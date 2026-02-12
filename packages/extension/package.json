@@ -1,0 +1,25 @@
+{
+  "name": "@tanuki-temaki/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:chrome": "vite build --watch --mode chrome",
+    "dev:firefox": "vite build --watch --mode firefox",
+    "build:chrome": "vite build --mode chrome",
+    "build:firefox": "vite build --mode firefox && node scripts/fix-firefox-manifest.js",
+    "build:all": "npm run build:chrome && npm run build:firefox",
+    "clean": "rm -rf dist-chrome dist-firefox"
+  },
+  "dependencies": {
+    "@tanuki-temaki/shared": "workspace:*",
+    "webextension-polyfill": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.12.0",
+    "@types/chrome": "^0.0.260",
+    "@crxjs/vite-plugin": "^2.0.0-beta.21",
+    "vite": "^5.0.11",
+    "typescript": "^5.3.3"
+  }
+}

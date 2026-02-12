@@ -1,0 +1,191 @@
+// Tanuki Temaki Database Schema
+// PostgreSQL database for caching Crunchyroll series data
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Series model - represents an anime series or manga from any provider
+model Series {
+  id              String   @id @default(uuid())
+  provider        String   // 'crunchyroll', 'netflix', 'anilist', etc.
+  mediaType       String   @default("ANIME") // 'ANIME' or 'MANGA'
+  externalId      String   // Provider's ID (e.g., 'GY8VEQ95Y' for Crunchyroll)
+  url             String   @unique
+
+  // Core metadata
+  title           String
+  titleImage      String?
+  description     String   @db.Text
+  rating          Float?
+  ageRating       String?
+  languages       String[]
+  genres          String[]
+  contentAdvisory String[]
+
+  // Relationships
+  tags            Tag[]
+  relatedFrom     Relationship[] @relation("RelatedFrom")
+  relatedTo       Relationship[] @relation("RelatedTo")
+
+  // User interactions
+  userRatings     UserSeriesRating[]
+  userNotes       UserSeriesNote[]
+  userTagVotes    UserTagVote[]
+
+  // Metadata
+  metadata        Json     @default("{}")
+  fetchedAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, externalId])
+  @@index([provider])
+  @@index([title])
+  @@index([mediaType])
+  @@map("series")
+}
+
+// Tag model - automatically generated tags for series categorization
+model Tag {
+  id         String  @id @default(uuid())
+  seriesId   String
+  series     Series  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  value      String  // The tag value (e.g., 'action', 'isekai', 'school')
+  source     String  // 'genre', 'content', 'description', 'manual'
+  confidence Float   @default(1.0) // Confidence score (0-1)
+  category   String? // 'theme', 'mood', 'setting', etc.
+
+  @@index([seriesId])
+  @@index([value])
+  @@index([category])
+  @@map("tags")
+}
+
+// Relationship model - represents "More like this" connections between series
+model Relationship {
+  id            String   @id @default(uuid())
+  fromSeriesId  String
+  toSeriesId    String
+
+  fromSeries    Series   @relation("RelatedFrom", fields: [fromSeriesId], references: [id], onDelete: Cascade)
+  toSeries      Series   @relation("RelatedTo", fields: [toSeriesId], references: [id], onDelete: Cascade)
+
+  similarity    Float?   // Tag similarity score (0-1)
+  sharedTags    String[] // Tags shared between the two series
+  discoveredAt  DateTime @default(now())
+
+  @@unique([fromSeriesId, toSeriesId])
+  @@index([fromSeriesId])
+  @@index([toSeriesId])
+  @@map("relationships")
+}
+
+// User model - represents authenticated users (OAuth, no PII)
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  oauthIdentities OAuthIdentity[]
+  seriesRatings   UserSeriesRating[]
+  tagVotes        UserTagVote[]
+  notes           UserSeriesNote[]
+  preferences     UserPreference[]
+
+  @@index([username])
+  @@map("users")
+}
+
+// OAuthIdentity model - links users to OAuth providers (no email storage)
+model OAuthIdentity {
+  id         String @id @default(uuid())
+  userId     String
+  provider   String // 'google', 'github'
+  providerId String // OAuth provider's user ID
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("oauth_identities")
+}
+
+// UserSeriesRating model - user ratings for series (0-5 scale)
+model UserSeriesRating {
+  id        String   @id @default(uuid())
+  userId    String
+  seriesId  String
+  rating    Int      // 0 = didn't like, 1-5 = liked (1 = not very good, 5 = very good)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId])
+  @@index([userId])
+  @@index([seriesId])
+  @@index([rating])
+  @@map("user_series_ratings")
+}
+
+// UserSeriesNote model - private notes on series
+model UserSeriesNote {
+  id        String   @id @default(uuid())
+  userId    String
+  seriesId  String
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId])
+  @@index([userId])
+  @@index([seriesId])
+  @@map("user_series_notes")
+}
+
+// UserTagVote model - upvote/downvote tags on specific series
+model UserTagVote {
+  id        String   @id @default(uuid())
+  userId    String
+  seriesId  String
+  tagValue  String   // The tag being voted on
+  vote      Int      // 1 (upvote) or -1 (downvote)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId, tagValue])
+  @@index([userId])
+  @@index([seriesId])
+  @@index([tagValue])
+  @@map("user_tag_votes")
+}
+
+// UserPreference model - flexible JSON storage for user preferences
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  key       String   // e.g., 'available_services'
+  value     Json     // JSON value (e.g., ['Netflix', 'Crunchyroll'])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@map("user_preferences")
+}

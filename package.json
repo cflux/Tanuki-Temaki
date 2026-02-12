@@ -1,0 +1,40 @@
+{
+  "name": "tanuki-temaki",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Crunchyroll series discovery tool that helps you find new shows based on similar themes and relationships",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tanuki-temaki"
+  },
+  "author": "",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:web": "pnpm --filter web dev",
+    "build:backend": "pnpm --filter backend build",
+    "build:web": "pnpm --filter web build",
+    "build:extension:chrome": "pnpm --filter extension build:chrome",
+    "build:extension:firefox": "pnpm --filter extension build:firefox",
+    "build:extension:all": "pnpm --filter extension build:all",
+    "build:all": "pnpm -r build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "prettier": "^3.2.4",
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
