@@ -315,7 +315,10 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                     {personalizedScore !== undefined && (
                       <PersonalizedBadge score={personalizedScore} />
                     )}
-                    <h3 className="font-semibold text-lg text-zinc-100">{series.title}</h3>
+                    <h3 className="font-semibold text-lg text-zinc-100 flex items-center gap-2">
+                      {series.title}
+                      {series.isAdult && <span className="text-base" title="Adult content">🔞</span>}
+                    </h3>
                   </div>
 
                   {/* Metadata (chapters/episodes) */}

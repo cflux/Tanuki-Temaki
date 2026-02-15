@@ -107,6 +107,7 @@ export class CrunchyrollAdapter extends BaseAdapter {
   private normalize(raw: any): RawSeriesData {
     return {
       provider: 'crunchyroll',
+      mediaType: 'ANIME', // Crunchyroll primarily provides anime
       externalId: raw.id || raw.externalId,
       url: raw.url || '',
       title: raw.title || 'Unknown Title',
@@ -114,6 +115,7 @@ export class CrunchyrollAdapter extends BaseAdapter {
       description: raw.description || raw.extended_description || '',
       rating: this.parseRating(raw.rating),
       ageRating: this.extractAgeRating(raw),
+      isAdult: undefined, // Crunchyroll doesn't provide isAdult flag
       languages: this.extractLanguages(raw),
       genres: this.extractGenres(raw),
       contentAdvisory: this.extractContentAdvisory(raw),

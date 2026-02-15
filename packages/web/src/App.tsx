@@ -7,8 +7,10 @@ import { ProfilePage } from './pages/ProfilePage';
 import { WatchlistPage } from './pages/WatchlistPage';
 import { RatedSeriesPage } from './pages/RatedSeriesPage';
 import { NotedSeriesPage } from './pages/NotedSeriesPage';
+import { IsAdultTestPage } from './pages/IsAdultTestPage';
 import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
+import { SafeModeToggle } from './components/SafeModeToggle';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
 
@@ -91,6 +93,7 @@ function App() {
         <header className="border-b border-zinc-800 bg-zinc-900">
           <div className="w-full px-4 py-4 flex justify-end items-center">
             <div className="flex items-center gap-3">
+              <SafeModeToggle />
               <PersonalizeToggle />
               <UserMenu />
             </div>
@@ -104,6 +107,7 @@ function App() {
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/rated" element={<RatedSeriesPage />} />
           <Route path="/noted" element={<NotedSeriesPage />} />
+          <Route path="/test/isadult" element={<IsAdultTestPage />} />
         </Routes>
 
         {/* Force username selection for temp usernames */}

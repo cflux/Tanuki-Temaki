@@ -23,6 +23,7 @@ const traceRelationshipsSchema = z.object({
 const searchOneSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   mediaType: z.enum(['ANIME', 'MANGA']).optional().default('ANIME'),
+  filterAdult: z.boolean().optional(), // When true, sets isAdult: false to exclude adult content
 });
 
 // Dependency injection - will be set in main server file
@@ -89,11 +90,11 @@ router.get('/search', async (req, res, next) => {
  */
 router.post('/search-one', async (req, res, next) => {
   try {
-    const { title, mediaType } = searchOneSchema.parse(req.body);
+    const { title, mediaType, filterAdult } = searchOneSchema.parse(req.body);
 
-    logger.info('Searching for series by title', { title, mediaType });
+    logger.info('Searching for series by title', { title, mediaType, filterAdult });
 
-    const series = await seriesCache.searchAndCacheByTitle(title, mediaType);
+    const series = await seriesCache.searchAndCacheByTitle(title, mediaType, filterAdult);
 
     res.json(series);
   } catch (error) {
@@ -110,13 +111,13 @@ router.post('/search-one', async (req, res, next) => {
  */
 router.post('/search-many', async (req, res, next) => {
   try {
-    const { title, mediaType, limit = 10 } = searchOneSchema.extend({
+    const { title, mediaType, limit = 10, filterAdult } = searchOneSchema.extend({
       limit: z.number().min(1).max(20).optional(),
     }).parse(req.body);
 
-    logger.info('Searching for multiple series', { title, mediaType, limit });
+    logger.info('Searching for multiple series', { title, mediaType, limit, filterAdult });
 
-    const results = await seriesCache.searchMultipleResults(title, mediaType, limit);
+    const results = await seriesCache.searchMultipleResults(title, mediaType, limit, filterAdult);
 
     res.json(results);
   } catch (error) {

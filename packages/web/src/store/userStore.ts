@@ -13,11 +13,13 @@ interface UserState {
   isLoading: boolean;
   preferPersonalized: boolean;
   resultsMediaFilter: 'ANIME' | 'MANGA' | 'BOTH';
+  filterAdultContent: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   updateUsername: (username: string) => void;
   setPreferPersonalized: (prefer: boolean) => void;
   setResultsMediaFilter: (filter: 'ANIME' | 'MANGA' | 'BOTH') => void;
+  setFilterAdultContent: (filter: boolean) => void;
   logout: () => void;
 }
 
@@ -28,6 +30,7 @@ export const useUserStore = create<UserState>()(
       isLoading: true,
       preferPersonalized: false,
       resultsMediaFilter: 'BOTH',
+      filterAdultContent: false,
 
       setUser: (user) => set({ user, isLoading: false }),
 
@@ -42,7 +45,9 @@ export const useUserStore = create<UserState>()(
 
       setResultsMediaFilter: (filter) => set({ resultsMediaFilter: filter }),
 
-      logout: () => set({ user: null, isLoading: false, preferPersonalized: false, resultsMediaFilter: 'BOTH' }),
+      setFilterAdultContent: (filter) => set({ filterAdultContent: filter }),
+
+      logout: () => set({ user: null, isLoading: false, preferPersonalized: false, resultsMediaFilter: 'BOTH', filterAdultContent: false }),
     }),
     {
       name: 'tanuki-user-storage',
@@ -50,6 +55,7 @@ export const useUserStore = create<UserState>()(
         user: state.user,
         preferPersonalized: state.preferPersonalized,
         resultsMediaFilter: state.resultsMediaFilter,
+        filterAdultContent: state.filterAdultContent,
       }), // Persist user data and preferences
     }
   )

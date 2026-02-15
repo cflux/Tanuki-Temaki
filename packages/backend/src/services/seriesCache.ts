@@ -82,8 +82,8 @@ export class SeriesCacheService {
    * Search for a single series by title (searches AniList and caches)
    * Returns the best match from AniList
    */
-  async searchAndCacheByTitle(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<Series> {
-    logger.info('Searching for series by title', { title, mediaType });
+  async searchAndCacheByTitle(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', filterAdult?: boolean): Promise<Series> {
+    logger.info('Searching for series by title', { title, mediaType, filterAdult });
 
     // First, check local cache by title (try multiple variations)
     // Normalize search: remove spaces, lowercase for comparison
@@ -142,11 +142,12 @@ export class SeriesCacheService {
     }
 
     // Not in cache - search AniList
-    logger.info('Not in cache, searching AniList', { title, mediaType });
+    logger.info('Not in cache, searching AniList', { title, mediaType, filterAdult });
 
     // Search AniList directly
     const anilistAdapter = this.anilistMatcher.getAdapter();
-    const searchResult = await anilistAdapter.searchMedia(title, mediaType);
+    const isAdult = filterAdult ? false : undefined; // Convert filterAdult flag to AniList parameter
+    const searchResult = await anilistAdapter.searchMedia(title, mediaType, isAdult);
 
     if (!searchResult) {
       throw new AppError(404, `No ${mediaType.toLowerCase()} found with title: ${title}`);
@@ -278,6 +279,7 @@ export class SeriesCacheService {
         description: rawData.description,
         rating: rawData.rating,
         ageRating: rawData.ageRating,
+        isAdult: rawData.isAdult,
         languages: rawData.languages,
         genres: rawData.genres,
         contentAdvisory: rawData.contentAdvisory,
@@ -310,7 +312,8 @@ export class SeriesCacheService {
   async searchMultipleResults(
     title: string,
     mediaType: 'ANIME' | 'MANGA' = 'ANIME',
-    limit: number = 10
+    limit: number = 10,
+    filterAdult?: boolean
   ): Promise<Array<{
     id: string;
     title: string;
@@ -324,12 +327,13 @@ export class SeriesCacheService {
     season?: string;
     year?: number;
   }>> {
-    logger.info('Searching AniList for multiple results', { title, mediaType, limit });
+    logger.info('Searching AniList for multiple results', { title, mediaType, limit, filterAdult });
 
     const anilistAdapter = this.anilistMatcher.getAdapter();
 
     // Search AniList with a higher page limit
-    const searchResults = await anilistAdapter.searchMediaMultiple(title, mediaType, limit);
+    const isAdult = filterAdult ? false : undefined; // Convert filterAdult flag to AniList parameter
+    const searchResults = await anilistAdapter.searchMediaMultiple(title, mediaType, limit, isAdult);
 
     if (!searchResults || searchResults.length === 0) {
       throw new AppError(404, `No ${mediaType.toLowerCase()} found with title: ${title}`);
@@ -419,6 +423,7 @@ export class SeriesCacheService {
         description: rawData.description,
         rating: rawData.rating,
         ageRating: rawData.ageRating,
+        isAdult: rawData.isAdult,
         languages: rawData.languages,
         genres: rawData.genres,
         contentAdvisory: rawData.contentAdvisory,
@@ -533,6 +538,7 @@ export class SeriesCacheService {
         description: rawData.description,
         rating: rawData.rating,
         ageRating: rawData.ageRating,
+        isAdult: rawData.isAdult,
         languages: rawData.languages,
         genres: rawData.genres,
         contentAdvisory: rawData.contentAdvisory,
@@ -553,6 +559,7 @@ export class SeriesCacheService {
         description: rawData.description,
         rating: rawData.rating,
         ageRating: rawData.ageRating,
+        isAdult: rawData.isAdult,
         languages: rawData.languages,
         genres: rawData.genres,
         contentAdvisory: rawData.contentAdvisory,
@@ -643,6 +650,7 @@ export class SeriesCacheService {
       description: dbSeries.description,
       rating: dbSeries.rating,
       ageRating: dbSeries.ageRating,
+      isAdult: dbSeries.isAdult,
       languages: dbSeries.languages,
       genres: dbSeries.genres,
       contentAdvisory: dbSeries.contentAdvisory,

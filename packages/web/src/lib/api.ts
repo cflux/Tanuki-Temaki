@@ -121,10 +121,11 @@ export const seriesApi = {
   /**
    * Search for a single series by title (returns best match)
    */
-  async searchByTitle(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<Series> {
+  async searchByTitle(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', filterAdult?: boolean): Promise<Series> {
     const { data } = await api.post<Series>('/api/series/search-one', {
       title,
       mediaType,
+      filterAdult,
     });
     return data;
   },
@@ -132,7 +133,7 @@ export const seriesApi = {
   /**
    * Search for multiple series results for user selection
    */
-  async searchMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', limit = 10): Promise<Array<{
+  async searchMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', limit = 10, filterAdult?: boolean): Promise<Array<{
     id: string;
     title: string;
     description: string;
@@ -149,6 +150,7 @@ export const seriesApi = {
       title,
       mediaType,
       limit,
+      filterAdult,
     });
     return data;
   },

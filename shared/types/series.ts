@@ -10,6 +10,7 @@ export interface Series {
   description: string;
   rating?: number;
   ageRating?: string;
+  isAdult?: boolean;
   languages: string[];
   genres: string[];
   contentAdvisory: string[];
@@ -61,6 +62,7 @@ export interface RawSeriesData {
   description: string;
   rating?: number;
   ageRating?: string;
+  isAdult?: boolean;
   languages: string[];
   genres: string[];
   contentAdvisory: string[];

@@ -204,8 +204,9 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
               return null;
             })()}
           </div>
-          <h3 className="text-white font-semibold text-sm line-clamp-3 mb-1" title={series.title}>
-            {series.title}
+          <h3 className="text-white font-semibold text-sm line-clamp-3 mb-1 flex items-start gap-1" title={series.title}>
+            <span className="flex-1">{series.title}</span>
+            {series.isAdult && <span className="text-xs flex-shrink-0" title="Adult content">🔞</span>}
           </h3>
           <div className="flex flex-wrap gap-1">
             {isRoot

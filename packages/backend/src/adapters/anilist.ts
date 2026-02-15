@@ -173,13 +173,13 @@ export class AniListAdapter {
   /**
    * Search for media (anime or manga) by title
    */
-  async searchMedia(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<AniListMedia | null> {
+  async searchMedia(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', isAdult?: boolean): Promise<AniListMedia | null> {
     try {
-      logger.info('Searching AniList for media', { title, mediaType });
+      logger.info('Searching AniList for media', { title, mediaType, isAdult });
 
       const query = gql`
-        query ($search: String, $type: MediaType) {
-          Media(search: $search, type: $type) {
+        query ($search: String, $type: MediaType, $isAdult: Boolean) {
+          Media(search: $search, type: $type, isAdult: $isAdult) {
             id
             type
             title {
@@ -188,6 +188,7 @@ export class AniListAdapter {
               native
             }
             description
+            isAdult
             genres
             tags {
               name
@@ -216,7 +217,10 @@ export class AniListAdapter {
         }
       `;
 
-      const variables = { search: title, type: mediaType };
+      const variables: any = { search: title, type: mediaType };
+      if (isAdult !== undefined) {
+        variables.isAdult = isAdult;
+      }
       const data = await this.requestWithRetry(
         async () => {
           const response = await fetch(ANILIST_API_URL, {
@@ -291,14 +295,14 @@ export class AniListAdapter {
   /**
    * Search for multiple media results (for user selection)
    */
-  async searchMediaMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', perPage: number = 10): Promise<AniListMedia[]> {
+  async searchMediaMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', perPage: number = 10, isAdult?: boolean): Promise<AniListMedia[]> {
     try {
-      logger.info('Searching AniList for multiple media', { title, mediaType, perPage });
+      logger.info('Searching AniList for multiple media', { title, mediaType, perPage, isAdult });
 
       const query = gql`
-        query ($search: String, $type: MediaType, $perPage: Int) {
+        query ($search: String, $type: MediaType, $perPage: Int, $isAdult: Boolean) {
           Page(page: 1, perPage: $perPage) {
-            media(search: $search, type: $type, sort: SEARCH_MATCH) {
+            media(search: $search, type: $type, isAdult: $isAdult, sort: SEARCH_MATCH) {
               id
               type
               title {
@@ -307,6 +311,7 @@ export class AniListAdapter {
                 native
               }
               description
+              isAdult
               format
               status
               episodes
@@ -326,7 +331,10 @@ export class AniListAdapter {
         }
       `;
 
-      const variables = { search: title, type: mediaType, perPage };
+      const variables: any = { search: title, type: mediaType, perPage };
+      if (isAdult !== undefined) {
+        variables.isAdult = isAdult;
+      }
       const data = await this.requestWithRetry(
         async () => {
           const response = await fetch(ANILIST_API_URL, {
@@ -410,13 +418,13 @@ export class AniListAdapter {
   /**
    * Get anime by AniList ID with full relationships
    */
-  async getAnimeWithRelations(anilistId: number): Promise<AniListMediaWithRelations | null> {
+  async getAnimeWithRelations(anilistId: number, isAdult?: boolean): Promise<AniListMediaWithRelations | null> {
     try {
-      logger.info('Fetching anime with relations from AniList', { anilistId });
+      logger.info('Fetching anime with relations from AniList', { anilistId, isAdult });
 
       const query = gql`
-        query ($id: Int) {
-          Media(id: $id, type: ANIME) {
+        query ($id: Int, $isAdult: Boolean) {
+          Media(id: $id, type: ANIME, isAdult: $isAdult) {
             id
             title {
               romaji
@@ -424,6 +432,8 @@ export class AniListAdapter {
               native
             }
             description
+            isAdult
+            type
             genres
             tags {
               name
@@ -458,6 +468,7 @@ export class AniListAdapter {
                     english
                   }
                   type
+                  isAdult
                   format
                   status
                   externalLinks {
@@ -479,6 +490,7 @@ export class AniListAdapter {
                       english
                     }
                     type
+                    isAdult
                     format
                     status
                     externalLinks {
@@ -494,7 +506,10 @@ export class AniListAdapter {
         }
       `;
 
-      const variables = { id: anilistId };
+      const variables: any = { id: anilistId };
+      if (isAdult !== undefined) {
+        variables.isAdult = isAdult;
+      }
       const data = await this.requestWithRetry(
         async () => {
           const response = await fetch(ANILIST_API_URL, {
@@ -576,13 +591,13 @@ export class AniListAdapter {
   /**
    * Get manga by AniList ID with full relationships
    */
-  async getMangaWithRelations(anilistId: number): Promise<AniListMediaWithRelations | null> {
+  async getMangaWithRelations(anilistId: number, isAdult?: boolean): Promise<AniListMediaWithRelations | null> {
     try {
-      logger.info('Fetching manga with relations from AniList', { anilistId });
+      logger.info('Fetching manga with relations from AniList', { anilistId, isAdult });
 
       const query = gql`
-        query ($id: Int) {
-          Media(id: $id, type: MANGA) {
+        query ($id: Int, $isAdult: Boolean) {
+          Media(id: $id, type: MANGA, isAdult: $isAdult) {
             id
             type
             title {
@@ -591,6 +606,7 @@ export class AniListAdapter {
               native
             }
             description
+            isAdult
             genres
             tags {
               name
@@ -625,6 +641,7 @@ export class AniListAdapter {
                     english
                   }
                   type
+                  isAdult
                   format
                   status
                   externalLinks {
@@ -646,6 +663,7 @@ export class AniListAdapter {
                       english
                     }
                     type
+                    isAdult
                     format
                     status
                     externalLinks {
@@ -661,7 +679,10 @@ export class AniListAdapter {
         }
       `;
 
-      const variables = { id: anilistId };
+      const variables: any = { id: anilistId };
+      if (isAdult !== undefined) {
+        variables.isAdult = isAdult;
+      }
       const data = await this.requestWithRetry(
         async () => {
           const response = await fetch(ANILIST_API_URL, {
@@ -776,6 +797,7 @@ export class AniListAdapter {
       description,
       rating: media.averageScore ? media.averageScore / 10 : undefined, // Convert 0-100 to 0-10
       ageRating: undefined, // AniList doesn't provide age ratings
+      isAdult: media.isAdult,
       languages: [], // Would need to infer from externalLinks or other data
       genres: [...media.genres, ...topTags], // Combine genres and top tags
       contentAdvisory: [], // Not directly available from AniList
@@ -1260,6 +1282,7 @@ export interface AniListMedia {
     native?: string;
   };
   description?: string;
+  isAdult?: boolean;
   genres: string[];
   tags?: Array<{
     name: string;
@@ -1293,6 +1316,7 @@ export interface AniListMediaWithRelations extends AniListMedia {
           english?: string;
         };
         type: string;
+        isAdult?: boolean;
         format?: string;
         status?: string;
         externalLinks?: ExternalLink[];
@@ -1310,6 +1334,7 @@ export interface AniListMediaWithRelations extends AniListMedia {
             english?: string;
           };
           type: string;
+          isAdult?: boolean;
           format?: string;
           status?: string;
           externalLinks?: ExternalLink[];

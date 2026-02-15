@@ -318,9 +318,9 @@ pnpm dev
 - [x] Backend API for notes works
 - [x] Frontend RatingWidget component
 - [x] Frontend NotesWidget component
-- [ ] **TEST:** Can rate series 0-5
-- [ ] **TEST:** Clicking same rating removes it
-- [ ] **TEST:** Ratings persist and reload correctly
+- [x] **TEST:** Can rate series 0-5
+- [x] **TEST:** Clicking same rating removes it
+- [x] **TEST:** Ratings persist and reload correctly
 - [ ] **TEST:** Notes can be added, edited, deleted
 - [ ] **TEST:** Anonymous users see "sign in to rate"
 
@@ -329,31 +329,126 @@ pnpm dev
 - [x] Backend tag preferences aggregation works
 - [x] Frontend TagVotingWidget component
 - [x] ProfilePage component
-- [ ] **TEST:** Can upvote/downvote tags on series
-- [ ] **TEST:** Clicking same vote removes it
-- [ ] **TEST:** Profile page shows aggregated tag preferences
+- [x] **TEST:** Can upvote/downvote tags on series
+- [x] **TEST:** Clicking same vote removes it
+- [x] **TEST:** Profile page shows aggregated tag preferences
 
 ### Phase 4 - Service Preferences ✅ (Ready for Testing)
 - [x] Backend API for preferences works
 - [x] Frontend ServicePreferences component
 - [x] Integration into ProfilePage
-- [ ] **TEST:** Can select available services
-- [ ] **TEST:** Service preferences persist
-- [ ] **TEST:** Service list includes all platforms in database
+- [x] **TEST:** Can select available services
+- [x] **TEST:** Service preferences persist
+- [x] **TEST:** Service list includes all platforms in database
 
 ### Phase 5 - Personalized Recommendations ✅ (Ready for Testing)
 - [x] PersonalizedRecommendationService implemented
 - [x] Recommendation API endpoints work
 - [x] Frontend recommendation API works
 - [x] Personalized mode toggle in DiscoveryPage
-- [ ] **TEST:** Tag preferences influence recommendation order
-- [ ] **TEST:** Service filtering works correctly
+- [x] **TEST:** Tag preferences influence recommendation order
+- [x] **TEST:** Service filtering works correctly
 - [ ] **TEST:** Highly rated (5-star) series get boosted scores
 - [ ] **TEST:** Disliked (0-star) series and children excluded
 - [ ] **TEST:** Result count ~125 maximum
 - [ ] **TEST:** Personalized mode disabled for anonymous users
 - [ ] **TEST:** PersonalizedBadge displays correctly on series cards
 - [ ] **TEST:** RecommendationExplanation shows matched tags and reasons
+
+## 🔍 In Progress - Adult Content Support
+
+### AniList `isAdult` Parameter Investigation
+**Status**: 🧪 Under Investigation
+
+**Context:**
+AniList's GraphQL API includes an `isAdult` boolean parameter to filter adult (18+) content. Currently, we're not using this parameter in any queries, which may be filtering out adult content by default.
+
+**Affected Queries:**
+1. **Initial Search** (`searchMedia`, `searchMediaMultiple`)
+   - Used when user searches for a series by title
+   - Missing `isAdult` may exclude adult series from search results
+
+2. **Tag/Genre Search** (`searchByTag`)
+   - Used for tag-based discovery
+   - Missing `isAdult` may exclude adult series from tag results
+
+3. **Relationship Tracing** (`getAnimeWithRelations`, `getMangaWithRelations`) ⚠️ **MOST IMPORTANT**
+   - Used when building the relationship graph
+   - Fetches `relations` (sequels, prequels, etc.) and `recommendations`
+   - Missing `isAdult` may filter adult series from the relationship tree
+   - Could result in incomplete relationship graphs (e.g., missing adult sequels to non-adult series)
+
+**How `isAdult` Works:**
+- `isAdult: true` → Only adult (18+) content
+- `isAdult: false` → Only non-adult content
+- Omitted → **Unknown** (may default to `false` or return both)
+
+**Two Implementation Approaches:**
+
+**Option A: Omit Parameter (Test if it returns both)**
+```graphql
+query ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    # No isAdult parameter - does this return both?
+    ...
+  }
+}
+```
+
+**Option B: Dual Queries + Merge** (Guaranteed to get all content)
+```graphql
+# Query 1: Adult content
+query ($id: Int) {
+  Media(id: $id, type: ANIME, isAdult: true) { ... }
+}
+
+# Query 2: Non-adult content
+query ($id: Int) {
+  Media(id: $id, type: ANIME, isAdult: false) { ... }
+}
+
+# Then merge:
+# - Deduplicate main Media by ID
+# - Merge relations.edges arrays
+# - Merge recommendations.edges arrays
+```
+
+## future features
+1. AI Breakdown of description information to try and agument recomendation engine
+2. Finding series with buz from reddit anime and manga subreddits?
+3. Improve the look of the ui/give it some style
+4. mobile device support/testining
+5. Figure out a better way to deal with the services in the prefrences page
+
+**Testing Plan:**
+Create a temporary testing page/subpage to compare results for the same query with:
+1. `isAdult: null` (omitted)
+2. `isAdult: true`
+3. `isAdult: false`
+
+Test all query types:
+- `searchMedia` (title search)
+- `searchMediaMultiple` (multiple results)
+- `getAnimeWithRelations` (relationship tracing)
+- `searchByTag` (tag/genre search)
+
+**Implementation Tasks:**
+- [ ] Create testing page/subpage for comparing results
+- [ ] Add optional `isAdult` parameter to all query methods
+- [ ] Test default behavior (parameter omitted)
+- [ ] Test explicit `true`, `false`, and omitted values
+- [ ] Document findings
+- [ ] Implement chosen approach (single query vs dual query)
+- [ ] Update relationship tracing to include adult content if appropriate
+
+**Next Steps:**
+1. Update IMPLEMENTATION_STATUS.md with details ✅
+2. Create testing interface for comparing isAdult parameter behavior
+3. Run tests against AniList API
+4. Choose implementation approach based on results
+5. Implement adult content support across all queries
+
+---
 
 ## 🎯 Next Steps (Prioritized)
 

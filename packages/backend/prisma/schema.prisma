@@ -24,6 +24,7 @@ model Series {
   description     String   @db.Text
   rating          Float?
   ageRating       String?
+  isAdult         Boolean?
   languages       String[]
   genres          String[]
   contentAdvisory String[]

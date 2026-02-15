@@ -36,7 +36,7 @@ export function DiscoveryPage() {
     byProvider: Array<{ provider: string; count: number }>;
     byMediaType: Array<{ mediaType: string; count: number }>;
   } | null>(null);
-  const { user, preferPersonalized, resultsMediaFilter: savedResultsMediaFilter, setResultsMediaFilter: saveResultsMediaFilter } = useUserStore();
+  const { user, preferPersonalized, resultsMediaFilter: savedResultsMediaFilter, setResultsMediaFilter: saveResultsMediaFilter, filterAdultContent } = useUserStore();
   const {
     relationshipGraph,
     mediaType,
@@ -177,7 +177,7 @@ export function DiscoveryPage() {
         message: `Searching for "${searchQuery}" on AniList...`,
       });
 
-      const results = await seriesApi.searchMultiple(searchQuery, mediaType, 10);
+      const results = await seriesApi.searchMultiple(searchQuery, mediaType, 10, filterAdultContent);
 
       // If multiple results, show selection modal
       if (results.length > 1) {
@@ -197,7 +197,7 @@ export function DiscoveryPage() {
 
       // Use the single result
       const selectedResult = results[0];
-      const series = await seriesApi.searchByTitle(selectedResult.title, mediaType);
+      const series = await seriesApi.searchByTitle(selectedResult.title, mediaType, filterAdultContent);
       setRootSeries(series);
 
       // Step 2: Cache series data
