@@ -1,6 +1,10 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth';
 import { UserService } from '../services/user';
+import { asyncHandler, AppError } from '../middleware/errorHandler.js';
+import { logger } from '../lib/logger.js';
+import { validateRequired, validateRating } from '../utils/validators.js';
+import { USER_DATA_ERRORS } from '../config/errorMessages.js';
 
 const router = express.Router();
 
@@ -12,39 +16,24 @@ router.use(requireAuth);
 /**
  * Rate a series
  */
-router.post('/ratings', async (req, res) => {
-  try {
-    const { seriesId, rating } = req.body;
+router.post('/ratings', asyncHandler(async (req, res) => {
+  const { seriesId, rating } = req.body;
 
-    if (!seriesId || rating === undefined) {
-      return res.status(400).json({ error: 'seriesId and rating are required' });
-    }
+  validateRequired(req.body, ['seriesId', 'rating']);
+  validateRating(rating);
 
-    if (typeof rating !== 'number' || rating < 0 || rating > 5) {
-      return res.status(400).json({ error: 'rating must be a number between 0 and 5' });
-    }
-
-    const result = await UserService.rateSeries(req.user!.userId, seriesId, rating);
-    res.json(result);
-  } catch (error) {
-    console.error('Error rating series:', error);
-    res.status(500).json({ error: 'Failed to rate series' });
-  }
-});
+  const result = await UserService.rateSeries(req.user!.userId, seriesId, rating);
+  res.json(result);
+}));
 
 /**
  * Get user's rating for a series
  */
-router.get('/ratings/:seriesId', async (req, res) => {
-  try {
-    const { seriesId } = req.params;
-    const rating = await UserService.getUserRating(req.user!.userId, seriesId);
-    res.json(rating);
-  } catch (error) {
-    console.error('Error fetching rating:', error);
-    res.status(500).json({ error: 'Failed to fetch rating' });
-  }
-});
+router.get('/ratings/:seriesId', asyncHandler(async (req, res) => {
+  const { seriesId } = req.params;
+  const rating = await UserService.getUserRating(req.user!.userId, seriesId);
+  res.json(rating);
+}));
 
 /**
  * Get all user's ratings
@@ -54,8 +43,8 @@ router.get('/ratings', async (req, res) => {
     const ratings = await UserService.getAllRatings(req.user!.userId);
     res.json(ratings);
   } catch (error) {
-    console.error('Error fetching ratings:', error);
-    res.status(500).json({ error: 'Failed to fetch ratings' });
+    logger.error('Error fetching ratings', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_RATINGS });
   }
 });
 
@@ -71,8 +60,8 @@ router.delete('/ratings/:seriesId', async (req, res) => {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Rating not found' });
     }
-    console.error('Error deleting rating:', error);
-    res.status(500).json({ error: 'Failed to delete rating' });
+    logger.error('Error deleting rating', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_DELETE_RATING });
   }
 });
 
@@ -92,8 +81,8 @@ router.post('/notes', async (req, res) => {
     const result = await UserService.saveNote(req.user!.userId, seriesId, note);
     res.json(result);
   } catch (error) {
-    console.error('Error saving note:', error);
-    res.status(500).json({ error: 'Failed to save note' });
+    logger.error('Error saving note', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_SAVE_NOTE });
   }
 });
 
@@ -106,8 +95,8 @@ router.get('/notes/:seriesId', async (req, res) => {
     const note = await UserService.getNote(req.user!.userId, seriesId);
     res.json(note);
   } catch (error) {
-    console.error('Error fetching note:', error);
-    res.status(500).json({ error: 'Failed to fetch note' });
+    logger.error('Error fetching note', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_NOTE });
   }
 });
 
@@ -123,8 +112,8 @@ router.delete('/notes/:seriesId', async (req, res) => {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Note not found' });
     }
-    console.error('Error deleting note:', error);
-    res.status(500).json({ error: 'Failed to delete note' });
+    logger.error('Error deleting note', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_DELETE_NOTE });
   }
 });
 
@@ -148,8 +137,8 @@ router.post('/tag-votes', async (req, res) => {
     const result = await UserService.voteOnTag(req.user!.userId, seriesId, tagValue, vote);
     res.json(result);
   } catch (error) {
-    console.error('Error voting on tag:', error);
-    res.status(500).json({ error: 'Failed to vote on tag' });
+    logger.error('Error voting on tag', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_VOTE });
   }
 });
 
@@ -165,8 +154,8 @@ router.delete('/tag-votes/:seriesId/:tagValue', async (req, res) => {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Tag vote not found' });
     }
-    console.error('Error removing tag vote:', error);
-    res.status(500).json({ error: 'Failed to remove tag vote' });
+    logger.error('Error removing tag vote', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_REMOVE_VOTE });
   }
 });
 
@@ -179,8 +168,8 @@ router.get('/tag-votes/:seriesId', async (req, res) => {
     const votes = await UserService.getSeriesTagVotes(req.user!.userId, seriesId);
     res.json(votes);
   } catch (error) {
-    console.error('Error fetching tag votes:', error);
-    res.status(500).json({ error: 'Failed to fetch tag votes' });
+    logger.error('Error fetching tag votes', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_VOTES });
   }
 });
 
@@ -194,8 +183,8 @@ router.get('/tag-preferences', async (req, res) => {
     const preferencesObj = Object.fromEntries(preferences);
     res.json(preferencesObj);
   } catch (error) {
-    console.error('Error fetching tag preferences:', error);
-    res.status(500).json({ error: 'Failed to fetch tag preferences' });
+    logger.error('Error fetching tag preferences', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_TAG_PREFERENCES });
   }
 });
 
@@ -215,8 +204,8 @@ router.post('/preferences', async (req, res) => {
     const result = await UserService.setPreference(req.user!.userId, key, value);
     res.json(result);
   } catch (error) {
-    console.error('Error setting preference:', error);
-    res.status(500).json({ error: 'Failed to set preference' });
+    logger.error('Error setting preference', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_SET_PREFERENCE });
   }
 });
 
@@ -228,8 +217,8 @@ router.get('/preferences', async (req, res) => {
     const preferences = await UserService.getAllPreferences(req.user!.userId);
     res.json(preferences);
   } catch (error) {
-    console.error('Error fetching preferences:', error);
-    res.status(500).json({ error: 'Failed to fetch preferences' });
+    logger.error('Error fetching preferences', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_PREFERENCES });
   }
 });
 
@@ -247,8 +236,8 @@ router.post('/preferences/available-services', async (req, res) => {
     const result = await UserService.setAvailableServices(req.user!.userId, services);
     res.json(result);
   } catch (error) {
-    console.error('Error setting available services:', error);
-    res.status(500).json({ error: 'Failed to set available services' });
+    logger.error('Error setting available services', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_SET_SERVICES });
   }
 });
 
@@ -260,8 +249,8 @@ router.get('/preferences/available-services', async (req, res) => {
     const services = await UserService.getAvailableServices(req.user!.userId);
     res.json(services);
   } catch (error) {
-    console.error('Error fetching available services:', error);
-    res.status(500).json({ error: 'Failed to fetch available services' });
+    logger.error('Error fetching available services', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_SERVICES });
   }
 });
 
@@ -281,8 +270,8 @@ router.post('/watchlist', async (req, res) => {
     const result = await UserService.addToWatchlist(req.user!.userId, seriesId, status);
     res.json(result);
   } catch (error) {
-    console.error('Error adding to watchlist:', error);
-    res.status(500).json({ error: 'Failed to add to watchlist' });
+    logger.error('Error adding to watchlist', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_ADD_WATCHLIST });
   }
 });
 
@@ -296,8 +285,8 @@ router.delete('/watchlist/:seriesId', async (req, res) => {
     await UserService.removeFromWatchlist(req.user!.userId, seriesId);
     res.json({ success: true });
   } catch (error) {
-    console.error('Error removing from watchlist:', error);
-    res.status(500).json({ error: 'Failed to remove from watchlist' });
+    logger.error('Error removing from watchlist', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_REMOVE_WATCHLIST });
   }
 });
 
@@ -309,8 +298,8 @@ router.get('/watchlist', async (req, res) => {
     const watchlist = await UserService.getWatchlist(req.user!.userId);
     res.json(watchlist);
   } catch (error) {
-    console.error('Error fetching watchlist:', error);
-    res.status(500).json({ error: 'Failed to fetch watchlist' });
+    logger.error('Error fetching watchlist', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_WATCHLIST });
   }
 });
 
@@ -342,8 +331,8 @@ router.post('/watchlist/batch', async (req, res) => {
 
     res.json(statuses);
   } catch (error) {
-    console.error('Error fetching batch watchlist status:', error);
-    res.status(500).json({ error: 'Failed to fetch batch watchlist status' });
+    logger.error('Error fetching batch watchlist status', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_BATCH_WATCHLIST });
   }
 });
 
@@ -356,8 +345,8 @@ router.get('/watchlist/:seriesId', async (req, res) => {
     const status = await UserService.getWatchlistStatus(req.user!.userId, seriesId);
     res.json(status);
   } catch (error) {
-    console.error('Error fetching watchlist status:', error);
-    res.status(500).json({ error: 'Failed to fetch watchlist status' });
+    logger.error('Error fetching watchlist status', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_WATCHLIST_STATUS });
   }
 });
 
@@ -369,8 +358,8 @@ router.get('/rated', async (req, res) => {
     const rated = await UserService.getRatedSeries(req.user!.userId);
     res.json(rated);
   } catch (error) {
-    console.error('Error fetching rated series:', error);
-    res.status(500).json({ error: 'Failed to fetch rated series' });
+    logger.error('Error fetching rated series', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_RATED_SERIES });
   }
 });
 
@@ -382,8 +371,8 @@ router.get('/noted', async (req, res) => {
     const noted = await UserService.getNotedSeries(req.user!.userId);
     res.json(noted);
   } catch (error) {
-    console.error('Error fetching noted series:', error);
-    res.status(500).json({ error: 'Failed to fetch noted series' });
+    logger.error('Error fetching noted series', { error: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_NOTED_SERIES });
   }
 });
 

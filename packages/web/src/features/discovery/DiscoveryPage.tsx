@@ -7,6 +7,7 @@ import { TreeView } from '../../components/views/TreeView';
 import { TableView } from '../../components/views/TableView';
 import { LoadingOverlay } from '../../components/LoadingOverlay';
 import { SeriesSelectionModal } from '../../components/SeriesSelectionModal';
+import { NAVIGATION_DELAY } from '../../config/uiConstants';
 
 export function DiscoveryPage() {
   const location = useLocation();
@@ -207,7 +208,7 @@ export function DiscoveryPage() {
       });
 
       // Small delay to show caching step
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, NAVIGATION_DELAY.ROUTE_TRANSITION));
 
       // Step 3: Trace relationships with streaming progress
       const baseGraph = await seriesApi.traceRelationshipsStream(
@@ -426,7 +427,7 @@ export function DiscoveryPage() {
         message: `Found "${series.title}", caching metadata...`,
       });
 
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, NAVIGATION_DELAY.ROUTE_TRANSITION));
 
       // Trace relationships
       const baseGraph = await seriesApi.traceRelationshipsStream(

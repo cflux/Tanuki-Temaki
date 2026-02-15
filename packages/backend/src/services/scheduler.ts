@@ -1,5 +1,6 @@
 import { logger } from '../lib/logger.js';
 import { GenreCollectionService } from './genreCollection.js';
+import { CACHE_EXPIRATION } from '../config/constants.js';
 
 /**
  * Scheduler service for periodic tasks
@@ -14,7 +15,6 @@ export class Scheduler {
     logger.info('Starting scheduled tasks');
 
     // Refresh genre collection once a week (every 7 days)
-    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const genreRefreshInterval = setInterval(async () => {
       try {
         await GenreCollectionService.refreshGenreCollection();
@@ -23,7 +23,7 @@ export class Scheduler {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-    }, WEEK_MS);
+    }, CACHE_EXPIRATION.GENRE_COLLECTION);
 
     this.intervals.push(genreRefreshInterval);
 
@@ -37,7 +37,7 @@ export class Scheduler {
       );
 
     logger.info('Scheduled tasks started', {
-      genreRefreshIntervalMs: WEEK_MS,
+      genreRefreshIntervalMs: CACHE_EXPIRATION.GENRE_COLLECTION,
     });
   }
 

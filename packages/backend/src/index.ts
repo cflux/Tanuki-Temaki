@@ -9,8 +9,7 @@ import { SeriesCacheService } from './services/seriesCache.js';
 import { RelationshipTracer } from './services/relationshipTracer.js';
 import { adapterRegistry } from './adapters/registry.js';
 import { CrunchyrollAdapter } from './adapters/crunchyroll.js';
-
-const WS_PORT = Number(process.env.WS_PORT) || 8765;
+import { WS_PORT } from './config/constants.js';
 
 // Initialize WebSocket server
 const wss = new WebSocketServer({ port: WS_PORT });

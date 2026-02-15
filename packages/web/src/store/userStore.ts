@@ -1,12 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-export interface User {
-  id: string;
-  username: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { User } from '@tanuki-temaki/shared';
 
 interface UserState {
   user: User | null;

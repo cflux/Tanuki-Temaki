@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../lib/api';
 import { useUserStore } from '../../store/userStore';
 import { UsernameModal } from './UsernameModal';
+import { NAVIGATION_DELAY } from '../../config/uiConstants';
 
 export const AuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,7 @@ export const AuthCallback: React.FC = () => {
 
       if (errorParam) {
         setError('Authentication failed. Please try again.');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
         return;
       }
 
@@ -31,11 +32,11 @@ export const AuthCallback: React.FC = () => {
             setShowUsernameModal(true);
           } else {
             setError('Failed to fetch user data');
-            setTimeout(() => navigate('/'), 3000);
+            setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
           }
         } catch (err) {
           setError('Failed to fetch user data');
-          setTimeout(() => navigate('/'), 3000);
+          setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
         }
       } else if (status === 'success') {
         // User logged in successfully
@@ -46,15 +47,15 @@ export const AuthCallback: React.FC = () => {
             navigate('/');
           } else {
             setError('Failed to fetch user data');
-            setTimeout(() => navigate('/'), 3000);
+            setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
           }
         } catch (err) {
           setError('Failed to fetch user data');
-          setTimeout(() => navigate('/'), 3000);
+          setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
         }
       } else {
         setError('Invalid callback status');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
       }
     };
 

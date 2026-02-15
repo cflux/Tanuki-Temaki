@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { userApi } from '../../lib/api';
+import { useSyncedState } from '../../hooks';
 
 interface TagVotingWidgetProps {
   seriesId: string;
@@ -16,13 +17,8 @@ export const TagVotingWidget: React.FC<TagVotingWidgetProps> = ({
   onVoteChange,
 }) => {
   const user = useUserStore((state) => state.user);
-  const [vote, setVote] = useState<number | null>(initialVote ?? null);
+  const [vote, setVote] = useSyncedState(initialVote);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Sync state with prop changes (when data refetches)
-  useEffect(() => {
-    setVote(initialVote ?? null);
-  }, [initialVote]);
 
   const handleVote = async (newVote: 1 | -1) => {
     if (!user) return;

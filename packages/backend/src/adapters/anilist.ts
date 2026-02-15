@@ -1,8 +1,17 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import { logger } from '../lib/logger.js';
 import type { RawSeriesData } from '@tanuki-temaki/shared';
-
-const ANILIST_API_URL = 'https://graphql.anilist.co';
+import {
+  ANILIST_API_URL,
+  ANILIST_MIN_REQUEST_INTERVAL,
+  ANILIST_INITIAL_LIMIT,
+  JSON_HEADERS,
+  THIRTY_SECONDS_MS,
+  EIGHT_SECONDS_MS,
+  ANILIST_CONFIG,
+} from '../config/constants.js';
+import { fetchAniList } from './anilistClient.js';
+import { buildGenreSearchQuery, buildTagSearchQuery } from './graphql/fragments.js';
 
 /**
  * AniList adapter for fetching anime data
@@ -11,17 +20,14 @@ const ANILIST_API_URL = 'https://graphql.anilist.co';
 export class AniListAdapter {
   private client: GraphQLClient;
   private lastRequestTime: number = 0;
-  private readonly MIN_REQUEST_INTERVAL = 5000; // 5000ms between requests (12 requests/min - avoids burst limit)
+  private readonly MIN_REQUEST_INTERVAL = ANILIST_MIN_REQUEST_INTERVAL;
   private rateLimitCallback?: (waitTimeMs: number, attempt: number, maxRetries: number) => void;
-  private rateLimitRemaining: number = 90; // Track remaining requests
+  private rateLimitRemaining: number = ANILIST_INITIAL_LIMIT;
   private rateLimitReset: number = 0; // Unix timestamp when limit resets
 
   constructor() {
     this.client = new GraphQLClient(ANILIST_API_URL, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: JSON_HEADERS,
     });
   }
 
@@ -46,7 +52,7 @@ export class AniListAdapter {
 
     if (this.rateLimitRemaining <= 3) {
       // Critical - slow down drastically (30 seconds between requests)
-      requiredDelay = 30000;
+      requiredDelay = THIRTY_SECONDS_MS;
       logger.warn(`Critical rate limit (${this.rateLimitRemaining} remaining): 30s delay`);
     } else if (this.rateLimitRemaining <= 8) {
       // Very low - slow down significantly (20 seconds between requests)
@@ -58,11 +64,11 @@ export class AniListAdapter {
       logger.info(`Low rate limit (${this.rateLimitRemaining} remaining): 12s delay`);
     } else if (this.rateLimitRemaining <= 25) {
       // Getting low - slow down (8 seconds between requests)
-      requiredDelay = 8000;
+      requiredDelay = EIGHT_SECONDS_MS;
       logger.info(`Rate limit getting low (${this.rateLimitRemaining} remaining): 8s delay`);
     } else if (this.rateLimitRemaining <= 40) {
       // Starting to slow down (5 seconds between requests)
-      requiredDelay = 5000;
+      requiredDelay = ANILIST_MIN_REQUEST_INTERVAL;
       logger.debug(`Slowing down (${this.rateLimitRemaining} remaining): 5s delay`);
     }
 
@@ -222,50 +228,7 @@ export class AniListAdapter {
         variables.isAdult = isAdult;
       }
       const data = await this.requestWithRetry(
-        async () => {
-          const response = await fetch(ANILIST_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-
-          // Update rate limit info from headers
-          this.updateRateLimitInfo(response.headers);
-
-          // Check HTTP status
-          if (!response.ok) {
-            const json = await response.json();
-            // Return error in the same format graphql-request would
-            throw {
-              response: {
-                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
-                status: response.status,
-                headers: {},
-              },
-              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
-            };
-          }
-
-          const json = await response.json();
-
-          // Check for GraphQL errors
-          if (json.errors) {
-            throw {
-              response: {
-                errors: json.errors,
-                status: 200,
-                headers: {},
-              },
-              message: json.errors[0]?.message || 'GraphQL Error',
-            };
-          }
-
-          // Return just the data part (same as graphql-request)
-          return json.data;
-        },
+        () => fetchAniList(query, variables, (headers) => this.updateRateLimitInfo(headers)),
         5,
         this.rateLimitCallback
       );
@@ -336,45 +299,7 @@ export class AniListAdapter {
         variables.isAdult = isAdult;
       }
       const data = await this.requestWithRetry(
-        async () => {
-          const response = await fetch(ANILIST_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-
-          this.updateRateLimitInfo(response.headers);
-
-          if (!response.ok) {
-            const json = await response.json();
-            throw {
-              response: {
-                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
-                status: response.status,
-                headers: {},
-              },
-              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
-            };
-          }
-
-          const json = await response.json();
-
-          if (json.errors) {
-            throw {
-              response: {
-                errors: json.errors,
-                status: 200,
-                headers: {},
-              },
-              message: json.errors[0]?.message || 'GraphQL Error',
-            };
-          }
-
-          return json.data;
-        },
+        () => fetchAniList(query, variables, (headers) => this.updateRateLimitInfo(headers)),
         5,
         this.rateLimitCallback
       );
@@ -511,50 +436,7 @@ export class AniListAdapter {
         variables.isAdult = isAdult;
       }
       const data = await this.requestWithRetry(
-        async () => {
-          const response = await fetch(ANILIST_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-
-          // Update rate limit info from headers
-          this.updateRateLimitInfo(response.headers);
-
-          // Check HTTP status
-          if (!response.ok) {
-            const json = await response.json();
-            // Return error in the same format graphql-request would
-            throw {
-              response: {
-                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
-                status: response.status,
-                headers: {},
-              },
-              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
-            };
-          }
-
-          const json = await response.json();
-
-          // Check for GraphQL errors
-          if (json.errors) {
-            throw {
-              response: {
-                errors: json.errors,
-                status: 200,
-                headers: {},
-              },
-              message: json.errors[0]?.message || 'GraphQL Error',
-            };
-          }
-
-          // Return just the data part (same as graphql-request)
-          return json.data;
-        },
+        () => fetchAniList(query, variables, (headers) => this.updateRateLimitInfo(headers)),
         5,
         this.rateLimitCallback
       );
@@ -684,50 +566,7 @@ export class AniListAdapter {
         variables.isAdult = isAdult;
       }
       const data = await this.requestWithRetry(
-        async () => {
-          const response = await fetch(ANILIST_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-
-          // Update rate limit info from headers
-          this.updateRateLimitInfo(response.headers);
-
-          // Check HTTP status
-          if (!response.ok) {
-            const json = await response.json();
-            // Return error in the same format graphql-request would
-            throw {
-              response: {
-                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
-                status: response.status,
-                headers: {},
-              },
-              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
-            };
-          }
-
-          const json = await response.json();
-
-          // Check for GraphQL errors
-          if (json.errors) {
-            throw {
-              response: {
-                errors: json.errors,
-                status: 200,
-                headers: {},
-              },
-              message: json.errors[0]?.message || 'GraphQL Error',
-            };
-          }
-
-          // Return just the data part (same as graphql-request)
-          return json.data;
-        },
+        () => fetchAniList(query, variables, (headers) => this.updateRateLimitInfo(headers)),
         5,
         this.rateLimitCallback
       );
@@ -783,9 +622,9 @@ export class AniListAdapter {
 
     // Extract top tags as genres
     const topTags = media.tags
-      ?.filter(tag => !tag.isMediaSpoiler && tag.rank >= 60)
+      ?.filter(tag => !tag.isMediaSpoiler && tag.rank >= ANILIST_CONFIG.TAG_RANK_THRESHOLD)
       .map(tag => tag.name)
-      .slice(0, 10) || [];
+      .slice(0, ANILIST_CONFIG.TOP_TAGS_LIMIT) || [];
 
     return {
       provider: 'crunchyroll',
@@ -999,185 +838,10 @@ export class AniListAdapter {
       });
 
       // Build query conditionally based on whether we're searching genre or tag
+      const includeTypeFilter = mediaType !== 'all';
       const query = isGenre
-        ? (mediaType === 'all'
-          ? gql`
-              query ($genre_in: [String], $perPage: Int) {
-                Page(page: 1, perPage: $perPage) {
-                  pageInfo {
-                    total
-                    perPage
-                  }
-                  media(genre_in: $genre_in, sort: [POPULARITY_DESC, SCORE_DESC]) {
-                    id
-                    type
-                    title {
-                      romaji
-                      english
-                      native
-                    }
-                    description
-                    genres
-                    tags {
-                      name
-                      rank
-                      isMediaSpoiler
-                    }
-                    averageScore
-                    popularity
-                    format
-                    status
-                    episodes
-                    chapters
-                    volumes
-                    duration
-                    season
-                    seasonYear
-                    coverImage {
-                      large
-                    }
-                    externalLinks {
-                      url
-                      site
-                      type
-                    }
-                  }
-                }
-              }
-            `
-          : gql`
-              query ($genre_in: [String], $type: MediaType, $perPage: Int) {
-                Page(page: 1, perPage: $perPage) {
-                  pageInfo {
-                    total
-                    perPage
-                  }
-                  media(genre_in: $genre_in, type: $type, sort: [POPULARITY_DESC, SCORE_DESC]) {
-                    id
-                    type
-                    title {
-                      romaji
-                      english
-                      native
-                    }
-                    description
-                    genres
-                    tags {
-                      name
-                      rank
-                      isMediaSpoiler
-                    }
-                    averageScore
-                    popularity
-                    format
-                    status
-                    episodes
-                    chapters
-                    volumes
-                    duration
-                    season
-                    seasonYear
-                    coverImage {
-                      large
-                    }
-                    externalLinks {
-                      url
-                      site
-                      type
-                    }
-                  }
-                }
-              }
-            `)
-        : (mediaType === 'all'
-          ? gql`
-              query ($tag_in: [String], $perPage: Int) {
-                Page(page: 1, perPage: $perPage) {
-                  pageInfo {
-                    total
-                    perPage
-                  }
-                  media(tag_in: $tag_in, sort: [POPULARITY_DESC, SCORE_DESC]) {
-                    id
-                    type
-                    title {
-                      romaji
-                      english
-                      native
-                    }
-                    description
-                    genres
-                    tags {
-                      name
-                      rank
-                      isMediaSpoiler
-                    }
-                    averageScore
-                    popularity
-                    format
-                    status
-                    episodes
-                    chapters
-                    volumes
-                    duration
-                    season
-                    seasonYear
-                    coverImage {
-                      large
-                    }
-                    externalLinks {
-                      url
-                      site
-                      type
-                    }
-                  }
-                }
-              }
-            `
-          : gql`
-              query ($tag_in: [String], $type: MediaType, $perPage: Int) {
-                Page(page: 1, perPage: $perPage) {
-                  pageInfo {
-                    total
-                    perPage
-                  }
-                  media(tag_in: $tag_in, type: $type, sort: [POPULARITY_DESC, SCORE_DESC]) {
-                    id
-                    type
-                    title {
-                      romaji
-                      english
-                      native
-                    }
-                    description
-                    genres
-                    tags {
-                      name
-                      rank
-                      isMediaSpoiler
-                    }
-                    averageScore
-                    popularity
-                    format
-                    status
-                    episodes
-                    chapters
-                    volumes
-                    duration
-                    season
-                    seasonYear
-                    coverImage {
-                      large
-                    }
-                    externalLinks {
-                      url
-                      site
-                      type
-                    }
-                  }
-                }
-              }
-            `);
+        ? buildGenreSearchQuery(includeTypeFilter)
+        : buildTagSearchQuery(includeTypeFilter);
 
       const variables: any = {
         [isGenre ? 'genre_in' : 'tag_in']: [formattedSearch],
@@ -1195,60 +859,16 @@ export class AniListAdapter {
       });
 
       const data = await this.requestWithRetry(
-        async () => {
-          const response = await fetch(ANILIST_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-
-          // Update rate limit info from headers
-          this.updateRateLimitInfo(response.headers);
-
-          // Check HTTP status
-          if (!response.ok) {
-            const json = await response.json();
-            throw {
-              response: {
-                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
-                status: response.status,
-                headers: {},
-              },
-              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
-            };
-          }
-
-          const json = await response.json();
-
-          // Log the response for debugging
-          logger.info('AniList tag search response', {
-            hasData: !!json.data,
-            hasErrors: !!json.errors,
-            mediaCount: json.data?.Page?.media?.length || 0,
-            errors: json.errors ? JSON.stringify(json.errors) : undefined,
-            fullResponse: JSON.stringify(json, null, 2)
-          });
-
-          // Check for GraphQL errors
-          if (json.errors) {
-            throw {
-              response: {
-                errors: json.errors,
-                status: 200,
-                headers: {},
-              },
-              message: json.errors[0]?.message || 'GraphQL Error',
-            };
-          }
-
-          return json.data;
-        },
+        () => fetchAniList(query, variables, (headers) => this.updateRateLimitInfo(headers)),
         5,
         this.rateLimitCallback
       );
+
+      // Log the response for debugging
+      logger.info('AniList tag search response', {
+        hasData: !!data,
+        mediaCount: data?.Page?.media?.length || 0,
+      });
 
       const results = data?.Page?.media || [];
 

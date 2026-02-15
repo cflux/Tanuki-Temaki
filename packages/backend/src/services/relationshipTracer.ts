@@ -8,6 +8,7 @@ import type {
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { SeriesCacheService } from './seriesCache.js';
+import { CACHE_EXPIRATION, API_DELAYS } from '../config/constants.js';
 import { AniListMatcherService } from './anilistMatcher.js';
 import type { RelatedAnimeInfo } from '../adapters/anilist.js';
 
@@ -193,9 +194,8 @@ export class RelationshipTracer {
     // Check if we have cached AniList relations in metadata
     let relatedAnime;
     const lastFetched = metadata?.relationsLastFetched;
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const isStale = !lastFetched ||
-      (Date.now() - new Date(lastFetched as string).getTime()) > SEVEN_DAYS_MS;
+      (Date.now() - new Date(lastFetched as string).getTime()) > CACHE_EXPIRATION.RELATIONSHIP_TRACE;
 
     logger.info('Checking for cached relations', {
       seriesId: current.id,
@@ -614,8 +614,7 @@ export class RelationshipTracer {
         });
 
         // Add delay to avoid hitting AniList rate limits (90 req/min = ~700ms between requests)
-        // Wait 1 second between sequel fetches to be safe
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, API_DELAYS.RATE_LIMIT_RETRY));
 
         // Fetch the sequel with its relations and recommendations
         const sequelMedia = mediaType === 'MANGA'

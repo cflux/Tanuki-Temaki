@@ -65,3 +65,22 @@ export const notFoundHandler = (req: Request, res: Response) => {
     message: `Cannot ${req.method} ${req.path}`,
   });
 };
+
+/**
+ * Async route handler wrapper
+ * Catches errors from async route handlers and passes them to Express error middleware
+ * Eliminates the need for try-catch blocks in every route handler
+ *
+ * Usage:
+ * router.get('/path', asyncHandler(async (req, res) => {
+ *   const data = await someAsyncOperation();
+ *   res.json(data);
+ * }));
+ */
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { userApi } from '../../lib/api';
+import { useSyncedState } from '../../hooks';
 
 interface RatingWidgetProps {
   seriesId: string;
@@ -14,14 +15,9 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
   onRatingChange,
 }) => {
   const user = useUserStore((state) => state.user);
-  const [rating, setRating] = useState<number | null>(initialRating ?? null);
+  const [rating, setRating] = useSyncedState(initialRating);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Sync state with prop changes (when data refetches)
-  useEffect(() => {
-    setRating(initialRating ?? null);
-  }, [initialRating]);
 
   const handleRatingClick = async (newRating: number) => {
     if (!user) return;

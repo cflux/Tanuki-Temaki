@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
+import { HTTP_PORT, FRONTEND_URL, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS } from './config/constants.js';
 import healthRouter from './routes/health.js';
 import seriesRouter, { setDependencies as setSeriesDependencies } from './routes/series.js';
 import authRouter from './routes/auth.js';
@@ -22,11 +23,10 @@ import {
 import { Scheduler } from './services/scheduler.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: FRONTEND_URL,
   credentials: true,
 }));
 app.use(express.json());
@@ -36,8 +36,8 @@ app.use(passport.initialize());
 
 // Rate limiting - 2000 requests per 15 minutes (generous for development and batch operations)
 app.use('/api', rateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 2000, // Increased to handle batch operations and testing
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  maxRequests: RATE_LIMIT_MAX_REQUESTS,
 }));
 
 // Inject dependencies into routes
@@ -58,8 +58,8 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start HTTP server
-const server = app.listen(PORT, () => {
-  logger.info(`HTTP server listening on port ${PORT}`);
+const server = app.listen(HTTP_PORT, () => {
+  logger.info(`HTTP server listening on port ${HTTP_PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`Extension connected: ${extensionBridge.isConnected()}`);
 

@@ -1,8 +1,8 @@
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { gql } from 'graphql-request';
-
-const ANILIST_API_URL = 'https://graphql.anilist.co';
+import { CACHE_EXPIRATION } from '../config/constants.js';
+import { fetchAniList } from '../adapters/anilistClient.js';
 
 /**
  * Service to manage AniList's genre collection
@@ -11,7 +11,7 @@ const ANILIST_API_URL = 'https://graphql.anilist.co';
 export class GenreCollectionService {
   private static genreCache: Set<string> | null = null;
   private static lastFetch: Date | null = null;
-  private static readonly CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private static readonly CACHE_DURATION_MS = CACHE_EXPIRATION.GENRE_COLLECTION;
 
   /**
    * Fetch the genre collection from AniList
@@ -26,26 +26,8 @@ export class GenreCollectionService {
     `;
 
     try {
-      const response = await fetch(ANILIST_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`AniList API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data.errors) {
-        throw new Error(`AniList GraphQL errors: ${JSON.stringify(data.errors)}`);
-      }
-
-      const genres: string[] = data.data.GenreCollection || [];
+      const data = await fetchAniList<{ GenreCollection: string[] }>(query, {});
+      const genres: string[] = data.GenreCollection || [];
       logger.info('Fetched genre collection', { count: genres.length, genres });
 
       return genres;

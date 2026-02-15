@@ -1,6 +1,7 @@
 import express from 'express';
 import { AniListAdapter } from '../adapters/anilist.js';
 import { logger } from '../lib/logger.js';
+import { ANILIST_API_URL, JSON_HEADERS } from '../config/constants.js';
 
 const router = express.Router();
 const anilistAdapter = new AniListAdapter();
@@ -10,7 +11,7 @@ const anilistAdapter = new AniListAdapter();
  * Simple health check to verify route is working
  */
 router.get('/health', (req, res) => {
-  console.log('Test health endpoint hit');
+  logger.info('Test health endpoint hit');
   res.json({ status: 'ok', message: 'Test router is working' });
 });
 
@@ -19,8 +20,7 @@ router.get('/health', (req, res) => {
  * Test endpoint to compare isAdult parameter behavior
  */
 router.post('/isadult', async (req, res) => {
-  console.log('=== TEST ENDPOINT HIT ===');
-  console.log('Request body:', req.body);
+  logger.info('Test endpoint hit', { body: req.body });
   try {
     const { queryType, isAdultValue, searchInput, tagInput, anilistId } = req.body;
 
@@ -116,8 +116,6 @@ router.post('/isadult', async (req, res) => {
  * Test searchMedia with optional isAdult parameter
  */
 async function testSearchMedia(title: string, isAdult?: boolean): Promise<any | null> {
-  const ANILIST_API_URL = 'https://graphql.anilist.co';
-
   const query = `
     query ($search: String, $type: MediaType, $isAdult: Boolean) {
       Media(search: $search, type: $type, isAdult: $isAdult) {
@@ -141,7 +139,7 @@ async function testSearchMedia(title: string, isAdult?: boolean): Promise<any | 
 
   const response = await fetch(ANILIST_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({ query, variables }),
   });
 
@@ -153,8 +151,6 @@ async function testSearchMedia(title: string, isAdult?: boolean): Promise<any | 
  * Test searchMediaMultiple with optional isAdult parameter
  */
 async function testSearchMediaMultiple(title: string, isAdult?: boolean): Promise<any[]> {
-  const ANILIST_API_URL = 'https://graphql.anilist.co';
-
   const query = `
     query ($search: String, $type: MediaType, $isAdult: Boolean, $perPage: Int) {
       Page(page: 1, perPage: $perPage) {
@@ -180,7 +176,7 @@ async function testSearchMediaMultiple(title: string, isAdult?: boolean): Promis
 
   const response = await fetch(ANILIST_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({ query, variables }),
   });
 
@@ -192,8 +188,6 @@ async function testSearchMediaMultiple(title: string, isAdult?: boolean): Promis
  * Test getAnimeWithRelations with optional isAdult parameter
  */
 async function testGetAnimeWithRelations(id: number, isAdult?: boolean): Promise<any | null> {
-  const ANILIST_API_URL = 'https://graphql.anilist.co';
-
   const query = `
     query ($id: Int, $type: MediaType, $isAdult: Boolean) {
       Media(id: $id, type: $type, isAdult: $isAdult) {
@@ -247,7 +241,7 @@ async function testGetAnimeWithRelations(id: number, isAdult?: boolean): Promise
 
   const response = await fetch(ANILIST_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({ query, variables }),
   });
 
@@ -259,8 +253,6 @@ async function testGetAnimeWithRelations(id: number, isAdult?: boolean): Promise
  * Test searchByTag with optional isAdult parameter
  */
 async function testSearchByTag(tag: string, isAdult?: boolean): Promise<any[]> {
-  const ANILIST_API_URL = 'https://graphql.anilist.co';
-
   const query = `
     query ($tag_in: [String], $isAdult: Boolean, $perPage: Int) {
       Page(page: 1, perPage: $perPage) {
@@ -286,7 +278,7 @@ async function testSearchByTag(tag: string, isAdult?: boolean): Promise<any[]> {
 
   const response = await fetch(ANILIST_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({ query, variables }),
   });
 

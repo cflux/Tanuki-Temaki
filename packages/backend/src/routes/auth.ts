@@ -2,10 +2,11 @@ import express from 'express';
 import passport from '../config/passport';
 import { AuthService } from '../services/auth';
 import { requireAuth } from '../middleware/auth';
+import { FRONTEND_URL, COOKIE_CONFIG } from '../config/constants.js';
+import { setAuthCookies, clearAuthCookies } from '../utils/cookies.js';
+import { logger } from '../lib/logger.js';
 
 const router = express.Router();
-
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Google OAuth - Initiate
 router.get('/google', passport.authenticate('google', { scope: ['profile'], session: false }));
@@ -22,21 +23,7 @@ router.get(
     const refreshToken = AuthService.generateRefreshToken(user.userId, user.username || 'temporary');
 
     // Set httpOnly cookies
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
     // Redirect to frontend with status
     if (user.isNewUser || !user.username) {
@@ -62,21 +49,7 @@ router.get(
     const refreshToken = AuthService.generateRefreshToken(user.userId, user.username || 'temporary');
 
     // Set httpOnly cookies
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
     // Redirect to frontend with status
     if (user.isNewUser || !user.username) {
@@ -98,7 +71,7 @@ router.get('/me', requireAuth, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Error fetching current user:', error);
+    logger.error('Error fetching current user', { error: error instanceof Error ? error.message : 'Unknown error' });
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
@@ -121,20 +94,14 @@ router.post('/refresh', (req, res) => {
   const newAccessToken = AuthService.generateAccessToken(payload.userId, payload.username);
 
   // Set new access token cookie
-  res.cookie('access_token', newAccessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 15 * 60 * 1000, // 15 minutes
-  });
+  res.cookie(COOKIE_CONFIG.ACCESS_TOKEN.name, newAccessToken, COOKIE_CONFIG.ACCESS_TOKEN);
 
   res.json({ success: true });
 });
 
 // Logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('access_token');
-  res.clearCookie('refresh_token');
+  clearAuthCookies(res);
   res.json({ success: true });
 });
 
@@ -167,23 +134,11 @@ router.patch('/username', requireAuth, async (req, res) => {
     const newRefreshToken = AuthService.generateRefreshToken(req.user!.userId, username);
 
     // Update cookies
-    res.cookie('access_token', newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refresh_token', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, newAccessToken, newRefreshToken);
 
     res.json({ success: true, username });
   } catch (error) {
-    console.error('Error updating username:', error);
+    logger.error('Error updating username', { error: error instanceof Error ? error.message : 'Unknown error' });
     res.status(500).json({ error: 'Failed to update username' });
   }
 });
@@ -202,7 +157,7 @@ router.get('/username/available/:username', async (req, res) => {
     const isAvailable = await AuthService.isUsernameAvailable(username);
     res.json({ available: isAvailable });
   } catch (error) {
-    console.error('Error checking username availability:', error);
+    logger.error('Error checking username availability', { error: error instanceof Error ? error.message : 'Unknown error' });
     res.status(500).json({ error: 'Failed to check username availability' });
   }
 });

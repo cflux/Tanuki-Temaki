@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { userApi, seriesApi } from '../../lib/api';
+import { STATUS_DISPLAY_DURATION } from '../../config/uiConstants';
 
 interface ServicePreferencesProps {
   userId: string;
@@ -54,11 +55,11 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
       await userApi.setAvailableServices(selectedServices);
       console.log('Services saved successfully');
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.SUCCESS);
     } catch (error) {
       console.error('Failed to save service preferences:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.ERROR);
     } finally {
       setIsSaving(false);
     }

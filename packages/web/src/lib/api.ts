@@ -1,12 +1,5 @@
 import axios from 'axios';
-import type { Series, SeriesRelationship } from '@tanuki-temaki/shared';
-
-export interface User {
-  id: string;
-  username: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote } from '@tanuki-temaki/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -352,33 +345,7 @@ export const authApi = {
   },
 };
 
-export interface UserRating {
-  id: string;
-  userId: string;
-  seriesId: string;
-  rating: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserNote {
-  id: string;
-  userId: string;
-  seriesId: string;
-  note: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserTagVote {
-  id: string;
-  userId: string;
-  seriesId: string;
-  tagValue: string;
-  vote: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// User types now imported from @tanuki-temaki/shared
 
 export const userApi = {
   // ==================== RATINGS ====================

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { userApi } from '../../lib/api';
+import { useSyncedState } from '../../hooks';
+import { STATUS_DISPLAY_DURATION } from '../../config/uiConstants';
 
 interface NotesWidgetProps {
   seriesId: string;
@@ -15,13 +17,9 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
 }) => {
   const user = useUserStore((state) => state.user);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [note, setNote] = useState(initialNote ?? '');
+  const [note, setNote] = useSyncedState(initialNote, '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-
-  useEffect(() => {
-    setNote(initialNote ?? '');
-  }, [initialNote]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -41,12 +39,12 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
         onNoteChange?.(null);
       }
 
-      // Reset status after 2 seconds
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      // Reset status after brief delay
+      setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.SUCCESS);
     } catch (error) {
       console.error('Failed to save note:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.ERROR);
     } finally {
       setIsSaving(false);
     }
@@ -70,7 +68,7 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
     } catch (error) {
       console.error('Failed to delete note:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.ERROR);
     } finally {
       setIsSaving(false);
     }

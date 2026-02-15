@@ -120,7 +120,7 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
           isRoot
             ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-zinc-900'
             : 'cursor-pointer hover:ring-2 hover:ring-blue-500/50'
-        } ${!isOnUserService ? 'opacity-40' : ''}`}
+        }`}
         title={!isOnUserService ? 'Not available on your preferred services' : ''}
         style={{
           borderColor: color,
@@ -131,6 +131,7 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
           position: 'relative',
           zIndex: isHovered ? 9999 : 1,
           willChange: isHovered ? 'transform' : 'auto',
+          opacity: isHovered ? 1 : (!isOnUserService ? 0.4 : 1),
         }}
         onMouseEnter={(e) => {
           // Read current zoom level only when hovering (no subscription = no re-renders during zoom)
