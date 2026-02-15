@@ -33,6 +33,7 @@ export interface SeriesRelationship {
   rootId: string;
   nodes: SeriesNode[];
   edges: RelationshipEdge[];
+  seedSeriesIds?: string[]; // For tag-based searches: IDs of the initial seed series
 }
 
 export interface SeriesNode {

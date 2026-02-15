@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Series, SeriesRelationship } from '@tanuki-temaki/shared';
 
 export interface LoadingProgress {
-  step: 'searching' | 'caching' | 'tracing' | 'complete' | 'rate_limited';
+  step: 'searching' | 'caching' | 'tracing' | 'complete' | 'rate_limited' | 'fetching' | 'merging' | 'personalizing';
   message: string;
   current?: number;
   total?: number;

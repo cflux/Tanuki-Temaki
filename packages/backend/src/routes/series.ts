@@ -2,8 +2,11 @@ import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
+import { UserService } from '../services/user.js';
+import { optionalAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logger } from '../lib/logger.js';
+import { prisma } from '../lib/prisma.js';
 
 const router: RouterType = Router();
 
@@ -102,6 +105,53 @@ router.post('/search-one', async (req, res, next) => {
 });
 
 /**
+ * POST /api/series/search-many
+ * Search for series and return multiple results for user selection
+ */
+router.post('/search-many', async (req, res, next) => {
+  try {
+    const { title, mediaType, limit = 10 } = searchOneSchema.extend({
+      limit: z.number().min(1).max(20).optional(),
+    }).parse(req.body);
+
+    logger.info('Searching for multiple series', { title, mediaType, limit });
+
+    const results = await seriesCache.searchMultipleResults(title, mediaType, limit);
+
+    res.json(results);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError(400, error.errors[0].message));
+    }
+    next(error);
+  }
+});
+
+/**
+ * POST /api/series/fetch-by-anilist-id
+ * Fetch a series by its AniList ID
+ */
+router.post('/fetch-by-anilist-id', async (req, res, next) => {
+  try {
+    const { anilistId, mediaType } = z.object({
+      anilistId: z.number(),
+      mediaType: z.enum(['ANIME', 'MANGA']),
+    }).parse(req.body);
+
+    logger.info('Fetching series by AniList ID', { anilistId, mediaType });
+
+    const series = await seriesCache.fetchByAniListId(anilistId, mediaType);
+
+    res.json(series);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError(400, error.errors[0].message));
+    }
+    next(error);
+  }
+});
+
+/**
  * GET /api/series/stats
  * Get cache statistics
  */
@@ -109,6 +159,101 @@ router.get('/stats', async (req, res, next) => {
   try {
     const stats = await seriesCache.getCacheStats();
     res.json(stats);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/series/services
+ * Get all unique streaming/reading platforms from cached series
+ */
+router.get('/services', async (req, res, next) => {
+  try {
+    // Normalize service names to canonical versions
+    const normalizeServiceName = (name: string): string => {
+      const lower = name.toLowerCase();
+
+      // Amazon variations
+      if (lower.includes('amazon') || lower === 'prime video') {
+        return 'Amazon Prime Video';
+      }
+      // Crunchyroll variations
+      if (lower.includes('crunchyroll') && !lower.includes('manga')) {
+        return 'Crunchyroll';
+      }
+      if (lower.includes('crunchyroll') && lower.includes('manga')) {
+        return 'Crunchyroll Manga';
+      }
+      // HBO variations
+      if (lower.includes('hbo')) {
+        return 'HBO Max';
+      }
+      // Return original if no normalization needed
+      return name;
+    };
+
+    // Predefined list of common anime/manga services
+    const commonServices = [
+      // Anime Streaming
+      'Crunchyroll',
+      'Funimation',
+      'HIDIVE',
+      'Netflix',
+      'Hulu',
+      'Amazon Prime Video',
+      'Disney+',
+      'HBO Max',
+      'VRV',
+      'AnimeLab',
+      'Wakanim',
+      'bilibili',
+      // Manga Reading
+      'Manga Plus by SHUEISHA',
+      'VIZ Media',
+      'Crunchyroll Manga',
+      'ComiXology',
+      'Kindle',
+      'BookWalker',
+      'Kodansha Comics',
+      'Seven Seas Entertainment',
+      'Yen Press',
+      'INKR',
+      'Azuki Manga',
+      'Manga Planet',
+      'K MANGA',
+    ];
+
+    const servicesSet = new Set<string>(commonServices);
+
+    const series = await prisma.series.findMany({
+      select: {
+        metadata: true,
+      },
+    });
+
+    // Add services discovered from series metadata (normalized)
+    series.forEach(s => {
+      const metadata = s.metadata as any;
+
+      // Add streaming links (platforms from AniList)
+      if (metadata?.streamingLinks && typeof metadata.streamingLinks === 'object') {
+        Object.keys(metadata.streamingLinks).forEach((platform: string) => {
+          const normalized = normalizeServiceName(platform);
+          servicesSet.add(normalized);
+        });
+      }
+
+      // Add provider as fallback
+      if (metadata?.provider) {
+        const normalized = normalizeServiceName(metadata.provider);
+        servicesSet.add(normalized);
+      }
+    });
+
+    const services = Array.from(servicesSet).sort();
+
+    res.json(services);
   } catch (error) {
     next(error);
   }
@@ -140,9 +285,9 @@ router.delete('/clear', async (req, res, next) => {
 
 /**
  * GET /api/series/:id
- * Get series by ID
+ * Get series by ID (with optional user data if authenticated)
  */
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -152,7 +297,29 @@ router.get('/:id', async (req, res, next) => {
       throw new AppError(404, 'Series not found');
     }
 
-    res.json(series);
+    // If user is authenticated, include their rating, note, and tag votes
+    if (req.user) {
+      const [rating, note, tagVotes] = await Promise.all([
+        UserService.getUserRating(req.user.userId, id),
+        UserService.getNote(req.user.userId, id),
+        UserService.getSeriesTagVotes(req.user.userId, id),
+      ]);
+
+      // Convert tag votes to a map for easier frontend consumption
+      const tagVotesMap: Record<string, number> = {};
+      tagVotes.forEach(vote => {
+        tagVotesMap[vote.tagValue] = vote.vote;
+      });
+
+      res.json({
+        ...series,
+        userRating: rating?.rating ?? null,
+        userNote: note?.note ?? null,
+        userTagVotes: tagVotesMap,
+      });
+    } else {
+      res.json(series);
+    }
   } catch (error) {
     next(error);
   }
@@ -162,7 +329,7 @@ router.get('/:id', async (req, res, next) => {
  * GET /api/series/:id/trace-stream
  * Trace relationship graph with SSE progress updates
  */
-router.get('/:id/trace-stream', async (req, res, next) => {
+router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const maxDepth = parseInt(req.query.maxDepth as string) || 3;
@@ -196,6 +363,38 @@ router.get('/:id/trace-stream', async (req, res, next) => {
         sendProgress
       );
 
+      // If user is authenticated, add user ratings/notes/votes to all series
+      if (req.user) {
+        const seriesIds = relationship.nodes.map(n => n.series.id);
+
+        // Fetch all user data for these series in parallel
+        const [ratingsMap, notesMap, votesMap] = await Promise.all([
+          UserService.getRatingsMap(req.user.userId, seriesIds),
+          Promise.all(seriesIds.map(async (sid) => {
+            const note = await UserService.getNote(req.user!.userId, sid);
+            return [sid, note?.note ?? null] as [string, string | null];
+          })).then(pairs => new Map(pairs)),
+          UserService.getTagVotesMap(req.user.userId, seriesIds),
+        ]);
+
+        // Attach user data to each series
+        relationship.nodes.forEach(node => {
+          const sid = node.series.id;
+          (node.series as any).userRating = ratingsMap.get(sid) ?? null;
+          (node.series as any).userNote = notesMap.get(sid) ?? null;
+
+          // Convert tag votes to map
+          const tagVotes = votesMap.get(sid);
+          const tagVotesObj: Record<string, number> = {};
+          if (tagVotes) {
+            tagVotes.forEach((vote, tag) => {
+              tagVotesObj[tag] = vote;
+            });
+          }
+          (node.series as any).userTagVotes = tagVotesObj;
+        });
+      }
+
       // Send final result
       res.write(`data: ${JSON.stringify({ result: relationship })}\n\n`);
       res.end();
@@ -213,7 +412,7 @@ router.get('/:id/trace-stream', async (req, res, next) => {
  * POST /api/series/:id/trace
  * Trace relationship graph from series
  */
-router.post('/:id/trace', async (req, res, next) => {
+router.post('/:id/trace', optionalAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { maxDepth } = traceRelationshipsSchema.parse(req.body);
@@ -231,6 +430,38 @@ router.post('/:id/trace', async (req, res, next) => {
       series.url,
       maxDepth
     );
+
+    // If user is authenticated, add user ratings/notes/votes to all series
+    if (req.user) {
+      const seriesIds = relationship.nodes.map(n => n.series.id);
+
+      // Fetch all user data for these series in parallel
+      const [ratingsMap, notesMap, votesMap] = await Promise.all([
+        UserService.getRatingsMap(req.user.userId, seriesIds),
+        Promise.all(seriesIds.map(async (sid) => {
+          const note = await UserService.getNote(req.user!.userId, sid);
+          return [sid, note?.note ?? null] as [string, string | null];
+        })).then(pairs => new Map(pairs)),
+        UserService.getTagVotesMap(req.user.userId, seriesIds),
+      ]);
+
+      // Attach user data to each series
+      relationship.nodes.forEach(node => {
+        const sid = node.series.id;
+        (node.series as any).userRating = ratingsMap.get(sid) ?? null;
+        (node.series as any).userNote = notesMap.get(sid) ?? null;
+
+        // Convert tag votes to map
+        const tagVotes = votesMap.get(sid);
+        const tagVotesObj: Record<string, number> = {};
+        if (tagVotes) {
+          tagVotes.forEach((vote, tag) => {
+            tagVotesObj[tag] = vote;
+          });
+        }
+        (node.series as any).userTagVotes = tagVotesObj;
+      });
+    }
 
     res.json(relationship);
   } catch (error) {

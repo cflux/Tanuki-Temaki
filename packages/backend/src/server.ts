@@ -6,9 +6,11 @@ import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import healthRouter from './routes/health.js';
-import seriesRouter, { setDependencies } from './routes/series.js';
+import seriesRouter, { setDependencies as setSeriesDependencies } from './routes/series.js';
 import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
+import recommendationsRouter, { setDependencies as setRecommendationsDependencies } from './routes/recommendations.js';
+import tagsRouter from './routes/tags.js';
 import passport from './config/passport.js';
 import { prisma } from './lib/prisma.js';
 import {
@@ -16,13 +18,14 @@ import {
   seriesCache,
   relationshipTracer,
 } from './index.js';
+import { Scheduler } from './services/scheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
 app.use(express.json());
@@ -30,20 +33,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
 
-// Rate limiting - 100 requests per 15 minutes
+// Rate limiting - 2000 requests per 15 minutes (generous for development and batch operations)
 app.use('/api', rateLimiter({
-  windowMs: 15 * 60 * 1000,
-  maxRequests: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 2000, // Increased to handle batch operations and testing
 }));
 
 // Inject dependencies into routes
-setDependencies(seriesCache, relationshipTracer);
+setSeriesDependencies(seriesCache, relationshipTracer);
+setRecommendationsDependencies(relationshipTracer, seriesCache);
 
 // Routes
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/series', seriesRouter);
+app.use('/api/recommendations', recommendationsRouter);
+app.use('/api/tags', tagsRouter);
 
 // Error handling
 app.use(notFoundHandler);
@@ -54,11 +60,17 @@ const server = app.listen(PORT, () => {
   logger.info(`HTTP server listening on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`Extension connected: ${extensionBridge.isConnected()}`);
+
+  // Start scheduled tasks
+  Scheduler.start();
 });
 
 // Graceful shutdown
 const shutdown = async () => {
   logger.info('Shutting down gracefully...');
+
+  // Stop scheduled tasks
+  Scheduler.stop();
 
   server.close(() => {
     logger.info('HTTP server closed');

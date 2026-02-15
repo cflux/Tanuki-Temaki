@@ -50,7 +50,7 @@ export const UserMenu: React.FC = () => {
       <>
         <button
           onClick={() => setShowLoginModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="h-10 flex items-center px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
           Sign In
         </button>
@@ -63,14 +63,14 @@ export const UserMenu: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        className="h-10 flex items-center gap-2 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-medium transition-colors"
       >
-        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
           {user.username.charAt(0).toUpperCase()}
         </div>
-        <span className="font-medium text-gray-800">{user.username}</span>
+        <span className="font-medium text-zinc-100">{user.username}</span>
         <svg
-          className={`w-4 h-4 text-gray-600 transition-transform ${
+          className={`w-4 h-4 text-zinc-400 transition-transform ${
             showDropdown ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -82,17 +82,36 @@ export const UserMenu: React.FC = () => {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-48 bg-zinc-900 rounded-lg shadow-lg border border-zinc-800 py-2 z-50">
           <button
             onClick={handleProfileClick}
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
           >
-            Profile
+            👤 Profile
           </button>
-          <div className="border-t border-gray-200 my-1"></div>
+          <div className="border-t border-zinc-800 my-1"></div>
+          <button
+            onClick={() => { setShowDropdown(false); navigate('/watchlist'); }}
+            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
+          >
+            📝 Watchlist
+          </button>
+          <button
+            onClick={() => { setShowDropdown(false); navigate('/rated'); }}
+            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
+          >
+            ⭐ Rated Series
+          </button>
+          <button
+            onClick={() => { setShowDropdown(false); navigate('/noted'); }}
+            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
+          >
+            📝 My Notes
+          </button>
+          <div className="border-t border-zinc-800 my-1"></div>
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors text-red-600"
+            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-red-400"
           >
             Sign Out
           </button>

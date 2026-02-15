@@ -265,4 +265,126 @@ router.get('/preferences/available-services', async (req, res) => {
   }
 });
 
+// ==================== WATCHLIST ====================
+
+/**
+ * Add series to watchlist
+ */
+router.post('/watchlist', async (req, res) => {
+  try {
+    const { seriesId, status } = req.body;
+
+    if (!seriesId) {
+      return res.status(400).json({ error: 'seriesId is required' });
+    }
+
+    const result = await UserService.addToWatchlist(req.user!.userId, seriesId, status);
+    res.json(result);
+  } catch (error) {
+    console.error('Error adding to watchlist:', error);
+    res.status(500).json({ error: 'Failed to add to watchlist' });
+  }
+});
+
+/**
+ * Remove series from watchlist
+ */
+router.delete('/watchlist/:seriesId', async (req, res) => {
+  try {
+    const { seriesId } = req.params;
+
+    await UserService.removeFromWatchlist(req.user!.userId, seriesId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error removing from watchlist:', error);
+    res.status(500).json({ error: 'Failed to remove from watchlist' });
+  }
+});
+
+/**
+ * Get user's watchlist
+ */
+router.get('/watchlist', async (req, res) => {
+  try {
+    const watchlist = await UserService.getWatchlist(req.user!.userId);
+    res.json(watchlist);
+  } catch (error) {
+    console.error('Error fetching watchlist:', error);
+    res.status(500).json({ error: 'Failed to fetch watchlist' });
+  }
+});
+
+/**
+ * Get watchlist status for multiple series (batch)
+ */
+router.post('/watchlist/batch', async (req, res) => {
+  try {
+    const { seriesIds } = req.body;
+
+    if (!Array.isArray(seriesIds) || seriesIds.length === 0) {
+      return res.status(400).json({ error: 'seriesIds must be a non-empty array' });
+    }
+
+    // Limit batch size to prevent abuse
+    if (seriesIds.length > 200) {
+      return res.status(400).json({ error: 'Maximum 200 series IDs per batch' });
+    }
+
+    const statuses = await Promise.all(
+      seriesIds.map(async (seriesId) => {
+        const status = await UserService.getWatchlistStatus(req.user!.userId, seriesId);
+        return {
+          seriesId,
+          status: status?.status || null,
+        };
+      })
+    );
+
+    res.json(statuses);
+  } catch (error) {
+    console.error('Error fetching batch watchlist status:', error);
+    res.status(500).json({ error: 'Failed to fetch batch watchlist status' });
+  }
+});
+
+/**
+ * Get watchlist status for a specific series
+ */
+router.get('/watchlist/:seriesId', async (req, res) => {
+  try {
+    const { seriesId } = req.params;
+    const status = await UserService.getWatchlistStatus(req.user!.userId, seriesId);
+    res.json(status);
+  } catch (error) {
+    console.error('Error fetching watchlist status:', error);
+    res.status(500).json({ error: 'Failed to fetch watchlist status' });
+  }
+});
+
+/**
+ * Get all rated series with details
+ */
+router.get('/rated', async (req, res) => {
+  try {
+    const rated = await UserService.getRatedSeries(req.user!.userId);
+    res.json(rated);
+  } catch (error) {
+    console.error('Error fetching rated series:', error);
+    res.status(500).json({ error: 'Failed to fetch rated series' });
+  }
+});
+
+/**
+ * Get all noted series with details
+ */
+router.get('/noted', async (req, res) => {
+  try {
+    const noted = await UserService.getNotedSeries(req.user!.userId);
+    res.json(noted);
+  } catch (error) {
+    console.error('Error fetching noted series:', error);
+    res.status(500).json({ error: 'Failed to fetch noted series' });
+  }
+});
+
 export default router;

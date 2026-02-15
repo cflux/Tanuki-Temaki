@@ -11,9 +11,11 @@ export interface User {
 interface UserState {
   user: User | null;
   isLoading: boolean;
+  preferPersonalized: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   updateUsername: (username: string) => void;
+  setPreferPersonalized: (prefer: boolean) => void;
   logout: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useUserStore = create<UserState>()(
     (set) => ({
       user: null,
       isLoading: true,
+      preferPersonalized: false,
 
       setUser: (user) => set({ user, isLoading: false }),
 
@@ -32,11 +35,13 @@ export const useUserStore = create<UserState>()(
           user: state.user ? { ...state.user, username } : null,
         })),
 
-      logout: () => set({ user: null, isLoading: false }),
+      setPreferPersonalized: (prefer) => set({ preferPersonalized: prefer }),
+
+      logout: () => set({ user: null, isLoading: false, preferPersonalized: false }),
     }),
     {
       name: 'tanuki-user-storage',
-      partialize: (state) => ({ user: state.user }), // Only persist user data, not loading state
+      partialize: (state) => ({ user: state.user, preferPersonalized: state.preferPersonalized }), // Persist user data and preference
     }
   )
 );

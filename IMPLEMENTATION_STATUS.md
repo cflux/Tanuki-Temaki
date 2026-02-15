@@ -1,6 +1,6 @@
 # Tanuki Temaki - User Accounts & Personalization Implementation Status
 
-## ✅ Completed (Phase 1 & 2 Backend + API)
+## ✅ Completed (Phases 1-4: Full User Experience)
 
 ### Database Schema
 - ✅ All 5 user-related models added to Prisma schema:
@@ -86,6 +86,8 @@
   - Available services management
 
 ### Frontend Components
+
+**Authentication Components:**
 - ✅ **LoginModal** (`src/components/auth/LoginModal.tsx`)
   - Google & GitHub OAuth buttons
   - Privacy-focused messaging
@@ -105,40 +107,134 @@
   - Profile navigation
   - Sign in/sign out
 
+**User Interaction Components:**
+- ✅ **RatingWidget** (`src/components/user/RatingWidget.tsx`)
+  - 0-5 star rating interface with thumbs down
+  - Click same rating to remove
+  - Real-time API updates
+  - Shows "Sign in to rate" for anonymous users
+
+- ✅ **NotesWidget** (`src/components/user/NotesWidget.tsx`)
+  - Expandable textarea for private notes
+  - Character counter
+  - Save/delete functionality
+  - Auto-save status indicator
+
+- ✅ **TagVotingWidget** (`src/components/user/TagVotingWidget.tsx`)
+  - Upvote/downvote buttons for tags
+  - Visual feedback (green for upvote, red for downvote)
+  - Toggle vote on/off
+  - Shows plain tags for anonymous users
+
+- ✅ **ServicePreferences** (`src/components/user/ServicePreferences.tsx`)
+  - Platform selection (streaming/reading services)
+  - Categorized service lists
+  - Persistent preferences
+  - Save status indicator
+
+**Pages:**
+- ✅ **ProfilePage** (`src/pages/ProfilePage.tsx`)
+  - User statistics (ratings count, tag preferences)
+  - Tag preferences display (liked/disliked with scores)
+  - Ratings history grouped by rating value
+  - Username editing functionality
+  - Service preferences integration
+
 ### Frontend Integration
 - ✅ React Router setup in `App.tsx`
 - ✅ Auth state initialization on app load
 - ✅ Header with UserMenu component
 - ✅ Auth callback route
+- ✅ Profile page route (`/profile`)
+- ✅ RatingWidget, NotesWidget, TagVotingWidget integrated into `TableView.tsx`
+- ✅ User data fetched alongside series data
+- ✅ Real-time updates for all user interactions
+- ✅ Multi-series selection modal for search disambiguation
+- ✅ Fetch by AniList ID for exact series selection
 
-## 🚧 Remaining Work
+## ✅ Completed (Phases 1-5)
 
-### Phase 2: Frontend UI Components (Tasks #18-20)
-- ⏳ **RatingWidget** component - 0-5 star rating interface
-- ⏳ **NotesWidget** component - Expandable textarea for notes
-- ⏳ Integration into TableView and SeriesDetailModal
-- ⏳ Extension of series routes to include user data (task #16)
+### Phase 5: Personalized Recommendations - COMPLETE ✅
+- ✅ **PersonalizedRecommendationService** - Algorithm implementation
+  - ✅ Score nodes based on tag preferences
+  - ✅ Smart expansion for 4-5 star rated series (depth +2 levels)
+  - ✅ Expansion limited to top 5 series (prioritized by upvoted tags)
+  - ✅ Filter expanded series by upvoted tags + shared tags with rated series
+  - ✅ Service filtering based on user's available services
+  - ✅ Result limiting (~200 max with hard cap)
+  - ✅ Exclude disliked series (0-star rating) and their children
+  - ✅ Boost highly rated series (5-star: +10, 4-star: +5)
+- ✅ **Recommendations Routes** - API endpoints
+  - ✅ POST /api/recommendations/personalized (requires auth)
+  - ✅ Integrated with server.ts
+- ✅ **Frontend recommendationApi** - Client functions
+  - ✅ getPersonalizedRecommendations(seriesId, maxDepth)
+- ✅ **DiscoveryPage** personalized mode toggle
+  - ✅ Toggle in header (visible before searching)
+  - ✅ Only visible when user is logged in
+  - ✅ Automatically applies personalization after tracing relationships
+  - ✅ Shows "Personalizing..." loading state
+- ✅ **PersonalizedBadge** component
+  - ✅ Shows personalization indicator on series cards
+  - ✅ Color-coded by score (green for highly recommended, purple for personalized, red for not recommended)
+- ✅ **RecommendationExplanation** component
+  - ✅ Displays why a series was recommended
+  - ✅ Shows matched tags from user preferences
+  - ✅ Shows personalization score
+  - ✅ Integrated into TableView
 
-### Phase 3: Tag Voting UI (Tasks #22-25)
-- ⏳ **TagVotingWidget** component - Upvote/downvote buttons
-- ⏳ **ProfilePage** component - Show user info and preferences
-- ⏳ Integration with series tag displays
+## ✅ Completed (Phase 6)
 
-### Phase 4: Service Preferences (Tasks #27-30)
-- ⏳ **ServicePreferences** component - Platform checkboxes
-- ⏳ Series routes extension for `/services` endpoint
-- ⏳ Integration into ProfilePage
+### Phase 6: Watchlist & History Views - COMPLETE ✅
+- ✅ **Database Schema**
+  - ✅ UserWatchlist model (userId, seriesId, status, addedAt)
+  - ✅ Migration created and applied
+- ✅ **Backend Endpoints**
+  - ✅ POST /api/user/watchlist (add to watchlist)
+  - ✅ PUT /api/user/watchlist/:seriesId (update status)
+  - ✅ DELETE /api/user/watchlist/:seriesId (remove from watchlist)
+  - ✅ GET /api/user/watchlist (get all watchlist items with series details)
+  - ✅ GET /api/user/watchlist/:seriesId (get watchlist status for series)
+  - ✅ GET /api/user/rated (get all rated series with details)
+  - ✅ GET /api/user/noted (get all series with notes)
+- ✅ **Frontend Components**
+  - ✅ WatchlistButton (add/remove from watchlist, shows status)
+  - ✅ WatchlistPage (grid view, remove capability)
+  - ✅ RatedSeriesPage (grid view, filter by rating)
+  - ✅ NotedSeriesPage (list view with note preview)
+- ✅ **Integration**
+  - ✅ Watchlist button added to TableView series cards
+  - ✅ Navigation links added to UserMenu dropdown
+  - ✅ Routes added to App.tsx
+  - ✅ userApi updated with all watchlist/history methods
 
-### Phase 5: Personalized Recommendations (Tasks #31-35)
-- ⏳ **PersonalizedRecommendationService** - Algorithm implementation
-  - Score nodes based on tag preferences
-  - Smart depth traversal
-  - Service filtering
-  - Result limiting (~125 max)
-- ⏳ **Recommendations Routes** - API endpoints
-- ⏳ **Frontend recommendationApi** - Client functions
-- ⏳ **DiscoveryPage** personalized mode toggle
-- ⏳ **PersonalizedBadge** and **RecommendationExplanation** components
+## ✅ Completed (Phase 7)
+
+### Phase 7: Genre/Tag Search & Recommendations - COMPLETE ✅
+- ✅ **TagSearchService** (`src/services/tagSearch.ts`)
+  - Search tags by name (partial match, case-insensitive)
+  - Get all unique tags from database
+  - Get top-rated series for a specific tag (sorted by averageScore, popularity)
+  - Get series count for a tag
+- ✅ **Tag Routes** (`src/routes/tags.ts`)
+  - GET /api/tags/search?q=action - Search for tags
+  - GET /api/tags - Get all tags
+  - GET /api/tags/:tagValue/series - Get top series for tag
+  - GET /api/tags/:tagValue/count - Get series count for tag
+- ✅ **Recommendation Endpoint**
+  - POST /api/recommendations/from-tag - Generate recommendations from tag
+  - Supports personalized mode
+  - Merges relationship graphs from multiple top series
+- ✅ **Frontend API** (`src/lib/api.ts`)
+  - tagApi.searchTags() - Search for tags
+  - tagApi.getAllTags() - Get all tags
+  - tagApi.getTopSeriesForTag() - Get top series for tag
+  - recommendationApi.getRecommendationsFromTag() - Get tag-based recommendations
+- ✅ **DiscoveryPage Updates**
+  - Search mode toggle (Series / Tag)
+  - Tag-based discovery with handleTagDiscovery()
+  - Dynamic placeholder based on search mode
+  - Personalized recommendations support for tag search
 
 ## 🔧 Setup Instructions
 
@@ -217,67 +313,75 @@ pnpm dev
 - [x] Anonymous users can still use app
 - [x] Logout clears session
 
-### Phase 2 - Ratings & Notes (Partially Complete)
+### Phase 2 - Ratings & Notes ✅ (Ready for Testing)
 - [x] Backend API for ratings works
 - [x] Backend API for notes works
-- [ ] Frontend RatingWidget component
-- [ ] Frontend NotesWidget component
-- [ ] Can rate series 0-5
-- [ ] Clicking same rating removes it
-- [ ] Ratings persist and reload correctly
-- [ ] Notes can be added, edited, deleted
-- [ ] Anonymous users see "sign in to rate"
+- [x] Frontend RatingWidget component
+- [x] Frontend NotesWidget component
+- [ ] **TEST:** Can rate series 0-5
+- [ ] **TEST:** Clicking same rating removes it
+- [ ] **TEST:** Ratings persist and reload correctly
+- [ ] **TEST:** Notes can be added, edited, deleted
+- [ ] **TEST:** Anonymous users see "sign in to rate"
 
-### Phase 3 - Tag Voting (Backend Complete)
+### Phase 3 - Tag Voting ✅ (Ready for Testing)
 - [x] Backend API for tag voting works
 - [x] Backend tag preferences aggregation works
-- [ ] Frontend TagVotingWidget component
-- [ ] Can upvote/downvote tags on series
-- [ ] Clicking same vote removes it
-- [ ] Profile page shows aggregated tag preferences
+- [x] Frontend TagVotingWidget component
+- [x] ProfilePage component
+- [ ] **TEST:** Can upvote/downvote tags on series
+- [ ] **TEST:** Clicking same vote removes it
+- [ ] **TEST:** Profile page shows aggregated tag preferences
 
-### Phase 4 - Service Preferences (Backend Complete)
+### Phase 4 - Service Preferences ✅ (Ready for Testing)
 - [x] Backend API for preferences works
-- [ ] Frontend ServicePreferences component
-- [ ] Can select available services
-- [ ] Service preferences persist
-- [ ] Service list includes all platforms in database
+- [x] Frontend ServicePreferences component
+- [x] Integration into ProfilePage
+- [ ] **TEST:** Can select available services
+- [ ] **TEST:** Service preferences persist
+- [ ] **TEST:** Service list includes all platforms in database
 
-### Phase 5 - Personalized Recommendations (Not Started)
-- [ ] PersonalizedRecommendationService implemented
-- [ ] Recommendation API endpoints work
-- [ ] Frontend recommendation API works
-- [ ] Personalized mode toggle in DiscoveryPage
-- [ ] Tag preferences influence recommendation order
-- [ ] Service filtering works correctly
-- [ ] Highly rated (5) series expand to depth 2-3
-- [ ] Disliked (0) series and children excluded
-- [ ] Result count ~125 maximum
-- [ ] Personalized mode disabled for anonymous users
+### Phase 5 - Personalized Recommendations ✅ (Ready for Testing)
+- [x] PersonalizedRecommendationService implemented
+- [x] Recommendation API endpoints work
+- [x] Frontend recommendation API works
+- [x] Personalized mode toggle in DiscoveryPage
+- [ ] **TEST:** Tag preferences influence recommendation order
+- [ ] **TEST:** Service filtering works correctly
+- [ ] **TEST:** Highly rated (5-star) series get boosted scores
+- [ ] **TEST:** Disliked (0-star) series and children excluded
+- [ ] **TEST:** Result count ~125 maximum
+- [ ] **TEST:** Personalized mode disabled for anonymous users
+- [ ] **TEST:** PersonalizedBadge displays correctly on series cards
+- [ ] **TEST:** RecommendationExplanation shows matched tags and reasons
 
 ## 🎯 Next Steps (Prioritized)
 
-1. **Complete Phase 2 UI** - Rating and Notes widgets are essential for user engagement
-   - Create RatingWidget component
-   - Create NotesWidget component
-   - Integrate into TableView
-   - Extend series routes with optionalAuth
+**All implementation is complete!** The focus now is on testing.
 
-2. **Complete Phase 3 UI** - Tag voting enables preference learning
-   - Create TagVotingWidget
-   - Create ProfilePage
-   - Add profile route to App.tsx
+1. **Test Phases 2-5** - Verify all user features work correctly
+   - ✅ Test 1: Authentication Flow (Complete)
+   - ⏳ Test 2: Series Ratings
+   - ⏳ Test 3: Private Notes
+   - ⏳ Test 4: Tag Voting (genres and tags)
+   - ⏳ Test 5: Profile Page
+   - ⏳ Test 6: Service Preferences
+   - ⏳ Test 7: Personalized Recommendations
+   - ⏳ Test 8: Multi-series selection (search disambiguation)
+   - ⏳ Test 9-10: Edge cases and integration tests
 
-3. **Complete Phase 4 UI** - Service filtering prevents frustration
-   - Add `/services` endpoint to series routes
-   - Create ServicePreferences component
-   - Integrate into ProfilePage
+2. **Phase 7: Genre/Tag Search & Recommendations** (planned next)
+   - Search by genre/tag name
+   - Get top-rated series for that genre/tag
+   - Generate recommendations from top series
+   - Personalized mode: prioritize series with most upvoted tags
 
-4. **Implement Phase 5** - Personalized recommendations (main feature)
-   - Create PersonalizedRecommendationService
-   - Implement recommendation algorithm
-   - Add recommendation routes
-   - Update DiscoveryPage with personalized mode
+3. **Optional Enhancements** (future work)
+   - Add more detailed personalization explanations
+   - Add ability to adjust personalization strength
+   - Add recommendation caching (15min TTL)
+   - Export/import user preferences
+   - Social features (share recommendations)
 
 ## 📝 Important Notes
 
@@ -305,9 +409,7 @@ pnpm dev
 1. **Missing Zod validation** - Should add schema validation to all API endpoints
 2. **No CORS configuration for production** - Currently set to `*`
 3. **No rate limiting on auth endpoints** - Should add stricter limits
-4. **Username can't be changed after initial setup** - Actually it can via PATCH /api/auth/username, but no UI for it
-5. **No "forgot username" flow** - OAuth providers don't expose email by design
-6. **Series routes not yet extended with user data** - Task #16 still pending
+4. **No "forgot username" flow** - OAuth providers don't expose email by design (low priority)
 
 ## 📚 File Structure
 
@@ -324,36 +426,51 @@ packages/
 │       │   └── auth.ts (✅ requireAuth, optionalAuth)
 │       ├── routes/
 │       │   ├── auth.ts (✅ OAuth & token routes)
-│       │   └── user.ts (✅ Ratings, notes, votes, prefs)
+│       │   ├── user.ts (✅ Ratings, notes, votes, prefs)
+│       │   └── recommendations.ts (✅ Personalized recommendations)
 │       ├── services/
 │       │   ├── auth.ts (✅ JWT & OAuth logic)
-│       │   └── user.ts (✅ User data operations)
-│       └── server.ts (✅ Updated with routes)
+│       │   ├── user.ts (✅ User data operations)
+│       │   └── personalizedRecommendations.ts (✅ Personalization algorithm)
+│       └── server.ts (✅ Updated with all routes)
 └── web/
     └── src/
         ├── components/
-        │   └── auth/
-        │       ├── LoginModal.tsx (✅)
-        │       ├── UsernameModal.tsx (✅)
-        │       ├── AuthCallback.tsx (✅)
-        │       └── UserMenu.tsx (✅)
+        │   ├── auth/
+        │   │   ├── LoginModal.tsx (✅)
+        │   │   ├── UsernameModal.tsx (✅)
+        │   │   ├── AuthCallback.tsx (✅)
+        │   │   └── UserMenu.tsx (✅)
+        │   ├── user/
+        │   │   ├── RatingWidget.tsx (✅)
+        │   │   ├── NotesWidget.tsx (✅)
+        │   │   ├── TagVotingWidget.tsx (✅)
+        │   │   └── ServicePreferences.tsx (✅)
+        │   ├── PersonalizedBadge.tsx (✅ Personalization indicator)
+        │   ├── RecommendationExplanation.tsx (✅ Why series was recommended)
+        │   ├── SeriesSelectionModal.tsx (✅ Multi-series disambiguation)
+        │   └── views/
+        │       └── TableView.tsx (✅ Integrated with all user widgets)
+        ├── features/
+        │   └── discovery/
+        │       └── DiscoveryPage.tsx (✅ Personalized mode toggle)
+        ├── pages/
+        │   └── ProfilePage.tsx (✅)
         ├── lib/
-        │   └── api.ts (✅ authApi, userApi)
+        │   └── api.ts (✅ authApi, userApi, recommendationApi)
         ├── store/
         │   └── userStore.ts (✅ Zustand store)
-        └── App.tsx (✅ Router setup)
+        └── App.tsx (✅ Router setup with profile route)
 ```
 
-## 🚀 Estimated Completion Time
+## 🚀 Estimated Testing Time
 
-- **Phase 2 UI**: 2-3 hours
-- **Phase 3 UI**: 2-3 hours
-- **Phase 4 UI**: 2-3 hours
-- **Phase 5 Implementation**: 6-8 hours
+- **Testing Phases 2-4**: 2-3 hours
+- **Testing Phase 5**: 1-2 hours
 
-**Total remaining**: ~12-17 hours of development work
+**Total testing**: ~3-5 hours to fully test all features
 
 ---
 
-**Last Updated**: 2026-02-12
-**Status**: ~60% complete (Backend infrastructure and API done, Frontend UI in progress)
+**Last Updated**: 2026-02-14
+**Status**: 🎉 **Phase 7 Complete!** All phases (1-7) fully implemented. Genre/Tag search and recommendations now available!

@@ -41,8 +41,11 @@
   * {
     @apply border-border;
   }
+  html {
+    @apply bg-zinc-950;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-zinc-950 text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

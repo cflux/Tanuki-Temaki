@@ -1,15 +1,13 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
-  createColumnHelper,
-  type SortingState,
-  type ColumnFiltersState,
-} from '@tanstack/react-table';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { Series, SeriesRelationship } from '@tanuki-temaki/shared';
+import { RatingWidget } from '../user/RatingWidget';
+import { NotesWidget } from '../user/NotesWidget';
+import { TagVotingWidget } from '../user/TagVotingWidget';
+import { WatchlistButton } from '../user/WatchlistButton';
+import { PersonalizedBadge } from '../PersonalizedBadge';
+import { RecommendationExplanation } from '../RecommendationExplanation';
+import { userApi } from '../../lib/api';
+import { useUserStore } from '../../store/userStore';
 
 interface TableViewProps {
   relationship: SeriesRelationship;
@@ -19,219 +17,33 @@ interface TableViewProps {
   rootTags: Set<string>;
   deselectedServices: Set<string>;
   resultsMediaFilter: 'ANIME' | 'MANGA' | 'BOTH';
+  userServices: string[];
   selectedSeriesId?: string | null;
   onExplore?: (seriesUrl: string) => void;
 }
 
-const columnHelper = createColumnHelper<Series>();
+// Helper function for platform icons
+const getPlatformIcon = (platform: string) => {
+  const lower = platform.toLowerCase();
+  if (lower.includes('crunchyroll')) return '🍥';
+  if (lower.includes('netflix')) return '🎬';
+  if (lower.includes('hulu')) return '💚';
+  if (lower.includes('amazon')) return '📦';
+  if (lower.includes('disney')) return '✨';
+  if (lower.includes('funimation')) return '⚡';
+  if (lower.includes('hidive')) return '🌊';
+  return '📺';
+};
 
-function createColumns(onExplore?: (seriesUrl: string) => void) {
-  return [
-    columnHelper.accessor('titleImage', {
-    header: 'Cover',
-    cell: (info) => {
-      const image = info.getValue();
-      return image ? (
-        <img
-          src={image}
-          alt=""
-          className="object-cover rounded"
-          style={{ width: 144, height: 192, flexShrink: 0, maxWidth: 'none' }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      ) : (
-        <div
-          className="bg-zinc-800 rounded flex items-center justify-center text-zinc-600"
-          style={{ width: 144, height: 192, flexShrink: 0 }}
-        >
-          No Image
-        </div>
-      );
-    },
-    enableSorting: false,
-    enableColumnFilter: false,
-    size: 144,
-    minSize: 144,
-  }),
-  columnHelper.accessor('title', {
-    header: 'Title',
-    cell: (info) => {
-      const series = info.row.original;
-      const streamingLinks = (series.metadata as any)?.streamingLinks || {};
-
-      // Get platform icon
-      const getPlatformIcon = (platform: string) => {
-        const lower = platform.toLowerCase();
-        if (lower.includes('crunchyroll')) return '🍥';
-        if (lower.includes('netflix')) return '🎬';
-        if (lower.includes('hulu')) return '💚';
-        if (lower.includes('amazon')) return '📦';
-        if (lower.includes('disney')) return '✨';
-        if (lower.includes('funimation')) return '⚡';
-        if (lower.includes('hidive')) return '🌊';
-        return '📺';
-      };
-
-      const mediaType = series.mediaType || 'ANIME';
-      const mediaIcon = mediaType === 'MANGA' ? '📖' : '📺';
-      const mediaBadgeColor = mediaType === 'MANGA' ? 'bg-green-600/20 border-green-600/50 text-green-300' : 'bg-blue-600/20 border-blue-600/50 text-blue-300';
-
-      // Extract metadata
-      const metadata = series.metadata as any;
-      const chapters = metadata?.chapters;
-      const volumes = metadata?.volumes;
-      const episodes = metadata?.episodes;
-
-      return (
-        <div style={{ width: 400, minWidth: 400, maxWidth: 400 }}>
-          <div className="font-semibold mb-2 flex items-center gap-2">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs border ${mediaBadgeColor}`}>
-              {mediaIcon} {mediaType}
-            </span>
-            <span>{info.getValue()}</span>
-          </div>
-
-          {/* Manga/Anime metadata */}
-          {(chapters || volumes || episodes) && (
-            <div className="mb-2 flex gap-2 text-xs text-zinc-400">
-              {mediaType === 'MANGA' ? (
-                <>
-                  {chapters && <span>📚 {chapters} chapters</span>}
-                  {volumes && <span>📕 {volumes} volumes</span>}
-                </>
-              ) : (
-                <>
-                  {episodes && <span>📺 {episodes} episodes</span>}
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(streamingLinks).length > 0 ? (
-              Object.entries(streamingLinks).map(([platform, url]) => (
-                <a
-                  key={platform}
-                  href={url as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
-                  title={`View on ${platform}`}
-                >
-                  {getPlatformIcon(platform)} {platform}
-                </a>
-              ))
-            ) : (
-              <a
-                href={series.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
-                title={`View on ${series.provider}`}
-              >
-                {getPlatformIcon(series.provider)} {series.provider}
-              </a>
-            )}
-          </div>
-        </div>
-      );
-    },
-    size: 400,
-    minSize: 400,
-    maxSize: 400,
-  }),
-  columnHelper.accessor('description', {
-    header: 'Description',
-    cell: (info) => {
-      const description = info.getValue();
-      return (
-        <div className="text-sm text-zinc-400" title={description}>
-          {description.length > 300 ? `${description.slice(0, 300)}...` : description}
-        </div>
-      );
-    },
-  }),
-  columnHelper.accessor('genres', {
-    header: 'Genres',
-    cell: (info) => (
-      <div className="flex flex-wrap gap-1 max-w-[200px]">
-        {info.getValue().map((genre, idx) => (
-          <span
-            key={idx}
-            className="px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300"
-          >
-            {genre}
-          </span>
-        ))}
-      </div>
-    ),
-    enableSorting: false,
-    size: 200,
-  }),
-  columnHelper.accessor('tags', {
-    header: 'Tags',
-    cell: (info) => (
-      <div className="flex flex-wrap gap-1 max-w-[250px]">
-        {info.getValue().slice(0, 5).map((tag) => (
-          <span
-            key={tag.id}
-            className="px-2 py-1 bg-blue-900/30 border border-blue-700 rounded text-xs text-blue-300"
-            title={`${tag.source} • ${(tag.confidence * 100).toFixed(0)}%`}
-          >
-            {tag.value}
-          </span>
-        ))}
-        {info.getValue().length > 5 && (
-          <span className="px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-500">
-            +{info.getValue().length - 5}
-          </span>
-        )}
-      </div>
-    ),
-    enableSorting: false,
-  }),
-  columnHelper.accessor('rating', {
-    header: 'Rating',
-    cell: (info) => {
-      const rating = info.getValue();
-      return rating ? (
-        <div className="text-amber-400 font-semibold">
-          ★ {rating.toFixed(1)}
-        </div>
-      ) : (
-        <span className="text-zinc-600">N/A</span>
-      );
-    },
-  }),
-  columnHelper.display({
-    id: 'actions',
-    header: 'Actions',
-    cell: (info) => (
-      <button
-        onClick={() => onExplore?.(info.row.original.url)}
-        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-        title="Explore relationships from this series"
-      >
-        Explore
-      </button>
-    ),
-    size: 100,
-    enableSorting: false,
-  }),
-  ];
-}
-
-export function TableView({ relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, selectedSeriesId, onExplore }: TableViewProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+export function TableView({ relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, userServices, selectedSeriesId, onExplore }: TableViewProps) {
   const [globalFilter, setGlobalFilter] = useState('');
-  const selectedRowRef = useRef<HTMLTableRowElement>(null);
+  const [sortBy, setSortBy] = useState<'title' | 'rating'>('title');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const selectedCardRef = useRef<HTMLDivElement>(null);
+  const [watchlistStatuses, setWatchlistStatuses] = useState<Map<string, string | null>>(new Map());
+  const { user } = useUserStore();
 
-  const columns = useMemo(() => createColumns(onExplore), [onExplore]);
-
-  const data = useMemo(
+  const filteredAndSortedData = useMemo(
     () => {
       const normalize = (t: string) => {
         let normalized = t.toLowerCase();
@@ -249,14 +61,34 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
         return normalized.replace(/[^a-z0-9]/g, '');
       };
 
+      // Check if this is a tag-based search with multiple seeds
+      const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
+      const seedIdsSet = new Set(relationship.seedSeriesIds || []);
+
       const rootNode = relationship.nodes.find(n => n.series.id === relationship.rootId);
       const rootTitleNorm = normalize(rootNode?.series.title ?? '');
 
-      return relationship.nodes
+      // Separate seed/root series from related series
+      let seedSeries: Series[] = [];
+      let relatedSeries = relationship.nodes
         .filter(n => {
-          const isRootById = n.series.id === relationship.rootId;
-          const isRootByTitle = normalize(n.series.title) === rootTitleNorm;
-          return !(isRootById || isRootByTitle);
+          if (isTagBasedSearch) {
+            // For tag-based searches, check if this is a seed series
+            if (seedIdsSet.has(n.series.id)) {
+              seedSeries.push(n.series);
+              return false;
+            }
+          } else {
+            // For single-root searches, check if this is the root series
+            const isRootById = n.series.id === relationship.rootId;
+            const isRootByTitle = normalize(n.series.title) === rootTitleNorm;
+
+            if (isRootById || isRootByTitle) {
+              seedSeries = [n.series];
+              return false;
+            }
+          }
+          return true;
         })
         .filter(n => {
           // Media type filter
@@ -311,111 +143,390 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
           return true;
         })
         .map(n => n.series);
+
+      // Apply global search filter to related series
+      if (globalFilter) {
+        const searchLower = globalFilter.toLowerCase();
+        relatedSeries = relatedSeries.filter(s =>
+          s.title.toLowerCase().includes(searchLower) ||
+          s.description.toLowerCase().includes(searchLower) ||
+          s.genres.some(g => g.toLowerCase().includes(searchLower)) ||
+          s.tags.some(t => t.value.toLowerCase().includes(searchLower))
+        );
+      }
+
+      // Apply sorting to related series
+      relatedSeries.sort((a, b) => {
+        let comparison = 0;
+
+        if (sortBy === 'title') {
+          comparison = a.title.localeCompare(b.title);
+        } else if (sortBy === 'rating') {
+          const ratingA = a.rating || 0;
+          const ratingB = b.rating || 0;
+          comparison = ratingB - ratingA; // Higher ratings first
+        }
+
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+
+      // Combine seed series at the top with related series
+      return [...seedSeries, ...relatedSeries];
     },
-    [relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter]
+    [relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, globalFilter, sortBy, sortOrder]
   );
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-    },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
-
-  // Scroll to selected row when selectedSeriesId changes
+  // Fetch watchlist statuses in batch
   useEffect(() => {
-    if (selectedSeriesId && selectedRowRef.current) {
-      // Scroll to the selected row
+    if (!user || filteredAndSortedData.length === 0) {
+      setWatchlistStatuses(new Map());
+      return;
+    }
+
+    const fetchBatchStatuses = async () => {
+      const seriesIds = filteredAndSortedData.map(s => s.id);
+      const statuses = await userApi.getWatchlistStatusBatch(seriesIds);
+
+      const statusMap = new Map<string, string | null>();
+      statuses.forEach(({ seriesId, status }) => {
+        statusMap.set(seriesId, status);
+      });
+
+      setWatchlistStatuses(statusMap);
+    };
+
+    fetchBatchStatuses();
+  }, [user, filteredAndSortedData]);
+
+  // Scroll to selected card when selectedSeriesId changes
+  useEffect(() => {
+    if (selectedSeriesId && selectedCardRef.current) {
       setTimeout(() => {
-        if (selectedRowRef.current) {
-          selectedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (selectedCardRef.current) {
+          selectedCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }, 100);
     }
   }, [selectedSeriesId]);
 
+  const toggleSort = (field: 'title' | 'rating') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'rating' ? 'desc' : 'asc');
+    }
+  };
+
   return (
     <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-4">
-      {/* Search */}
-      <div className="mb-4">
+      {/* Search and Sort Controls */}
+      <div className="mb-4 flex items-center gap-4">
         <input
           type="text"
-          value={globalFilter ?? ''}
+          value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Search series..."
-          className="w-full max-w-md px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-zinc-200 placeholder-zinc-500"
+          className="flex-1 max-w-md px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-zinc-200 placeholder-zinc-500"
         />
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => toggleSort('title')}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              sortBy === 'title'
+                ? 'bg-blue-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+            }`}
+          >
+            Title {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+          <button
+            onClick={() => toggleSort('rating')}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              sortBy === 'rating'
+                ? 'bg-blue-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+            }`}
+          >
+            Rating {sortBy === 'rating' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+        </div>
       </div>
 
-      {/* Table */}
-      <div>
-        <table className="w-full">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-zinc-700">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="text-left p-3 text-zinc-300 font-semibold cursor-pointer hover:bg-zinc-800 transition-colors"
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className="flex items-center gap-2">
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {header.column.getCanSort() && (
-                        <span className="text-zinc-500">
-                          {{
-                            asc: '↑',
-                            desc: '↓',
-                          }[header.column.getIsSorted() as string] ?? '↕'}
-                        </span>
+      {/* Series Cards */}
+      <div className="space-y-4">
+        {filteredAndSortedData.map((series, index) => {
+          // Check if this is a seed/root series
+          const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
+          const isSeedSeries = isTagBasedSearch
+            ? relationship.seedSeriesIds?.includes(series.id)
+            : series.id === relationship.rootId;
+          const isSelected = series.id === selectedSeriesId;
+          const userRating = (series as any).userRating;
+          const userNote = (series as any).userNote;
+          const userTagVotes = (series as any).userTagVotes || {};
+          const streamingLinks = (series.metadata as any)?.streamingLinks || {};
+          const metadata = series.metadata as any;
+          const chapters = metadata?.chapters;
+          const volumes = metadata?.volumes;
+          const episodes = metadata?.episodes;
+          const mediaType = series.mediaType || 'ANIME';
+          const mediaIcon = mediaType === 'MANGA' ? '📖' : '📺';
+          const mediaBadgeColor = mediaType === 'MANGA' ? 'bg-green-600/20 border-green-600/50 text-green-300' : 'bg-blue-600/20 border-blue-600/50 text-blue-300';
+
+          // Personalization data (if personalized mode is enabled)
+          const personalizedScore = (series as any).personalizedScore;
+          const matchedTags = (series as any).matchedTags;
+          const reason = (series as any).reason;
+
+          // Check if series is available on user's preferred services
+          const isOnUserService = userServices.length === 0 || Object.keys(streamingLinks).some(
+            platform => userServices.includes(platform)
+          );
+
+          return (
+            <div
+              key={series.id}
+              ref={isSelected ? selectedCardRef : null}
+              className={`bg-zinc-800/50 rounded-lg border transition-all ${
+                isSeedSeries
+                  ? 'border-purple-500 ring-2 ring-purple-500/30'
+                  : isSelected
+                  ? 'border-blue-500 ring-2 ring-blue-500/50'
+                  : 'border-zinc-700 hover:border-zinc-600'
+              } ${!isOnUserService ? 'opacity-40' : ''}`}
+              title={!isOnUserService ? 'Not available on your preferred services' : ''}
+            >
+              {/* Row 1: Cover, Title, Description, Ratings */}
+              <div className="flex gap-4 p-4">
+                {/* Cover Image */}
+                <div className="flex-shrink-0">
+                  {series.titleImage ? (
+                    <img
+                      src={series.titleImage}
+                      alt={series.title}
+                      className="object-cover rounded"
+                      style={{ width: 120, height: 160 }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="bg-zinc-700 rounded flex items-center justify-center text-zinc-500"
+                      style={{ width: 120, height: 160 }}
+                    >
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                {/* Title and Description */}
+                <div className="flex-1 min-w-0">
+                  {/* Title with media type badge */}
+                  <div className="flex items-start gap-2 mb-2 flex-wrap">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs border flex-shrink-0 ${mediaBadgeColor}`}>
+                      {mediaIcon} {mediaType}
+                    </span>
+                    {isSeedSeries && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-purple-600/20 border-purple-600/50 text-purple-300 flex-shrink-0">
+                        🎯 {isTagBasedSearch ? 'SEED SERIES' : 'ROOT SERIES'}
+                      </span>
+                    )}
+                    {personalizedScore !== undefined && (
+                      <PersonalizedBadge score={personalizedScore} />
+                    )}
+                    <h3 className="font-semibold text-lg text-zinc-100">{series.title}</h3>
+                  </div>
+
+                  {/* Metadata (chapters/episodes) */}
+                  {(chapters || volumes || episodes) && (
+                    <div className="mb-2 flex gap-3 text-xs text-zinc-400">
+                      {mediaType === 'MANGA' ? (
+                        <>
+                          {chapters && <span>📚 {chapters} chapters</span>}
+                          {volumes && <span>📕 {volumes} volumes</span>}
+                        </>
+                      ) : (
+                        <>
+                          {episodes && <span>📺 {episodes} episodes</span>}
+                        </>
                       )}
                     </div>
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => {
-              const isSelected = row.original.id === selectedSeriesId;
-              return (
-                <tr
-                  key={row.id}
-                  ref={isSelected ? selectedRowRef : null}
-                  className={`border-b border-zinc-800 hover:bg-zinc-800 transition-colors ${
-                    isSelected ? 'bg-blue-900/30 ring-2 ring-blue-500' : ''
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-3 text-zinc-200">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  )}
+
+                  {/* Streaming Links */}
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {Object.entries(streamingLinks).length > 0 ? (
+                      Object.entries(streamingLinks).map(([platform, url]) => (
+                        <a
+                          key={platform}
+                          href={url as string}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
+                          title={`View on ${platform}`}
+                        >
+                          {getPlatformIcon(platform)} {platform}
+                        </a>
+                      ))
+                    ) : (
+                      <a
+                        href={series.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
+                        title={`View on ${series.provider}`}
+                      >
+                        {getPlatformIcon(series.provider)} {series.provider}
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-zinc-400 line-clamp-3" title={series.description}>
+                    {series.description}
+                  </p>
+                </div>
+
+                {/* Ratings Column */}
+                <div className="flex flex-col gap-4 items-end flex-shrink-0" style={{ minWidth: 280 }}>
+                  {/* Series Rating */}
+                  <div className="text-center">
+                    <div className="text-xs text-zinc-500 mb-1">Series Rating</div>
+                    {series.rating ? (
+                      <div className="text-amber-400 font-semibold text-xl">
+                        ★ {series.rating.toFixed(1)}
+                      </div>
+                    ) : (
+                      <span className="text-zinc-600">N/A</span>
+                    )}
+                  </div>
+
+                  {/* Your Rating */}
+                  <div>
+                    <div className="text-xs text-zinc-500 mb-2 text-center">Your Rating</div>
+                    <RatingWidget
+                      seriesId={series.id}
+                      initialRating={userRating}
+                    />
+                  </div>
+
+                  {/* Watchlist Button */}
+                  <WatchlistButton
+                    seriesId={series.id}
+                    initialStatus={watchlistStatuses.get(series.id) || null}
+                  />
+
+                  {/* Explore Button - only show for non-seed series */}
+                  {!isSeedSeries && (
+                    <button
+                      onClick={() => onExplore?.(series.url)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors w-full"
+                      title="Explore relationships from this series"
+                    >
+                      Explore
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 2: Notes and Tags */}
+              <div className="border-t border-zinc-700 p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Notes Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-zinc-300 mb-2">Private Notes</h4>
+                    <NotesWidget
+                      seriesId={series.id}
+                      initialNote={userNote}
+                    />
+                  </div>
+
+                  {/* Tags/Genres Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-zinc-300 mb-2">
+                      Tags & Genres
+                      <span className="text-xs text-zinc-500 font-normal ml-2">
+                        (Vote to personalize recommendations)
+                      </span>
+                    </h4>
+
+                    {/* Genres with Voting */}
+                    {series.genres.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs text-zinc-500 mb-1">Genres:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {series.genres.map((genre, idx) => (
+                            <TagVotingWidget
+                              key={`genre-${idx}`}
+                              seriesId={series.id}
+                              tagValue={genre}
+                              initialVote={userTagVotes[genre] ?? null}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags with Voting */}
+                    {series.tags.length > 0 && (
+                      <div>
+                        <div className="text-xs text-zinc-500 mb-1">Tags:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {series.tags.map((tag) => (
+                            <TagVotingWidget
+                              key={tag.id}
+                              seriesId={series.id}
+                              tagValue={tag.value}
+                              initialVote={userTagVotes[tag.value] ?? null}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Personalization Explanation */}
+                {(reason || (matchedTags && matchedTags.length > 0)) && (
+                  <div className="mt-4">
+                    <RecommendationExplanation
+                      reason={reason}
+                      matchedTags={matchedTags}
+                      score={personalizedScore}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Total count */}
-      <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
-        <div className="text-sm text-zinc-400">
-          {table.getFilteredRowModel().rows.length} series
+      {filteredAndSortedData.length > 0 ? (
+        <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
+          <div className="text-sm text-zinc-400">
+            {(() => {
+              const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
+              const seedCount = isTagBasedSearch ? (relationship.seedSeriesIds?.length || 0) : 1;
+              const relatedCount = filteredAndSortedData.length - seedCount;
+
+              if (filteredAndSortedData.length === seedCount) {
+                return `${seedCount} ${isTagBasedSearch ? 'seed' : 'root'} series`;
+              } else {
+                return `${filteredAndSortedData.length} series (${seedCount} ${isTagBasedSearch ? 'seed' : 'root'} + ${relatedCount} related)`;
+              }
+            })()}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mt-8 text-center text-zinc-500">
+          No series found matching your filters
+        </div>
+      )}
     </div>
   );
 }

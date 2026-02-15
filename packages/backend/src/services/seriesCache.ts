@@ -83,7 +83,66 @@ export class SeriesCacheService {
    * Returns the best match from AniList
    */
   async searchAndCacheByTitle(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<Series> {
-    logger.info('Searching AniList by title', { title, mediaType });
+    logger.info('Searching for series by title', { title, mediaType });
+
+    // First, check local cache by title (try multiple variations)
+    // Normalize search: remove spaces, lowercase for comparison
+    const normalizedSearch = title.toLowerCase().replace(/\s+/g, '');
+
+    const allSeries = await prisma.series.findMany({
+      where: { mediaType },
+      select: {
+        id: true,
+        title: true,
+        mediaType: true,
+        // Don't include tags to make this query faster
+      },
+    });
+
+    logger.info('Local cache check', {
+      searchedFor: title,
+      normalizedSearch,
+      mediaType,
+      foundCount: allSeries.length,
+      sampleTitles: allSeries.slice(0, 3).map(s => s.title),
+    });
+
+    // Find best match by normalized title
+    const cachedMatch = allSeries.find(s => {
+      const normalizedTitle = s.title.toLowerCase().replace(/\s+/g, '');
+      const matches = normalizedTitle.includes(normalizedSearch) || normalizedSearch.includes(normalizedTitle);
+      if (matches) {
+        logger.info('Match found', {
+          dbTitle: s.title,
+          normalizedDbTitle: normalizedTitle,
+          normalizedSearch,
+        });
+      }
+      return matches;
+    });
+
+    if (cachedMatch) {
+      logger.info('Found in local cache', {
+        id: cachedMatch.id,
+        title: cachedMatch.title,
+        searchedFor: title,
+      });
+
+      // Fetch full series with tags
+      const fullSeries = await prisma.series.findUnique({
+        where: { id: cachedMatch.id },
+        include: { tags: true },
+      });
+
+      if (!fullSeries) {
+        throw new AppError(500, 'Series not found after cache match');
+      }
+
+      return this.mapToSeries(fullSeries);
+    }
+
+    // Not in cache - search AniList
+    logger.info('Not in cache, searching AniList', { title, mediaType });
 
     // Search AniList directly
     const anilistAdapter = this.anilistMatcher.getAdapter();
@@ -109,7 +168,7 @@ export class SeriesCacheService {
     });
 
     if (existing) {
-      logger.info('Series already in cache', { id: existing.id, title: existing.title });
+      logger.info('Series already in cache by AniList ID', { id: existing.id, title: existing.title });
       return this.mapToSeries(existing);
     }
 
@@ -238,6 +297,148 @@ export class SeriesCacheService {
     logger.info('Series cached from AniList search', {
       id: dbSeries.id,
       title: dbSeries.title,
+      tagCount: dbSeries.tags.length,
+    });
+
+    return this.mapToSeries(dbSeries);
+  }
+
+  /**
+   * Search for multiple series results from AniList for user selection
+   * Returns basic info for each result without caching
+   */
+  async searchMultipleResults(
+    title: string,
+    mediaType: 'ANIME' | 'MANGA' = 'ANIME',
+    limit: number = 10
+  ): Promise<Array<{
+    id: string;
+    title: string;
+    description: string;
+    titleImage: string | null;
+    mediaType: 'ANIME' | 'MANGA';
+    anilistId: number;
+    format?: string;
+    episodes?: number;
+    chapters?: number;
+    season?: string;
+    year?: number;
+  }>> {
+    logger.info('Searching AniList for multiple results', { title, mediaType, limit });
+
+    const anilistAdapter = this.anilistMatcher.getAdapter();
+
+    // Search AniList with a higher page limit
+    const searchResults = await anilistAdapter.searchMediaMultiple(title, mediaType, limit);
+
+    if (!searchResults || searchResults.length === 0) {
+      throw new AppError(404, `No ${mediaType.toLowerCase()} found with title: ${title}`);
+    }
+
+    logger.info(`Found ${searchResults.length} results from AniList`, {
+      titles: searchResults.slice(0, 3).map(r => r.title.english || r.title.romaji),
+    });
+
+    // Map to simplified series info
+    return searchResults.map(media => ({
+      id: `anilist-${media.id}`,
+      title: media.title.english || media.title.romaji,
+      description: media.description || '',
+      titleImage: media.coverImage?.large || media.coverImage?.medium || null,
+      mediaType,
+      anilistId: media.id,
+      format: media.format,
+      episodes: media.episodes,
+      chapters: media.chapters,
+      season: media.season,
+      year: media.seasonYear || media.startDate?.year,
+    }));
+  }
+
+  /**
+   * Fetch series by AniList ID (cache if not exists)
+   */
+  async fetchByAniListId(anilistId: number, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<Series> {
+    logger.info('Fetching series by AniList ID', { anilistId, mediaType });
+
+    // Check if we already have this in cache by AniList ID
+    const existing = await prisma.series.findFirst({
+      where: {
+        metadata: {
+          path: ['anilistId'],
+          equals: anilistId,
+        },
+      },
+      include: { tags: true },
+    });
+
+    if (existing) {
+      logger.info('Series already in cache by AniList ID', { id: existing.id, title: existing.title });
+      return this.mapToSeries(existing);
+    }
+
+    // Not in cache - fetch from AniList
+    logger.info('Fetching from AniList', { anilistId, mediaType });
+
+    const anilistAdapter = this.anilistMatcher.getAdapter();
+    const anilistMedia = mediaType === 'MANGA'
+      ? await anilistAdapter.getMangaWithRelations(anilistId)
+      : await anilistAdapter.getAnimeWithRelations(anilistId);
+
+    if (!anilistMedia) {
+      throw new AppError(404, `No ${mediaType.toLowerCase()} found with AniList ID: ${anilistId}`);
+    }
+
+    // Create a synthetic URL
+    const syntheticUrl = `anilist://${anilistMedia.id}`;
+
+    // Normalize to RawSeriesData
+    const rawData = anilistAdapter.normalizeToRawSeriesData(anilistMedia, syntheticUrl);
+
+    // Extract streaming links
+    const streamingLinks = anilistAdapter.extractAllStreamingLinks(anilistMedia.externalLinks);
+
+    // Generate tags
+    const generatedTags = this.tagGenerator.generateTags(rawData);
+
+    // Add streaming links to metadata
+    const enrichedMetadata = {
+      ...rawData.metadata,
+      streamingLinks,
+    };
+
+    // Store in database
+    const dbSeries = await prisma.series.create({
+      data: {
+        provider: rawData.provider,
+        mediaType: rawData.mediaType,
+        externalId: rawData.externalId,
+        url: rawData.url,
+        title: rawData.title,
+        titleImage: rawData.titleImage,
+        description: rawData.description,
+        rating: rawData.rating,
+        ageRating: rawData.ageRating,
+        languages: rawData.languages,
+        genres: rawData.genres,
+        contentAdvisory: rawData.contentAdvisory,
+        metadata: enrichedMetadata,
+        tags: {
+          create: generatedTags.map(tag => ({
+            value: tag.value,
+            source: tag.source,
+            confidence: tag.confidence,
+            category: tag.category,
+          })),
+        },
+      },
+      include: { tags: true },
+    });
+
+    logger.info('Series cached from AniList ID', {
+      id: dbSeries.id,
+      title: dbSeries.title,
+      anilistId: anilistMedia.id,
       tagCount: dbSeries.tags.length,
     });
 

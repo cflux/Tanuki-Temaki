@@ -84,7 +84,7 @@ const TagLabelNode = memo(function TagLabelNode({ data }: { data: any }) {
 });
 
 const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
-  const { series, isRoot, newTags, color, onSeriesClick } = data;
+  const { series, isRoot, newTags, color, userServices, onSeriesClick } = data;
   const zoom = useStore((state) => state.transform[2]);
   const [isHovered, setIsHovered] = useState(false);
   const [nodeWrapper, setNodeWrapper] = useState<HTMLElement | null>(null);
@@ -99,6 +99,12 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
   const targetWidth = 500;
   const targetScale = isHovered ? targetWidth / CARD_W / zoom : 1;
 
+  // Check if series is available on user's preferred services
+  const streamingLinks = (series.metadata as any)?.streamingLinks || {};
+  const isOnUserService = !userServices || userServices.length === 0 || Object.keys(streamingLinks).some(
+    platform => userServices.includes(platform)
+  );
+
   return (
     <>
       {!isRoot && <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />}
@@ -107,7 +113,8 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
           isRoot
             ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-zinc-900'
             : 'cursor-pointer hover:ring-2 hover:ring-blue-500/50 transition-all'
-        }`}
+        } ${!isOnUserService ? 'opacity-40' : ''}`}
+        title={!isOnUserService ? 'Not available on your preferred services' : ''}
         style={{
           borderColor: color,
           width: CARD_W,
@@ -442,7 +449,6 @@ function consolidateSingletons(node: TagTree): void {
   });
 
   if (singletonTags.length >= 2) {
-    console.log(`[Consolidate] Processing ${singletonTags.length} singletons under "${node.label ?? node.id}"`);
     const singletonSeries = singletonTags.map(tag => tag.children[0]);
 
     // Count how many series share each tag
@@ -465,10 +471,8 @@ function consolidateSingletons(node: TagTree): void {
       if (availableSeries.length >= 2) {
         const existingTag = otherChildren.find(c => c.type === 'tag' && c.label === tag);
         if (existingTag) {
-          console.log(`  [Merge] Adding ${availableSeries.length} series to existing tag "${tag}"`);
           existingTag.children.push(...availableSeries);
         } else {
-          console.log(`  [Regroup] Creating new tag "${tag}" with ${availableSeries.length} series`);
           otherChildren.push({
             id: `${node.id}:regrouped:${tag}`,
             type: 'tag',
@@ -484,7 +488,6 @@ function consolidateSingletons(node: TagTree): void {
     // Put isolated series into "other"
     const isolated = singletonSeries.filter(s => !used.has(s));
     if (isolated.length >= 2) {
-      console.log(`  [Other] Creating "other" with ${isolated.length} isolated series`);
       otherChildren.push({
         id: `${node.id}:other`,
         type: 'tag',
@@ -494,14 +497,12 @@ function consolidateSingletons(node: TagTree): void {
       });
     } else {
       // If only 1 isolated, keep it as the original singleton tag
-      console.log(`  [Keep] Keeping ${isolated.length} original singleton tags`);
       isolated.forEach(s => {
         const originalTag = singletonTags.find(tag => tag.children[0] === s);
         if (originalTag) otherChildren.push(originalTag);
       });
     }
 
-    console.log(`  [Result] Final child count: ${otherChildren.length}`);
     node.children = otherChildren;
   }
 }
@@ -595,18 +596,9 @@ function layoutTree(
     let childY = startY;
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i];
-      const isMultiColumn = hasOnlyLeafSeries(child);
-      const childLabel = child.type === 'tag' ? child.label : child.series?.series.title;
-
-      if (isMultiColumn) {
-        console.log(`[${i}] Multi-column "${childLabel}" at childY: ${childY}`);
-      } else {
-        console.log(`[${i}] Standard "${childLabel}" at childY: ${childY}`);
-      }
 
       layoutTree(child, depth + 1, childY, positions);
       const sh = subtreeH(child);
-      console.log(`  subtreeH: ${sh}, next childY: ${childY + sh + SIBLING_GAP}`);
       childY += sh + SIBLING_GAP;
     }
   }
@@ -618,7 +610,8 @@ function collectNodesEdges(
   fNodes: Node[],
   fEdges: Edge[],
   onSeriesClick?: (seriesId: string) => void,
-  inheritedColor?: string
+  inheritedColor?: string,
+  userServices?: string[]
 ) {
   const pos = positions.get(node.id) ?? { x: 0, y: 0 };
   // Series card borders use the nearest tag ancestor's color so the branch is visually clear
@@ -635,6 +628,7 @@ function collectNodesEdges(
       newTags: node.newTags,
       label: node.label,
       color: displayColor,
+      userServices,
       onSeriesClick,
     },
   });
@@ -671,7 +665,7 @@ function collectNodesEdges(
       style: { stroke: c, strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: c, width: 16, height: 16 },
     });
-    collectNodesEdges(child, positions, fNodes, fEdges, onSeriesClick, childInheritedColor);
+    collectNodesEdges(child, positions, fNodes, fEdges, onSeriesClick, childInheritedColor, userServices);
   }
 }
 
@@ -685,14 +679,346 @@ interface TreeViewProps {
   rootTags: Set<string>;
   deselectedServices: Set<string>;
   resultsMediaFilter: 'ANIME' | 'MANGA' | 'BOTH';
+  userServices: string[];
   onSeriesClick?: (seriesId: string) => void;
 }
 
-export function TreeView({ relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, onSeriesClick }: TreeViewProps) {
+export function TreeView({ relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, userServices, onSeriesClick }: TreeViewProps) {
   const treeViewport = useDiscoveryStore(state => state.treeViewport);
   const setTreeViewport = useDiscoveryStore(state => state.setTreeViewport);
 
   const { nodes: flowNodes, edges: flowEdges } = useMemo(() => {
+    // Check if this is a tag-based search with multiple seed series
+    const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
+
+    console.log('[TreeView] Rendering tree view', {
+      isTagBasedSearch,
+      seedSeriesIds: relationship.seedSeriesIds,
+      totalNodes: relationship.nodes.length,
+      rootId: relationship.rootId,
+    });
+
+    const buildMultiRootTree = () => {
+      if (!relationship.seedSeriesIds) {
+        console.log('[TreeView] No seedSeriesIds found');
+        return { nodes: [], edges: [] };
+      }
+
+      console.log('[TreeView] Building multi-root tree with seeds:', relationship.seedSeriesIds);
+
+      // Get seed series nodes
+      // seedSeriesIds now contains the actual database IDs after tracing
+      const seedNodes = relationship.seedSeriesIds
+        .map(id => {
+          const found = relationship.nodes.find(n => n.series.id === id);
+          if (!found) {
+            console.log('[TreeView] Could not find seed node with ID:', id);
+          }
+          return found;
+        })
+        .filter((n): n is SeriesNodeType => n !== undefined);
+
+      console.log('[TreeView] Found seed nodes:', seedNodes.length);
+
+      if (seedNodes.length === 0) {
+        console.log('[TreeView] No seed nodes found!');
+        return { nodes: [], edges: [] };
+      }
+
+      // Collect all seed IDs to exclude from children
+      const excludeIds = new Set(seedNodes.map(n => n.series.id));
+
+      // Normalize title for comparison
+      const normalizeTitle = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const seedTitlesNorm = new Set(seedNodes.map(n => normalizeTitle(n.series.title)));
+
+      // Collect all tags from seed series to understand what the "root tags" are
+      const allSeedTags = new Set<string>();
+      seedNodes.forEach(n => {
+        n.series.tags.forEach(t => allSeedTags.add(t.value));
+      });
+
+      // Get all non-seed nodes that pass filters
+      const childItems = relationship.nodes
+        .filter(n =>
+          !excludeIds.has(n.series.id) &&
+          !seedTitlesNorm.has(normalizeTitle(n.series.title))
+        )
+        .filter(n => {
+          // Media type filter
+          if (resultsMediaFilter !== 'BOTH') {
+            const seriesMediaType = n.series.mediaType || 'ANIME';
+            if (seriesMediaType !== resultsMediaFilter) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .filter(n => {
+          // Service filter
+          if (deselectedServices.size > 0) {
+            const streamingLinks = (n.series.metadata as any)?.streamingLinks || {};
+            const platforms = Object.keys(streamingLinks);
+
+            if (platforms.length > 0) {
+              const hasSelectedPlatform = platforms.some(p => !deselectedServices.has(p));
+              if (!hasSelectedPlatform) return false;
+            } else {
+              if (deselectedServices.has(n.series.provider)) return false;
+            }
+          }
+
+          // Tag filter
+          const tags = n.series.tags.map(t => t.value);
+
+          if (requiredTags.size > 0) {
+            const hasRequired = tags.some(t => requiredTags.has(t));
+            if (!hasRequired) return false;
+          }
+
+          if (excludedTags.size > 0) {
+            const hasExcluded = tags.some(t => excludedTags.has(t));
+            if (hasExcluded) return false;
+          }
+
+          return true;
+        })
+        .map(node => ({
+          node,
+          newTags: node.series.tags.map(t => t.value).filter(v => !allSeedTags.has(v)),
+        }));
+
+      console.log('[TreeView] Child items after filtering:', {
+        total: childItems.length,
+        beforeFilters: relationship.nodes.length - seedNodes.length,
+      });
+
+      // Build individual trees for each seed series
+      const seedTrees: TagTree[] = seedNodes.map((seedNode, idx) => {
+        return {
+          id: seedNode.series.id,
+          type: 'series' as const,
+          isRoot: true,
+          series: seedNode,
+          color: hashColor(seedNode.cluster ?? `seed-${idx}`),
+          children: [], // Children will be assigned based on edges below
+        };
+      });
+
+      // Create a map for quick seed tree lookup
+      const seedTreeMap = new Map(seedTrees.map(tree => [tree.id, tree]));
+
+      // Build a full tree structure for each seed by recursively following edges
+      const childParentMap = new Map<string, Set<string>>(); // childId -> Set<seedId>
+      const nodeTreeMap = new Map<string, TagTree>(); // nodeId -> TagTree (for lookup)
+
+      // Helper: Find which seed(s) a node ultimately belongs to
+      const findParentSeeds = (nodeId: string, visited = new Set<string>()): Set<string> => {
+        if (visited.has(nodeId)) return new Set();
+        visited.add(nodeId);
+
+        // If this is a seed itself, return it
+        if (seedTreeMap.has(nodeId)) {
+          return new Set([nodeId]);
+        }
+
+        const seedParents = new Set<string>();
+        relationship.edges.forEach(edge => {
+          if (edge.to === nodeId) {
+            const parentSeeds = findParentSeeds(edge.from, visited);
+            parentSeeds.forEach(s => seedParents.add(s));
+          }
+        });
+        return seedParents;
+      };
+
+      // Map all children to their parent seeds
+      childItems.forEach(({ node }) => {
+        const allParents = findParentSeeds(node.series.id);
+        childParentMap.set(node.series.id, allParents);
+      });
+
+      // Helper: Clone a tree with unique IDs (for multi-parent nodes)
+      const cloneTreeWithUniqueIds = (tree: TagTree, prefix: string): TagTree => {
+        return {
+          ...tree,
+          id: `${prefix}::${tree.id}`,
+          children: tree.children.map(child => cloneTreeWithUniqueIds(child, prefix)),
+        };
+      };
+
+      // Helper: Recursively build tree for a node
+      const buildNodeTree = (nodeId: string, parentColor: string, visited = new Set<string>()): TagTree | null => {
+        if (visited.has(nodeId)) return null;
+        visited.add(nodeId);
+
+        // Skip seeds (they're already in seedTrees)
+        if (seedTreeMap.has(nodeId)) return null;
+
+        // Find node in the full relationship graph, not just filtered childItems
+        const nodeData = relationship.nodes.find(n => n.series.id === nodeId);
+        if (!nodeData) return null;
+
+        // Skip if this is a seed (shouldn't happen but safety check)
+        if (excludeIds.has(nodeId)) return null;
+
+        // Compute newTags: tags that are not in the seed series tags
+        const newTags = nodeData.series.tags
+          .map(t => t.value)
+          .filter(v => !allSeedTags.has(v))
+          .slice(0, 4); // Limit to top 4 tags
+
+        const nodeTree: TagTree = {
+          id: nodeId,
+          type: 'series',
+          series: nodeData,
+          newTags,
+          color: parentColor,
+          children: [],
+        };
+
+        // Find direct children of this node
+        relationship.edges.forEach(edge => {
+          if (edge.from === nodeId) {
+            const childTree = buildNodeTree(edge.to, parentColor, visited);
+            if (childTree) {
+              nodeTree.children.push(childTree);
+            }
+          }
+        });
+
+        return nodeTree;
+      };
+
+      // Build tree for each seed
+      seedTrees.forEach(seedTree => {
+        const seedId = seedTree.id;
+        const seedColor = seedTree.color;
+        const visited = new Set<string>([seedId]);
+
+        // Find all direct children of this seed
+        relationship.edges.forEach(edge => {
+          if (edge.from === seedId) {
+            const childParents = childParentMap.get(edge.to);
+            // Add if this child belongs to this seed (may also belong to other seeds)
+            if (childParents && childParents.has(seedId)) {
+              const childTree = buildNodeTree(edge.to, seedColor, visited);
+              if (childTree) {
+                // If multi-parent child, clone the entire tree with unique IDs
+                if (childParents.size > 1) {
+                  const uniqueTree = cloneTreeWithUniqueIds(childTree, seedId);
+                  seedTree.children.push(uniqueTree);
+                } else {
+                  seedTree.children.push(childTree);
+                }
+              }
+            }
+          }
+        });
+
+        // Count total descendants recursively
+        const countDescendants = (tree: TagTree): number => {
+          return tree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+        };
+        const totalDescendants = countDescendants(seedTree);
+
+        console.log(`[TreeView] Seed "${seedTree.series?.series.title}" has ${seedTree.children.length} direct children, ${totalDescendants} total descendants`);
+      });
+
+      // Debug: Count children by parent count
+      const orphanItems = childItems.filter(({ node }) => {
+        const parents = childParentMap.get(node.series.id);
+        return !parents || parents.size === 0;
+      });
+      const singleParentItems = childItems.filter(({ node }) => {
+        const parents = childParentMap.get(node.series.id);
+        return parents && parents.size === 1;
+      });
+      const multiParentItems = childItems.filter(({ node }) => {
+        const parents = childParentMap.get(node.series.id);
+        return parents && parents.size > 1;
+      });
+
+      console.log('[TreeView] Child assignment:', {
+        orphans: orphanItems.length,
+        singleParent: singleParentItems.length,
+        multiParent: multiParentItems.length,
+        total: childItems.length,
+      });
+
+      // Handle orphan items (children with no parent seeds)
+      // Add them to a separate group
+      const orphanChildren: TagTree[] = [];
+      if (orphanItems.length > 0) {
+        console.log('[TreeView] Found orphan children:', orphanItems.map(i => i.node.series.title));
+
+        // Debug: Check if these orphans have ANY edges at all
+        orphanItems.slice(0, 3).forEach(({ node }) => {
+          const incomingEdges = relationship.edges.filter(e => e.to === node.series.id);
+          const outgoingEdges = relationship.edges.filter(e => e.from === node.series.id);
+          console.log(`[TreeView] Orphan "${node.series.title}":`, {
+            id: node.series.id,
+            incomingEdges: incomingEdges.length,
+            outgoingEdges: outgoingEdges.length,
+            incomingFrom: incomingEdges.map(e => e.from),
+          });
+        });
+
+        orphanChildren.push({
+          id: 'orphans',
+          type: 'tag',
+          label: 'Other Recommendations',
+          color: '#9ca3af',
+          children: buildTagTree(orphanItems, [], 1, 2, excludeIds),
+        });
+      }
+
+      // Multi-parent children are now duplicated under each seed they belong to
+      // No need for separate shared tag groups
+
+      // Create a virtual root that contains all seed series
+      const virtualRoot: TagTree = {
+        id: 'virtual-root',
+        type: 'tag',
+        label: 'Tag Results',
+        color: '#6b7280',
+        children: [
+          ...seedTrees,
+          ...orphanChildren,
+        ],
+      };
+
+      // Consolidate and flatten
+      consolidateSingletons(virtualRoot);
+      virtualRoot.children = flattenSingleTagChildren(virtualRoot.children);
+
+      // Layout the tree
+      const positions = new Map<string, { x: number; y: number }>();
+      layoutTree(virtualRoot, -1, 0, positions); // Start at -1 so seeds are at x=0
+
+      // Collect nodes and edges, but skip the virtual root node itself
+      const fNodes: Node[] = [];
+      const fEdges: Edge[] = [];
+
+      virtualRoot.children.forEach(child => {
+        collectNodesEdges(child, positions, fNodes, fEdges, onSeriesClick, undefined, userServices);
+      });
+
+      console.log('[TreeView] Multi-root tree built:', {
+        nodes: fNodes.length,
+        edges: fEdges.length,
+        virtualRootChildren: virtualRoot.children.length,
+      });
+
+      return { nodes: fNodes, edges: fEdges };
+    };
+
+    if (isTagBasedSearch) {
+      // Multi-root tree for tag-based searches
+      return buildMultiRootTree();
+    }
+
+    // Single-root tree for series-based searches
     const rootSeriesNode = relationship.nodes.find(n => n.series.id === relationship.rootId);
     if (!rootSeriesNode) return { nodes: [], edges: [] };
 
@@ -841,10 +1167,10 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
 
     const fNodes: Node[] = [];
     const fEdges: Edge[] = [];
-    collectNodesEdges(rootTree, positions, fNodes, fEdges, onSeriesClick);
+    collectNodesEdges(rootTree, positions, fNodes, fEdges, onSeriesClick, undefined, userServices);
 
     return { nodes: fNodes, edges: fEdges };
-  }, [relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, onSeriesClick]);
+  }, [relationship, requiredTags, excludedTags, filterMode, rootTags, deselectedServices, resultsMediaFilter, userServices, onSeriesClick]);
 
   return (
     <div className="h-[calc(100vh-200px)] w-full bg-zinc-900 rounded-lg border border-zinc-800">

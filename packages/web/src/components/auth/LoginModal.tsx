@@ -18,27 +18,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-zinc-950 bg-opacity-95 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 max-w-md w-full mx-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Sign In</h2>
+          <h2 className="text-2xl font-bold text-zinc-50">Sign In</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            className="text-zinc-400 hover:text-zinc-200 text-2xl leading-none"
             aria-label="Close"
           >
             &times;
           </button>
         </div>
 
-        <p className="text-gray-600 mb-6">
+        <p className="text-zinc-400 mb-6">
           Sign in to track your series, rate shows, and get personalized recommendations.
         </p>
 
         <div className="space-y-3">
           <button
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 bg-zinc-800 border border-zinc-700 rounded-lg px-6 py-3 text-zinc-100 font-medium hover:bg-zinc-700 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -63,7 +63,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
           <button
             onClick={handleGitHubLogin}
-            className="w-full flex items-center justify-center gap-3 bg-gray-800 rounded-lg px-6 py-3 text-white font-medium hover:bg-gray-900 transition-colors"
+            className="w-full flex items-center justify-center gap-3 bg-zinc-800 border border-zinc-700 rounded-lg px-6 py-3 text-zinc-100 font-medium hover:bg-zinc-700 transition-colors"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path
@@ -76,7 +76,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <p className="text-sm text-gray-500 mt-6 text-center">
+        <p className="text-sm text-zinc-500 mt-6 text-center">
           We only store your username. No emails, no personal information.
         </p>
       </div>

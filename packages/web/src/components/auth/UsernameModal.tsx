@@ -67,16 +67,16 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose })
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Choose Your Username</h2>
-        <p className="text-gray-600 mb-6">
+    <div className="fixed inset-0 bg-zinc-950 bg-opacity-95 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 max-w-md w-full mx-4">
+        <h2 className="text-2xl font-bold text-zinc-50 mb-4">Choose Your Username</h2>
+        <p className="text-zinc-400 mb-6">
           Pick a unique username to complete your account setup.
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="username" className="block text-sm font-medium text-zinc-300 mb-2">
               Username
             </label>
             <input
@@ -84,12 +84,12 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose })
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              className={`w-full px-4 py-2 bg-zinc-800 border rounded-lg focus:outline-none focus:ring-2 text-zinc-100 placeholder-zinc-500 ${
                 error
                   ? 'border-red-500 focus:ring-red-500'
                   : isAvailable
                   ? 'border-green-500 focus:ring-green-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-zinc-700 focus:ring-blue-500'
               }`}
               placeholder="your_username"
               autoComplete="off"
@@ -97,16 +97,16 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose })
             />
             <div className="mt-2 min-h-[20px]">
               {isChecking && (
-                <p className="text-sm text-gray-500">Checking availability...</p>
+                <p className="text-sm text-zinc-400">Checking availability...</p>
               )}
               {!isChecking && error && (
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="text-sm text-red-400">{error}</p>
               )}
               {!isChecking && isAvailable && username && (
-                <p className="text-sm text-green-600">Username available!</p>
+                <p className="text-sm text-green-400">Username available!</p>
               )}
               {!isChecking && isAvailable === false && !error && (
-                <p className="text-sm text-red-600">Username already taken</p>
+                <p className="text-sm text-red-400">Username already taken</p>
               )}
             </div>
           </div>
@@ -114,13 +114,13 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose })
           <button
             type="submit"
             disabled={!isAvailable || isSubmitting || isChecking}
-            className="w-full bg-blue-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-blue-700 transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving...' : 'Continue'}
           </button>
         </form>
 
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-zinc-500 mt-4">
           3-20 characters. Letters, numbers, underscores, and hyphens only.
         </p>
       </div>

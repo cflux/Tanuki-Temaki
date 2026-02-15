@@ -37,6 +37,7 @@ model Series {
   userRatings     UserSeriesRating[]
   userNotes       UserSeriesNote[]
   userTagVotes    UserTagVote[]
+  userWatchlist   UserWatchlist[]
 
   // Metadata
   metadata        Json     @default("{}")
@@ -98,6 +99,7 @@ model User {
   tagVotes        UserTagVote[]
   notes           UserSeriesNote[]
   preferences     UserPreference[]
+  watchlist       UserWatchlist[]
 
   @@index([username])
   @@map("users")
@@ -188,4 +190,33 @@ model UserPreference {
   @@unique([userId, key])
   @@index([userId])
   @@map("user_preferences")
+}
+
+// UserWatchlist model - series marked to watch/read later
+model UserWatchlist {
+  id        String   @id @default(uuid())
+  userId    String
+  seriesId  String
+  status    String   @default("plan_to_watch") // 'plan_to_watch', 'watching', 'completed', 'on_hold', 'dropped'
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId])
+  @@index([userId])
+  @@index([seriesId])
+  @@index([status])
+  @@map("user_watchlist")
+}
+
+// Configuration model - system-wide configuration (e.g., cached genre lists)
+model Configuration {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([key])
+  @@map("Configuration")
 }

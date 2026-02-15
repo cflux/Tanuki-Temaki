@@ -289,6 +289,111 @@ export class AniListAdapter {
   }
 
   /**
+   * Search for multiple media results (for user selection)
+   */
+  async searchMediaMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', perPage: number = 10): Promise<AniListMedia[]> {
+    try {
+      logger.info('Searching AniList for multiple media', { title, mediaType, perPage });
+
+      const query = gql`
+        query ($search: String, $type: MediaType, $perPage: Int) {
+          Page(page: 1, perPage: $perPage) {
+            media(search: $search, type: $type, sort: SEARCH_MATCH) {
+              id
+              type
+              title {
+                romaji
+                english
+                native
+              }
+              description
+              format
+              status
+              episodes
+              chapters
+              volumes
+              season
+              seasonYear
+              startDate {
+                year
+              }
+              coverImage {
+                large
+                medium
+              }
+            }
+          }
+        }
+      `;
+
+      const variables = { search: title, type: mediaType, perPage };
+      const data = await this.requestWithRetry(
+        async () => {
+          const response = await fetch(ANILIST_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ query, variables }),
+          });
+
+          this.updateRateLimitInfo(response.headers);
+
+          if (!response.ok) {
+            const json = await response.json();
+            throw {
+              response: {
+                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
+                status: response.status,
+                headers: {},
+              },
+              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
+            };
+          }
+
+          const json = await response.json();
+
+          if (json.errors) {
+            throw {
+              response: {
+                errors: json.errors,
+                status: 200,
+                headers: {},
+              },
+              message: json.errors[0]?.message || 'GraphQL Error',
+            };
+          }
+
+          return json.data;
+        },
+        5,
+        this.rateLimitCallback
+      );
+
+      if (!data.Page || !data.Page.media || data.Page.media.length === 0) {
+        logger.warn('No media found on AniList', { title, mediaType });
+        return [];
+      }
+
+      logger.info(`Found ${data.Page.media.length} media results on AniList`, {
+        title,
+        mediaType,
+        count: data.Page.media.length,
+        titles: data.Page.media.slice(0, 3).map((m: any) => m.title.english || m.title.romaji),
+      });
+
+      return data.Page.media;
+    } catch (error) {
+      logger.error('Error searching AniList for multiple results', {
+        title,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return [];
+    }
+  }
+
+  /**
    * Search for anime by title (convenience wrapper)
    */
   async searchAnime(title: string): Promise<AniListMedia | null> {
@@ -837,6 +942,311 @@ export class AniListAdapter {
     });
 
     return related;
+  }
+
+  /**
+   * Search for media by tag name
+   * Returns top-rated series with the specified tag
+   */
+  async searchByTag(
+    tagName: string,
+    mediaType: 'ANIME' | 'MANGA' | 'all' = 'all',
+    perPage: number = 20
+  ): Promise<AniListMedia[]> {
+    try {
+      // Determine if this is a genre or a tag
+      const { GenreCollectionService } = await import('../services/genreCollection.js');
+      const isGenre = await GenreCollectionService.isGenre(tagName);
+
+      // Format for AniList (case-sensitive):
+      // - Genres: Capitalize each word (e.g., "Action", "Sci-Fi")
+      // - Tags: Lowercase (e.g., "female protagonist", "isekai")
+      const formattedSearch = isGenre
+        ? tagName
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ')
+        : tagName.toLowerCase();
+
+      logger.info('Searching AniList by tag/genre', {
+        tagName,
+        formattedSearch,
+        isGenre,
+        mediaType,
+        perPage
+      });
+
+      // Build query conditionally based on whether we're searching genre or tag
+      const query = isGenre
+        ? (mediaType === 'all'
+          ? gql`
+              query ($genre_in: [String], $perPage: Int) {
+                Page(page: 1, perPage: $perPage) {
+                  pageInfo {
+                    total
+                    perPage
+                  }
+                  media(genre_in: $genre_in, sort: [POPULARITY_DESC, SCORE_DESC]) {
+                    id
+                    type
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    description
+                    genres
+                    tags {
+                      name
+                      rank
+                      isMediaSpoiler
+                    }
+                    averageScore
+                    popularity
+                    format
+                    status
+                    episodes
+                    chapters
+                    volumes
+                    duration
+                    season
+                    seasonYear
+                    coverImage {
+                      large
+                    }
+                    externalLinks {
+                      url
+                      site
+                      type
+                    }
+                  }
+                }
+              }
+            `
+          : gql`
+              query ($genre_in: [String], $type: MediaType, $perPage: Int) {
+                Page(page: 1, perPage: $perPage) {
+                  pageInfo {
+                    total
+                    perPage
+                  }
+                  media(genre_in: $genre_in, type: $type, sort: [POPULARITY_DESC, SCORE_DESC]) {
+                    id
+                    type
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    description
+                    genres
+                    tags {
+                      name
+                      rank
+                      isMediaSpoiler
+                    }
+                    averageScore
+                    popularity
+                    format
+                    status
+                    episodes
+                    chapters
+                    volumes
+                    duration
+                    season
+                    seasonYear
+                    coverImage {
+                      large
+                    }
+                    externalLinks {
+                      url
+                      site
+                      type
+                    }
+                  }
+                }
+              }
+            `)
+        : (mediaType === 'all'
+          ? gql`
+              query ($tag_in: [String], $perPage: Int) {
+                Page(page: 1, perPage: $perPage) {
+                  pageInfo {
+                    total
+                    perPage
+                  }
+                  media(tag_in: $tag_in, sort: [POPULARITY_DESC, SCORE_DESC]) {
+                    id
+                    type
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    description
+                    genres
+                    tags {
+                      name
+                      rank
+                      isMediaSpoiler
+                    }
+                    averageScore
+                    popularity
+                    format
+                    status
+                    episodes
+                    chapters
+                    volumes
+                    duration
+                    season
+                    seasonYear
+                    coverImage {
+                      large
+                    }
+                    externalLinks {
+                      url
+                      site
+                      type
+                    }
+                  }
+                }
+              }
+            `
+          : gql`
+              query ($tag_in: [String], $type: MediaType, $perPage: Int) {
+                Page(page: 1, perPage: $perPage) {
+                  pageInfo {
+                    total
+                    perPage
+                  }
+                  media(tag_in: $tag_in, type: $type, sort: [POPULARITY_DESC, SCORE_DESC]) {
+                    id
+                    type
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    description
+                    genres
+                    tags {
+                      name
+                      rank
+                      isMediaSpoiler
+                    }
+                    averageScore
+                    popularity
+                    format
+                    status
+                    episodes
+                    chapters
+                    volumes
+                    duration
+                    season
+                    seasonYear
+                    coverImage {
+                      large
+                    }
+                    externalLinks {
+                      url
+                      site
+                      type
+                    }
+                  }
+                }
+              }
+            `);
+
+      const variables: any = {
+        [isGenre ? 'genre_in' : 'tag_in']: [formattedSearch],
+        perPage,
+      };
+
+      // Only include type parameter if filtering by specific media type
+      if (mediaType !== 'all') {
+        variables.type = mediaType;
+      }
+
+      logger.info('AniList tag search query', {
+        query: query.replace(/\s+/g, ' ').trim(),
+        variables: JSON.stringify(variables, null, 2)
+      });
+
+      const data = await this.requestWithRetry(
+        async () => {
+          const response = await fetch(ANILIST_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ query, variables }),
+          });
+
+          // Update rate limit info from headers
+          this.updateRateLimitInfo(response.headers);
+
+          // Check HTTP status
+          if (!response.ok) {
+            const json = await response.json();
+            throw {
+              response: {
+                errors: json.errors || [{ message: 'HTTP Error', status: response.status }],
+                status: response.status,
+                headers: {},
+              },
+              message: json.errors?.[0]?.message || `HTTP ${response.status}`,
+            };
+          }
+
+          const json = await response.json();
+
+          // Log the response for debugging
+          logger.info('AniList tag search response', {
+            hasData: !!json.data,
+            hasErrors: !!json.errors,
+            mediaCount: json.data?.Page?.media?.length || 0,
+            errors: json.errors ? JSON.stringify(json.errors) : undefined,
+            fullResponse: JSON.stringify(json, null, 2)
+          });
+
+          // Check for GraphQL errors
+          if (json.errors) {
+            throw {
+              response: {
+                errors: json.errors,
+                status: 200,
+                headers: {},
+              },
+              message: json.errors[0]?.message || 'GraphQL Error',
+            };
+          }
+
+          return json.data;
+        },
+        5,
+        this.rateLimitCallback
+      );
+
+      const results = data?.Page?.media || [];
+
+      logger.info('Found media by tag on AniList', {
+        tagName,
+        capitalizedTag,
+        mediaType,
+        count: results.length,
+        totalAvailable: data?.Page?.pageInfo?.total,
+      });
+
+      return results;
+    } catch (error) {
+      logger.error('Error searching AniList by tag', {
+        tagName,
+        capitalizedTag,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return [];
+    }
   }
 }
 

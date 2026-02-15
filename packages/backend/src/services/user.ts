@@ -272,10 +272,138 @@ export class UserService {
   }
 
   /**
+   * Normalize service names to canonical versions
+   */
+  private static normalizeServiceName(name: string): string {
+    const lower = name.toLowerCase();
+
+    // Amazon variations
+    if (lower.includes('amazon') || lower === 'prime video') {
+      return 'Amazon Prime Video';
+    }
+    // Crunchyroll variations
+    if (lower.includes('crunchyroll') && !lower.includes('manga')) {
+      return 'Crunchyroll';
+    }
+    if (lower.includes('crunchyroll') && lower.includes('manga')) {
+      return 'Crunchyroll Manga';
+    }
+    // HBO variations
+    if (lower.includes('hbo')) {
+      return 'HBO Max';
+    }
+    // Return original if no normalization needed
+    return name;
+  }
+
+  /**
    * Get available services
    */
   static async getAvailableServices(userId: string): Promise<string[]> {
     const services = await this.getPreference(userId, 'available_services');
-    return services || [];
+    if (!services || !Array.isArray(services)) {
+      return [];
+    }
+    // Normalize service names to match current canonical names
+    return services.map(s => this.normalizeServiceName(s));
+  }
+
+  // ==================== WATCHLIST ====================
+
+  /**
+   * Add series to watchlist
+   */
+  static async addToWatchlist(userId: string, seriesId: string, status: string = 'plan_to_watch') {
+    return prisma.userWatchlist.upsert({
+      where: {
+        userId_seriesId: {
+          userId,
+          seriesId,
+        },
+      },
+      update: {
+        status,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        seriesId,
+        status,
+      },
+    });
+  }
+
+  /**
+   * Remove series from watchlist
+   */
+  static async removeFromWatchlist(userId: string, seriesId: string) {
+    return prisma.userWatchlist.delete({
+      where: {
+        userId_seriesId: {
+          userId,
+          seriesId,
+        },
+      },
+    });
+  }
+
+  /**
+   * Get user's watchlist with series details
+   */
+  static async getWatchlist(userId: string) {
+    return prisma.userWatchlist.findMany({
+      where: { userId },
+      include: {
+        series: true,
+      },
+      orderBy: {
+        addedAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Get watchlist status for a specific series
+   */
+  static async getWatchlistStatus(userId: string, seriesId: string) {
+    const item = await prisma.userWatchlist.findUnique({
+      where: {
+        userId_seriesId: {
+          userId,
+          seriesId,
+        },
+      },
+    });
+    return item ? { status: item.status, addedAt: item.addedAt } : null;
+  }
+
+  /**
+   * Get all rated series with details
+   */
+  static async getRatedSeries(userId: string) {
+    return prisma.userSeriesRating.findMany({
+      where: { userId },
+      include: {
+        series: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Get all noted series with details
+   */
+  static async getNotedSeries(userId: string) {
+    return prisma.userSeriesNote.findMany({
+      where: { userId },
+      include: {
+        series: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
   }
 }

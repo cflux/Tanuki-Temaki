@@ -18,6 +18,76 @@ export const api = axios.create({
   withCredentials: true, // Enable cookies for auth
 });
 
+// Track if we're currently refreshing to avoid multiple refresh requests
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
+// Add response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Suppress console errors for auth checks and watchlist requests during refresh
+      const isAuthCheck = originalRequest.url?.includes('/api/auth/me');
+      const isWatchlistCheck = originalRequest.url?.includes('/api/user/watchlist/');
+
+      if (!isAuthCheck && !isWatchlistCheck) {
+        console.error('401 Unauthorized:', originalRequest.url);
+      }
+      if (isRefreshing) {
+        // Another request is already refreshing, queue this one
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => api(originalRequest))
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Try to refresh the token
+        await api.post('/api/auth/refresh');
+
+        // Token refreshed successfully, process queue and retry original request
+        processQueue();
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, clear queue and reject
+        processQueue(refreshError);
+
+        // Token refresh failed - user needs to log in again
+        // Clear user state if needed
+        window.dispatchEvent(new CustomEvent('auth:token-expired'));
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const seriesApi = {
   /**
    * Fetch series by URL
@@ -60,6 +130,41 @@ export const seriesApi = {
   },
 
   /**
+   * Search for multiple series results for user selection
+   */
+  async searchMultiple(title: string, mediaType: 'ANIME' | 'MANGA' = 'ANIME', limit = 10): Promise<Array<{
+    id: string;
+    title: string;
+    description: string;
+    titleImage: string | null;
+    mediaType: 'ANIME' | 'MANGA';
+    anilistId: number;
+    format?: string;
+    episodes?: number;
+    chapters?: number;
+    season?: string;
+    year?: number;
+  }>> {
+    const { data } = await api.post('/api/series/search-many', {
+      title,
+      mediaType,
+      limit,
+    });
+    return data;
+  },
+
+  /**
+   * Fetch series by AniList ID
+   */
+  async fetchByAniListId(anilistId: number, mediaType: 'ANIME' | 'MANGA' = 'ANIME'): Promise<Series> {
+    const { data } = await api.post<Series>('/api/series/fetch-by-anilist-id', {
+      anilistId,
+      mediaType,
+    });
+    return data;
+  },
+
+  /**
    * Trace relationship graph
    */
   async traceRelationships(
@@ -81,40 +186,71 @@ export const seriesApi = {
     maxDepth = 2,
     onProgress: (progress: any) => void
   ): Promise<SeriesRelationship> {
-    return new Promise((resolve, reject) => {
-      const eventSource = new EventSource(
-        `${API_BASE_URL}/api/series/${seriesId}/trace-stream?maxDepth=${maxDepth}`
-      );
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (data.error) {
-            eventSource.close();
-            reject(new Error(data.error));
-            return;
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/series/${seriesId}/trace-stream?maxDepth=${maxDepth}`,
+          {
+            credentials: 'include', // Send cookies with the request
+            headers: {
+              'Accept': 'text/event-stream',
+            },
           }
+        );
 
-          if (data.result) {
-            // Final result received
-            eventSource.close();
-            resolve(data.result);
-            return;
-          }
-
-          // Progress update
-          onProgress(data);
-        } catch (error) {
-          eventSource.close();
-          reject(error);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      };
 
-      eventSource.onerror = (error) => {
-        eventSource.close();
-        reject(new Error('Stream connection error'));
-      };
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.error) {
+                  reader.cancel();
+                  reject(new Error(data.error));
+                  return;
+                }
+
+                if (data.result) {
+                  // Final result received
+                  reader.cancel();
+                  resolve(data.result);
+                  return;
+                }
+
+                // Progress update
+                onProgress(data);
+              } catch (error) {
+                console.error('Failed to parse SSE data:', error);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        reject(error);
+      }
     });
   },
 
@@ -137,6 +273,14 @@ export const seriesApi = {
    */
   async clearDatabase(): Promise<void> {
     await api.delete('/api/series/clear');
+  },
+
+  /**
+   * Get all unique streaming/reading platforms
+   */
+  async getAllServices(): Promise<string[]> {
+    const { data } = await api.get('/api/series/services');
+    return data;
   },
 };
 
@@ -324,6 +468,229 @@ export const userApi = {
 
   async getAvailableServices(): Promise<string[]> {
     const { data } = await api.get('/api/user/preferences/available-services');
+    return data;
+  },
+
+  // ==================== WATCHLIST ====================
+
+  async addToWatchlist(seriesId: string, status: string = 'plan_to_watch'): Promise<any> {
+    const { data } = await api.post('/api/user/watchlist', { seriesId, status });
+    return data;
+  },
+
+  async removeFromWatchlist(seriesId: string): Promise<void> {
+    await api.delete(`/api/user/watchlist/${seriesId}`);
+  },
+
+  async getWatchlist(): Promise<any[]> {
+    const { data } = await api.get('/api/user/watchlist');
+    return data;
+  },
+
+  async getWatchlistStatus(seriesId: string): Promise<{ status: string; addedAt: string } | null> {
+    try {
+      const { data } = await api.get(`/api/user/watchlist/${seriesId}`);
+      return data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async getWatchlistStatusBatch(seriesIds: string[]): Promise<Array<{ seriesId: string; status: string | null }>> {
+    try {
+      const { data } = await api.post('/api/user/watchlist/batch', { seriesIds });
+      return data;
+    } catch (error: any) {
+      console.error('Failed to fetch batch watchlist status:', error);
+      return [];
+    }
+  },
+
+  async getRatedSeries(): Promise<any[]> {
+    const { data } = await api.get('/api/user/rated');
+    return data;
+  },
+
+  async getNotedSeries(): Promise<any[]> {
+    const { data } = await api.get('/api/user/noted');
+    return data;
+  },
+};
+
+export const tagApi = {
+  /**
+   * Search for tags by name
+   */
+  async searchTags(query: string, limit: number = 20): Promise<Array<{ tag: string; count: number }>> {
+    const { data } = await api.get('/api/tags/search', {
+      params: { q: query, limit },
+    });
+    return data;
+  },
+
+  /**
+   * Get all tags
+   */
+  async getAllTags(): Promise<Array<{ tag: string; count: number }>> {
+    const { data } = await api.get('/api/tags');
+    return data;
+  },
+
+  /**
+   * Get top-rated series for a tag
+   */
+  async getTopSeriesForTag(
+    tagValue: string,
+    mediaType: 'ANIME' | 'MANGA' | 'all' = 'all',
+    limit: number = 20
+  ): Promise<any[]> {
+    const { data } = await api.get(`/api/tags/${encodeURIComponent(tagValue)}/series`, {
+      params: { mediaType, limit },
+    });
+    return data;
+  },
+
+  /**
+   * Get series count for a tag
+   */
+  async getSeriesCountForTag(tagValue: string): Promise<{ tag: string; count: number }> {
+    const { data } = await api.get(`/api/tags/${encodeURIComponent(tagValue)}/count`);
+    return data;
+  },
+};
+
+export const recommendationApi = {
+  /**
+   * Get personalized recommendations for a series
+   * Requires authentication
+   */
+  async getPersonalizedRecommendations(
+    seriesId: string,
+    maxDepth: number = 2
+  ): Promise<SeriesRelationship> {
+    const { data } = await api.post<SeriesRelationship>(
+      '/api/recommendations/personalized',
+      { seriesId, maxDepth }
+    );
+    return data;
+  },
+
+  /**
+   * Get recommendations based on a tag/genre with SSE progress updates
+   * Optionally personalized if user is authenticated
+   */
+  async getRecommendationsFromTagWithProgress(
+    tagValue: string,
+    mediaType: 'ANIME' | 'MANGA' | 'all' = 'all',
+    maxDepth?: number,
+    topSeriesCount?: number,
+    personalized: boolean = false,
+    onProgress: (step: string, message: string, data?: any) => void
+  ): Promise<SeriesRelationship> {
+    return new Promise((resolve, reject) => {
+      // Build request body, only including optional params if provided (let backend use defaults)
+      const requestBody: any = { tagValue, mediaType, personalized };
+      if (maxDepth !== undefined) requestBody.maxDepth = maxDepth;
+      if (topSeriesCount !== undefined) requestBody.topSeriesCount = topSeriesCount;
+
+      // Send POST request with streaming response
+      fetch(`${API_BASE_URL}/api/recommendations/from-tag-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : '',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const error = await response.json();
+            reject(new Error(error.error || 'Failed to get recommendations'));
+            return;
+          }
+
+          // Read the SSE stream
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+
+          if (!reader) {
+            reject(new Error('No response body'));
+            return;
+          }
+
+          let buffer = '';
+
+          const readStream = async () => {
+            try {
+              const { done, value } = await reader.read();
+
+              if (done) {
+                return;
+              }
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+
+                  if (data === '[DONE]') {
+                    return;
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data);
+
+                    if (parsed.error) {
+                      reject(new Error(parsed.message || parsed.details || 'Unknown error'));
+                      return;
+                    }
+
+                    if (parsed.result) {
+                      resolve(parsed.result);
+                      return;
+                    }
+
+                    onProgress(parsed.step, parsed.message, parsed);
+                  } catch (e) {
+                    console.error('Failed to parse SSE data:', data, e);
+                  }
+                }
+              }
+
+              readStream();
+            } catch (error) {
+              reject(error);
+            }
+          };
+
+          readStream();
+        })
+        .catch(reject);
+    });
+  },
+
+  /**
+   * Get recommendations based on a tag/genre
+   * Optionally personalized if user is authenticated
+   */
+  async getRecommendationsFromTag(
+    tagValue: string,
+    mediaType: 'ANIME' | 'MANGA' | 'all' = 'all',
+    maxDepth: number = 2,
+    topSeriesCount: number = 5,
+    personalized: boolean = false
+  ): Promise<SeriesRelationship> {
+    const { data } = await api.post<SeriesRelationship>(
+      '/api/recommendations/from-tag',
+      { tagValue, mediaType, maxDepth, topSeriesCount, personalized }
+    );
     return data;
   },
 };

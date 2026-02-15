@@ -1,12 +1,34 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useDiscoveryStore } from '../../store/discoveryStore';
-import { seriesApi } from '../../lib/api';
+import { seriesApi, recommendationApi, userApi } from '../../lib/api';
+import { useUserStore } from '../../store/userStore';
 import { TreeView } from '../../components/views/TreeView';
 import { TableView } from '../../components/views/TableView';
 import { LoadingOverlay } from '../../components/LoadingOverlay';
+import { SeriesSelectionModal } from '../../components/SeriesSelectionModal';
 
 export function DiscoveryPage() {
+  const location = useLocation();
+  const processedLocationKey = useRef<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'series' | 'tag'>('series');
   const [url, setUrl] = useState('');
+  const [seriesOptions, setSeriesOptions] = useState<Array<{
+    id: string;
+    title: string;
+    description: string;
+    titleImage: string | null;
+    mediaType: 'ANIME' | 'MANGA';
+    anilistId: number;
+    format?: string;
+    episodes?: number;
+    chapters?: number;
+    season?: string;
+    year?: number;
+  }>>([]);
+  const [showSelectionModal, setShowSelectionModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [userServices, setUserServices] = useState<string[]>([]);
   const [cacheStats, setCacheStats] = useState<{
     totalSeries: number;
     totalTags: number;
@@ -14,13 +36,14 @@ export function DiscoveryPage() {
     byProvider: Array<{ provider: string; count: number }>;
     byMediaType: Array<{ mediaType: string; count: number }>;
   } | null>(null);
+  const { user, preferPersonalized } = useUserStore();
   const {
-    rootSeries,
     relationshipGraph,
     mediaType,
     resultsMediaFilter,
     isLoading,
     loadingProgress,
+    error,
     viewMode,
     requiredTags,
     excludedTags,
@@ -147,14 +170,34 @@ export function DiscoveryPage() {
           .join(' ');
       }
 
-      // Step 1: Search AniList
+      // Step 1: Search AniList for multiple results
       document.title = '🔍 Searching... - Tanuki Temaki';
       setLoadingProgress({
         step: 'searching',
         message: `Searching for "${searchQuery}" on AniList...`,
       });
 
-      const series = await seriesApi.searchByTitle(searchQuery, mediaType);
+      const results = await seriesApi.searchMultiple(searchQuery, mediaType, 10);
+
+      // If multiple results, show selection modal
+      if (results.length > 1) {
+        setSeriesOptions(results);
+        setSearchQuery(searchQuery);
+        setShowSelectionModal(true);
+        setLoading(false);
+        setLoadingProgress(null);
+        document.title = originalTitle;
+        return;
+      }
+
+      // If only one result, proceed directly
+      if (results.length === 0) {
+        throw new Error(`No ${mediaType.toLowerCase()} found with title: ${searchQuery}`);
+      }
+
+      // Use the single result
+      const selectedResult = results[0];
+      const series = await seriesApi.searchByTitle(selectedResult.title, mediaType);
       setRootSeries(series);
 
       // Step 2: Cache series data
@@ -167,12 +210,12 @@ export function DiscoveryPage() {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 3: Trace relationships with streaming progress
-      const graph = await seriesApi.traceRelationshipsStream(
+      const baseGraph = await seriesApi.traceRelationshipsStream(
         series.id,
         2,
         (progress) => {
           // Map backend progress to frontend format
-          let step: 'searching' | 'caching' | 'tracing' | 'complete' = 'tracing';
+          let step: 'searching' | 'caching' | 'tracing' | 'complete' | 'rate_limited' = 'tracing';
           let message = progress.message;
 
           if (progress.step === 'fetching_root') {
@@ -203,7 +246,18 @@ export function DiscoveryPage() {
         }
       );
 
-      setRelationshipGraph(graph);
+      // Step 4: Apply personalization if enabled and user is logged in
+      let finalGraph = baseGraph;
+      if (preferPersonalized && user) {
+        setLoadingProgress({
+          step: 'tracing',
+          message: 'Personalizing recommendations...',
+        });
+        document.title = '✨ Personalizing... - Tanuki Temaki';
+        finalGraph = await recommendationApi.getPersonalizedRecommendations(series.id, 2);
+      }
+
+      setRelationshipGraph(finalGraph);
 
       // Show completion briefly, then restore original title
       document.title = '✅ Complete - Tanuki Temaki';
@@ -226,7 +280,101 @@ export function DiscoveryPage() {
   };
 
   const handleDiscover = async () => {
-    await performDiscovery(url.trim());
+    if (searchMode === 'tag') {
+      await handleTagDiscovery();
+    } else {
+      await performDiscovery(url.trim());
+    }
+  };
+
+  const handleTagDiscovery = async () => {
+    const tagValue = url.trim();
+    if (!tagValue) return;
+
+    // Save original title and update with loading indicator
+    const originalTitle = document.title;
+    document.title = '🔄 Loading... - Tanuki Temaki';
+
+    // Reset view state for new discovery
+    useDiscoveryStore.setState({ treeViewport: null });
+    setSelectedSeries(null);
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Generate recommendations from tag with SSE progress updates
+      const mediaTypeValue = resultsMediaFilter === 'BOTH' ? 'all' : mediaType;
+
+      const graph = await recommendationApi.getRecommendationsFromTagWithProgress(
+        tagValue,
+        mediaTypeValue,
+        undefined, // Use backend default for maxDepth
+        undefined, // Use backend default for topSeriesCount
+        preferPersonalized && !!user,
+        (step, message, data) => {
+          // Update progress UI based on SSE events
+          setLoadingProgress({ step: step as any, message });
+
+          // Update document title based on step
+          if (step === 'searching') {
+            document.title = `🔍 Searching... - Tanuki Temaki`;
+          } else if (step === 'fetching') {
+            document.title = `📊 Finding... - Tanuki Temaki`;
+          } else if (step === 'tracing') {
+            const depthInfo = data?.maxDepth ? ` D${data.maxDepth}` : '';
+            document.title = `🔄 Tracing [${data?.current || 0}/${data?.total || 0}]${depthInfo} - Tanuki Temaki`;
+          } else if (step === 'merging') {
+            document.title = `🔀 Merging... - Tanuki Temaki`;
+          } else if (step === 'personalizing') {
+            document.title = `✨ Personalizing... - Tanuki Temaki`;
+          } else if (step === 'complete') {
+            document.title = `✅ Complete - Tanuki Temaki`;
+          }
+        }
+      );
+
+      setRelationshipGraph(graph);
+      setRootSeries(null); // No specific root series for tag search
+
+      // Show completion briefly
+      setLoadingProgress({
+        step: 'complete',
+        message: `✅ Found recommendations for "${tagValue}"!`,
+      });
+      document.title = '✅ Complete - Tanuki Temaki';
+      setTimeout(() => {
+        setLoadingProgress(null);
+        document.title = originalTitle;
+      }, 2000);
+    } catch (error: any) {
+      document.title = '❌ Error - Tanuki Temaki';
+
+      // Check if it's a 404 (no series found for tag) with suggestions
+      if (error.response?.status === 404 && error.response?.data?.suggestions) {
+        const suggestions = error.response.data.suggestions.slice(0, 5).join(', ');
+        setError(
+          `No series found with the tag "${tagValue}". Try one of these popular tags instead: ${suggestions}`
+        );
+        // Don't log 404s to console - they're expected when a tag doesn't exist
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+        console.warn('Tag discovery error:', error.response.data.message);
+      } else {
+        setError(error instanceof Error ? error.message : 'Failed to generate recommendations from tag');
+        console.error('Tag discovery error:', error);
+      }
+
+      setLoadingProgress(null);
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExplore = async (seriesUrl: string) => {
@@ -237,6 +385,118 @@ export function DiscoveryPage() {
     // Update search box and trigger discovery
     setUrl(series.title);
     await performDiscovery(series.title);
+  };
+
+  const handleSeriesSelect = async (anilistId: number, title: string) => {
+    // Close modal
+    setShowSelectionModal(false);
+    setSeriesOptions([]);
+
+    // Update search box
+    setUrl(title);
+
+    // Reset view state for new discovery
+    useDiscoveryStore.setState({ treeViewport: null });
+    setSelectedSeries(null);
+
+    // Scroll to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Save original title and update with loading indicator
+    const originalTitle = document.title;
+    document.title = '🔄 Loading... - Tanuki Temaki';
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch the specific series by AniList ID
+      document.title = '🔍 Fetching... - Tanuki Temaki';
+      setLoadingProgress({
+        step: 'searching',
+        message: `Fetching "${title}" from AniList...`,
+      });
+
+      const series = await seriesApi.fetchByAniListId(anilistId, mediaType);
+      setRootSeries(series);
+
+      // Cache series data
+      setLoadingProgress({
+        step: 'caching',
+        message: `Found "${series.title}", caching metadata...`,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Trace relationships
+      const baseGraph = await seriesApi.traceRelationshipsStream(
+        series.id,
+        2,
+        (progress) => {
+          let step: 'searching' | 'caching' | 'tracing' | 'complete' | 'rate_limited' = 'tracing';
+          let message = progress.message;
+
+          if (progress.step === 'fetching_root') {
+            step = 'caching';
+            document.title = '💾 Caching... - Tanuki Temaki';
+          } else if (progress.step === 'fetching_relations' || progress.step === 'processing_series') {
+            step = 'tracing';
+            if (progress.current !== undefined && progress.total !== undefined) {
+              document.title = `🔄 Tracing (${progress.current}/${progress.total}) - Tanuki Temaki`;
+            } else {
+              document.title = '🔄 Tracing... - Tanuki Temaki';
+            }
+          } else if (progress.step === 'rate_limited') {
+            step = 'rate_limited';
+            document.title = '⏳ Rate Limited - Tanuki Temaki';
+          } else if (progress.step === 'complete') {
+            step = 'complete';
+            document.title = '✅ Complete - Tanuki Temaki';
+          }
+
+          setLoadingProgress({
+            step,
+            message,
+            current: progress.current,
+            total: progress.total,
+          });
+        }
+      );
+
+      // Apply personalization if enabled and user is logged in
+      let finalGraph = baseGraph;
+      if (preferPersonalized && user) {
+        setLoadingProgress({
+          step: 'tracing',
+          message: 'Personalizing recommendations...',
+        });
+        document.title = '✨ Personalizing... - Tanuki Temaki';
+        finalGraph = await recommendationApi.getPersonalizedRecommendations(series.id, 2);
+      }
+
+      setRelationshipGraph(finalGraph);
+
+      document.title = '✅ Complete - Tanuki Temaki';
+      setTimeout(() => {
+        setLoadingProgress(null);
+        document.title = originalTitle;
+      }, 2000);
+    } catch (error) {
+      document.title = '❌ Error - Tanuki Temaki';
+      setError(error instanceof Error ? error.message : 'Failed to fetch series');
+      console.error('Discovery error:', error);
+      setLoadingProgress(null);
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectionCancel = () => {
+    setShowSelectionModal(false);
+    setSeriesOptions([]);
   };
 
   const handleSeriesClick = (seriesId: string) => {
@@ -274,6 +534,24 @@ export function DiscoveryPage() {
     }
   };
 
+  // Load user's service preferences
+  useEffect(() => {
+    const loadUserServices = async () => {
+      if (user) {
+        try {
+          const services = await userApi.getAvailableServices();
+          setUserServices(services);
+        } catch (error) {
+          console.error('Failed to load user services:', error);
+        }
+      } else {
+        setUserServices([]);
+      }
+    };
+
+    loadUserServices();
+  }, [user]);
+
   // Fetch cache stats on mount and after discoveries
   useEffect(() => {
     fetchCacheStats();
@@ -285,22 +563,73 @@ export function DiscoveryPage() {
     }
   }, [relationshipGraph]);
 
+  // Handle navigation from other pages (e.g., explore from ratings page)
+  useEffect(() => {
+    const state = location.state as { exploreTitle?: string; exploreMediaType?: 'ANIME' | 'MANGA' } | null;
+
+    // Only process if we have state and haven't processed this navigation yet
+    if (state?.exploreTitle && processedLocationKey.current !== location.key) {
+      processedLocationKey.current = location.key;
+
+      const title = state.exploreTitle;
+      const mediaTypeToSet = state.exploreMediaType;
+
+      // Clear the state to prevent it from persisting
+      window.history.replaceState({}, document.title);
+
+      // Set the media type if provided
+      if (mediaTypeToSet) {
+        setMediaType(mediaTypeToSet);
+      }
+      // Set the search box
+      setUrl(title);
+      // Trigger discovery
+      performDiscovery(title);
+    }
+  }, [location]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Loading Overlay */}
       {isLoading && loadingProgress && <LoadingOverlay progress={loadingProgress} />}
 
-      {/* Header with Search */}
+      {/* Series Selection Modal */}
+      <SeriesSelectionModal
+        isOpen={showSelectionModal}
+        searchQuery={searchQuery}
+        options={seriesOptions}
+        onSelect={handleSeriesSelect}
+        onCancel={handleSelectionCancel}
+      />
+
+      {/* Search Bar */}
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto px-4 py-3 max-w-[1920px]">
-          <div className="flex items-center gap-4">
-            {/* Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="text-2xl">🦝</div>
-              <div>
-                <h1 className="text-lg font-bold">Tanuki Temaki</h1>
-                <p className="text-xs text-zinc-400">{mediaType === 'MANGA' ? 'Manga' : 'Anime'} Discovery</p>
-              </div>
+        <div className="mx-auto px-4 py-3 max-w-[1920px] pl-20">
+          <div className="flex items-center gap-4 justify-center">
+            {/* Search Mode Selector */}
+            <div className="flex gap-1 bg-zinc-800 rounded-lg p-1">
+              <button
+                onClick={() => setSearchMode('series')}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  searchMode === 'series'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+                disabled={isLoading}
+              >
+                🎬 Series
+              </button>
+              <button
+                onClick={() => setSearchMode('tag')}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  searchMode === 'tag'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+                disabled={isLoading}
+              >
+                🏷️ Tag
+              </button>
             </div>
 
             {/* Media Type Selector */}
@@ -336,7 +665,11 @@ export function DiscoveryPage() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
-                placeholder={`Search ${mediaType.toLowerCase()} by title${mediaType === 'ANIME' ? ' or Crunchyroll URL' : ''}...`}
+                placeholder={
+                  searchMode === 'tag'
+                    ? 'Search by tag/genre (e.g. action, romance, comedy)...'
+                    : `Search ${mediaType.toLowerCase()} by title${mediaType === 'ANIME' ? ' or Crunchyroll URL' : ''}...`
+                }
                 className="flex-1 px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 disabled={isLoading}
               />
@@ -352,9 +685,31 @@ export function DiscoveryPage() {
         </div>
       </header>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mx-auto px-4 py-4 max-w-[1920px]">
+          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <h3 className="text-red-400 font-semibold mb-1">Search Error</h3>
+                <p className="text-red-200 text-sm">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-300 transition-colors"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Results */}
       <main className="flex-1 px-4 py-6 max-w-[1920px] mx-auto w-full">
-        {rootSeries && relationshipGraph && (
+        {relationshipGraph && (
         <div className="flex gap-6">
           {/* Sidebar */}
           <div className="w-80 flex-shrink-0 space-y-6">
@@ -541,7 +896,38 @@ export function DiscoveryPage() {
             {/* Service filters */}
             {(animeServices.length > 0 || mangaServices.length > 0) && (
               <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-                <h3 className="text-lg font-bold mb-3">Filter by Service</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold">Filter by Service</h3>
+                  {user && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const userServices = await userApi.getAvailableServices();
+                          // Deselect all services NOT in user's preferences
+                          const allServices = [...animeServices, ...mangaServices];
+                          allServices.forEach(service => {
+                            const isInPreferences = userServices.includes(service);
+                            const isCurrentlyDeselected = deselectedServices.has(service);
+                            // If service is not in preferences and not already deselected, deselect it
+                            if (!isInPreferences && !isCurrentlyDeselected) {
+                              toggleService(service);
+                            }
+                            // If service is in preferences and currently deselected, re-select it
+                            else if (isInPreferences && isCurrentlyDeselected) {
+                              toggleService(service);
+                            }
+                          });
+                        } catch (error) {
+                          console.error('Failed to load service preferences:', error);
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      title="Apply your saved service preferences"
+                    >
+                      Apply My Services
+                    </button>
+                  )}
+                </div>
 
                 {/* Anime Streaming Services */}
                 {animeServices.length > 0 && (
@@ -724,21 +1110,6 @@ export function DiscoveryPage() {
 
           {/* Main Content */}
           <div className="flex-1 min-w-0 space-y-6">
-            {/* Series Info Card — only shown in table view; tree view shows the root as a node */}
-            {viewMode === 'table' && (
-              <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                <h2 className="text-2xl font-bold mb-2">{rootSeries.title}</h2>
-                <p className="text-zinc-400 mb-4">{rootSeries.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {rootSeries.genres.slice(0, 5).map((genre) => (
-                    <span key={genre} className="px-3 py-1 bg-zinc-800 rounded-full text-sm">
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Visualization */}
             {viewMode === 'tree' ? (
               <TreeView
@@ -749,6 +1120,7 @@ export function DiscoveryPage() {
                 rootTags={rootTags}
                 deselectedServices={deselectedServices}
                 resultsMediaFilter={resultsMediaFilter}
+                userServices={userServices}
                 onSeriesClick={handleSeriesClick}
               />
             ) : (
@@ -761,6 +1133,7 @@ export function DiscoveryPage() {
                 rootTags={rootTags}
                 deselectedServices={deselectedServices}
                 resultsMediaFilter={resultsMediaFilter}
+                userServices={userServices}
                 selectedSeriesId={selectedSeriesId}
                 onExplore={handleExplore}
               />

@@ -197,6 +197,16 @@ export class RelationshipTracer {
     const isStale = !lastFetched ||
       (Date.now() - new Date(lastFetched as string).getTime()) > SEVEN_DAYS_MS;
 
+    logger.info('Checking for cached relations', {
+      seriesId: current.id,
+      title: current.title,
+      hasAnilistRelations: !!metadata?.anilistRelations,
+      relationsCount: metadata?.anilistRelations?.length ?? 0,
+      hasLastFetched: !!lastFetched,
+      lastFetched: lastFetched,
+      isStale,
+    });
+
     if (metadata?.anilistRelations && Array.isArray(metadata.anilistRelations) && !isStale) {
       logger.info('Using cached AniList relations', {
         seriesId: current.id,
