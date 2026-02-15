@@ -449,18 +449,20 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                     )}
 
                     {/* Tags with Voting */}
-                    {series.tags.length > 0 && (
+                    {series.tags.filter(tag => tag.source !== 'genre').length > 0 && (
                       <div>
                         <div className="text-xs text-zinc-500 mb-1">Tags:</div>
                         <div className="flex flex-wrap gap-2">
-                          {series.tags.map((tag) => (
-                            <TagVotingWidget
-                              key={tag.id}
-                              seriesId={series.id}
-                              tagValue={tag.value}
-                              initialVote={userTagVotes[tag.value] ?? null}
-                            />
-                          ))}
+                          {series.tags
+                            .filter(tag => tag.source !== 'genre')
+                            .map((tag) => (
+                              <TagVotingWidget
+                                key={tag.id}
+                                seriesId={series.id}
+                                tagValue={tag.value}
+                                initialVote={userTagVotes[tag.value] ?? null}
+                              />
+                            ))}
                         </div>
                       </div>
                     )}
