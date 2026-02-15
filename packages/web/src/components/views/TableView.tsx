@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Series, SeriesRelationship } from '@tanuki-temaki/shared';
 import { RatingWidget } from '../user/RatingWidget';
 import { NotesWidget } from '../user/NotesWidget';
@@ -45,28 +45,9 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
 
   const filteredAndSortedData = useMemo(
     () => {
-      const normalize = (t: string) => {
-        let normalized = t.toLowerCase();
-
-        // Remove common season/part indicators
-        normalized = normalized
-          .replace(/season\s*\d+/gi, '')
-          .replace(/part\s*\d+/gi, '')
-          .replace(/cour\s*\d+/gi, '')
-          .replace(/\d+(st|nd|rd|th)\s*season/gi, '')
-          .replace(/-[^-]*-$/g, '') // Remove trailing subtitle like "-Arise from the Shadow-"
-          .replace(/\s+/g, ''); // Remove spaces
-
-        // Remove all non-alphanumeric
-        return normalized.replace(/[^a-z0-9]/g, '');
-      };
-
       // Check if this is a tag-based search with multiple seeds
       const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
       const seedIdsSet = new Set(relationship.seedSeriesIds || []);
-
-      const rootNode = relationship.nodes.find(n => n.series.id === relationship.rootId);
-      const rootTitleNorm = normalize(rootNode?.series.title ?? '');
 
       // Separate seed/root series from related series
       let seedSeries: Series[] = [];
@@ -79,11 +60,8 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
               return false;
             }
           } else {
-            // For single-root searches, check if this is the root series
-            const isRootById = n.series.id === relationship.rootId;
-            const isRootByTitle = normalize(n.series.title) === rootTitleNorm;
-
-            if (isRootById || isRootByTitle) {
+            // For single-root searches, check if this is the root series by ID only
+            if (n.series.id === relationship.rootId) {
               seedSeries = [n.series];
               return false;
             }
@@ -256,7 +234,7 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
 
       {/* Series Cards */}
       <div className="space-y-4">
-        {filteredAndSortedData.map((series, index) => {
+        {filteredAndSortedData.map((series) => {
           // Check if this is a seed/root series
           const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
           const isSeedSeries = isTagBasedSearch

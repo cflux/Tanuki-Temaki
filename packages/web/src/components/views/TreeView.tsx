@@ -40,27 +40,32 @@ const COL_GAP = 40; // horizontal gap between columns in 2-col leaf groups (wide
 // ---- Node components ----
 
 const TagLabelNode = memo(function TagLabelNode({ data }: { data: any }) {
-  const zoom = useStore((state) => state.transform[2]);
   const [isHovered, setIsHovered] = useState(false);
+  const [hoverZoom, setHoverZoom] = useState(1);
   const [nodeWrapper, setNodeWrapper] = useState<HTMLElement | null>(null);
+  const getZoom = useStore((state) => () => state.transform[2]);
 
   // Calculate scale to make tag appear larger on hover, compensating for zoom
-  const targetScale = isHovered ? 1.5 / zoom : 1;
+  const targetScale = isHovered ? 1.5 / hoverZoom : 1;
 
   return (
     <>
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <div
-        className="px-5 py-2.5 rounded-lg font-bold text-base text-white shadow-lg select-none whitespace-nowrap border-2 border-white/20 cursor-pointer transition-all"
+        className="px-5 py-2.5 rounded-lg font-bold text-base text-white shadow-lg select-none whitespace-nowrap border-2 border-white/20 cursor-pointer"
         style={{
           backgroundColor: data.color,
           minWidth: 100,
           textAlign: 'center',
           transform: `scale(${targetScale})`,
+          transformOrigin: 'center',
           position: 'relative',
           zIndex: isHovered ? 9999 : 1,
+          willChange: isHovered ? 'transform' : 'auto',
         }}
         onMouseEnter={(e) => {
+          const currentZoom = getZoom();
+          setHoverZoom(currentZoom);
           setIsHovered(true);
           const wrapper = e.currentTarget.closest('.react-flow__node') as HTMLElement;
           setNodeWrapper(wrapper);
@@ -85,9 +90,10 @@ const TagLabelNode = memo(function TagLabelNode({ data }: { data: any }) {
 
 const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
   const { series, isRoot, newTags, color, userServices, onSeriesClick } = data;
-  const zoom = useStore((state) => state.transform[2]);
   const [isHovered, setIsHovered] = useState(false);
+  const [hoverZoom, setHoverZoom] = useState(1); // Store zoom level when hovering starts
   const [nodeWrapper, setNodeWrapper] = useState<HTMLElement | null>(null);
+  const getZoom = useStore((state) => () => state.transform[2]); // Get zoom reader function, not the value
 
   if (!series) return null;
 
@@ -95,9 +101,10 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
     ? (series.tags ?? []).slice(0, 4)
     : (newTags?.length > 0 ? newTags : series.tags ?? []);
 
-  // Calculate scale to make card appear at a fixed size (500px wide) regardless of zoom
+  // Calculate scale to show card at 500px width when hovered
+  // Using stored zoom from when hover started (not subscribed to live zoom changes)
   const targetWidth = 500;
-  const targetScale = isHovered ? targetWidth / CARD_W / zoom : 1;
+  const targetScale = isHovered ? targetWidth / CARD_W / hoverZoom : 1;
 
   // Check if series is available on user's preferred services
   const streamingLinks = (series.metadata as any)?.streamingLinks || {};
@@ -112,7 +119,7 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
         className={`bg-zinc-800 border-2 rounded-lg shadow-lg select-none flex overflow-hidden ${
           isRoot
             ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-zinc-900'
-            : 'cursor-pointer hover:ring-2 hover:ring-blue-500/50 transition-all'
+            : 'cursor-pointer hover:ring-2 hover:ring-blue-500/50'
         } ${!isOnUserService ? 'opacity-40' : ''}`}
         title={!isOnUserService ? 'Not available on your preferred services' : ''}
         style={{
@@ -120,10 +127,15 @@ const SeriesCardNode = memo(function SeriesCardNode({ data }: { data: any }) {
           width: CARD_W,
           minHeight: CARD_H,
           transform: `scale(${targetScale})`,
+          transformOrigin: 'center',
           position: 'relative',
           zIndex: isHovered ? 9999 : 1,
+          willChange: isHovered ? 'transform' : 'auto',
         }}
         onMouseEnter={(e) => {
+          // Read current zoom level only when hovering (no subscription = no re-renders during zoom)
+          const currentZoom = getZoom();
+          setHoverZoom(currentZoom);
           setIsHovered(true);
           // Store reference to parent React Flow node wrapper
           const wrapper = e.currentTarget.closest('.react-flow__node') as HTMLElement;
@@ -691,37 +703,37 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
     // Check if this is a tag-based search with multiple seed series
     const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
 
-    console.log('[TreeView] Rendering tree view', {
-      isTagBasedSearch,
-      seedSeriesIds: relationship.seedSeriesIds,
-      totalNodes: relationship.nodes.length,
-      rootId: relationship.rootId,
-    });
+    // console.log('[TreeView] Rendering tree view', {
+    //   isTagBasedSearch,
+    //   seedSeriesIds: relationship.seedSeriesIds,
+    //   totalNodes: relationship.nodes.length,
+    //   rootId: relationship.rootId,
+    // });
 
     const buildMultiRootTree = () => {
       if (!relationship.seedSeriesIds) {
-        console.log('[TreeView] No seedSeriesIds found');
+        // console.log('[TreeView] No seedSeriesIds found');
         return { nodes: [], edges: [] };
       }
 
-      console.log('[TreeView] Building multi-root tree with seeds:', relationship.seedSeriesIds);
+      // console.log('[TreeView] Building multi-root tree with seeds:', relationship.seedSeriesIds);
 
       // Get seed series nodes
       // seedSeriesIds now contains the actual database IDs after tracing
       const seedNodes = relationship.seedSeriesIds
         .map(id => {
           const found = relationship.nodes.find(n => n.series.id === id);
-          if (!found) {
-            console.log('[TreeView] Could not find seed node with ID:', id);
-          }
+          // if (!found) {
+          //   console.log('[TreeView] Could not find seed node with ID:', id);
+          // }
           return found;
         })
         .filter((n): n is SeriesNodeType => n !== undefined);
 
-      console.log('[TreeView] Found seed nodes:', seedNodes.length);
+      // console.log('[TreeView] Found seed nodes:', seedNodes.length);
 
       if (seedNodes.length === 0) {
-        console.log('[TreeView] No seed nodes found!');
+        // console.log('[TreeView] No seed nodes found!');
         return { nodes: [], edges: [] };
       }
 
@@ -788,10 +800,10 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
           newTags: node.series.tags.map(t => t.value).filter(v => !allSeedTags.has(v)),
         }));
 
-      console.log('[TreeView] Child items after filtering:', {
-        total: childItems.length,
-        beforeFilters: relationship.nodes.length - seedNodes.length,
-      });
+      // console.log('[TreeView] Child items after filtering:', {
+      //   total: childItems.length,
+      //   beforeFilters: relationship.nodes.length - seedNodes.length,
+      // });
 
       // Build individual trees for each seed series
       const seedTrees: TagTree[] = seedNodes.map((seedNode, idx) => {
@@ -812,6 +824,16 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
       const childParentMap = new Map<string, Set<string>>(); // childId -> Set<seedId>
       const nodeTreeMap = new Map<string, TagTree>(); // nodeId -> TagTree (for lookup)
 
+      // Create edge lookup maps for O(1) access instead of O(n) iteration
+      const edgesFrom = new Map<string, string[]>(); // nodeId -> [childIds]
+      const edgesTo = new Map<string, string[]>(); // nodeId -> [parentIds]
+      relationship.edges.forEach(edge => {
+        if (!edgesFrom.has(edge.from)) edgesFrom.set(edge.from, []);
+        if (!edgesTo.has(edge.to)) edgesTo.set(edge.to, []);
+        edgesFrom.get(edge.from)!.push(edge.to);
+        edgesTo.get(edge.to)!.push(edge.from);
+      });
+
       // Helper: Find which seed(s) a node ultimately belongs to
       const findParentSeeds = (nodeId: string, visited = new Set<string>()): Set<string> => {
         if (visited.has(nodeId)) return new Set();
@@ -823,11 +845,10 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         }
 
         const seedParents = new Set<string>();
-        relationship.edges.forEach(edge => {
-          if (edge.to === nodeId) {
-            const parentSeeds = findParentSeeds(edge.from, visited);
-            parentSeeds.forEach(s => seedParents.add(s));
-          }
+        const parents = edgesTo.get(nodeId) || [];
+        parents.forEach(parentId => {
+          const parentSeeds = findParentSeeds(parentId, visited);
+          parentSeeds.forEach(s => seedParents.add(s));
         });
         return seedParents;
       };
@@ -877,13 +898,12 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
           children: [],
         };
 
-        // Find direct children of this node
-        relationship.edges.forEach(edge => {
-          if (edge.from === nodeId) {
-            const childTree = buildNodeTree(edge.to, parentColor, visited);
-            if (childTree) {
-              nodeTree.children.push(childTree);
-            }
+        // Find direct children of this node using edge lookup map
+        const children = edgesFrom.get(nodeId) || [];
+        children.forEach(childId => {
+          const childTree = buildNodeTree(childId, parentColor, visited);
+          if (childTree) {
+            nodeTree.children.push(childTree);
           }
         });
 
@@ -896,21 +916,20 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         const seedColor = seedTree.color;
         const visited = new Set<string>([seedId]);
 
-        // Find all direct children of this seed
-        relationship.edges.forEach(edge => {
-          if (edge.from === seedId) {
-            const childParents = childParentMap.get(edge.to);
-            // Add if this child belongs to this seed (may also belong to other seeds)
-            if (childParents && childParents.has(seedId)) {
-              const childTree = buildNodeTree(edge.to, seedColor, visited);
-              if (childTree) {
-                // If multi-parent child, clone the entire tree with unique IDs
-                if (childParents.size > 1) {
-                  const uniqueTree = cloneTreeWithUniqueIds(childTree, seedId);
-                  seedTree.children.push(uniqueTree);
-                } else {
-                  seedTree.children.push(childTree);
-                }
+        // Find all direct children of this seed using edge lookup map
+        const seedChildren = edgesFrom.get(seedId) || [];
+        seedChildren.forEach(childId => {
+          const childParents = childParentMap.get(childId);
+          // Add if this child belongs to this seed (may also belong to other seeds)
+          if (childParents && childParents.has(seedId)) {
+            const childTree = buildNodeTree(childId, seedColor, visited);
+            if (childTree) {
+              // If multi-parent child, clone the entire tree with unique IDs
+              if (childParents.size > 1) {
+                const uniqueTree = cloneTreeWithUniqueIds(childTree, seedId);
+                seedTree.children.push(uniqueTree);
+              } else {
+                seedTree.children.push(childTree);
               }
             }
           }
@@ -922,7 +941,7 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         };
         const totalDescendants = countDescendants(seedTree);
 
-        console.log(`[TreeView] Seed "${seedTree.series?.series.title}" has ${seedTree.children.length} direct children, ${totalDescendants} total descendants`);
+        // console.log(`[TreeView] Seed "${seedTree.series?.series.title}" has ${seedTree.children.length} direct children, ${totalDescendants} total descendants`);
       });
 
       // Debug: Count children by parent count
@@ -939,30 +958,30 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         return parents && parents.size > 1;
       });
 
-      console.log('[TreeView] Child assignment:', {
-        orphans: orphanItems.length,
-        singleParent: singleParentItems.length,
-        multiParent: multiParentItems.length,
-        total: childItems.length,
-      });
+      // console.log('[TreeView] Child assignment:', {
+      //   orphans: orphanItems.length,
+      //   singleParent: singleParentItems.length,
+      //   multiParent: multiParentItems.length,
+      //   total: childItems.length,
+      // });
 
       // Handle orphan items (children with no parent seeds)
       // Add them to a separate group
       const orphanChildren: TagTree[] = [];
       if (orphanItems.length > 0) {
-        console.log('[TreeView] Found orphan children:', orphanItems.map(i => i.node.series.title));
+        // console.log('[TreeView] Found orphan children:', orphanItems.map(i => i.node.series.title));
 
         // Debug: Check if these orphans have ANY edges at all
-        orphanItems.slice(0, 3).forEach(({ node }) => {
-          const incomingEdges = relationship.edges.filter(e => e.to === node.series.id);
-          const outgoingEdges = relationship.edges.filter(e => e.from === node.series.id);
-          console.log(`[TreeView] Orphan "${node.series.title}":`, {
-            id: node.series.id,
-            incomingEdges: incomingEdges.length,
-            outgoingEdges: outgoingEdges.length,
-            incomingFrom: incomingEdges.map(e => e.from),
-          });
-        });
+        // orphanItems.slice(0, 3).forEach(({ node }) => {
+        //   const incomingEdges = relationship.edges.filter(e => e.to === node.series.id);
+        //   const outgoingEdges = relationship.edges.filter(e => e.from === node.series.id);
+        //   console.log(`[TreeView] Orphan "${node.series.title}":`, {
+        //     id: node.series.id,
+        //     incomingEdges: incomingEdges.length,
+        //     outgoingEdges: outgoingEdges.length,
+        //     incomingFrom: incomingEdges.map(e => e.from),
+        //   });
+        // });
 
         orphanChildren.push({
           id: 'orphans',
@@ -1004,11 +1023,11 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         collectNodesEdges(child, positions, fNodes, fEdges, onSeriesClick, undefined, userServices);
       });
 
-      console.log('[TreeView] Multi-root tree built:', {
-        nodes: fNodes.length,
-        edges: fEdges.length,
-        virtualRootChildren: virtualRoot.children.length,
-      });
+      // console.log('[TreeView] Multi-root tree built:', {
+      //   nodes: fNodes.length,
+      //   edges: fEdges.length,
+      //   virtualRootChildren: virtualRoot.children.length,
+      // });
 
       return { nodes: fNodes, edges: fEdges };
     };
@@ -1188,15 +1207,11 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         maxZoom={1.5}
         nodesDraggable={false}
         nodesConnectable={false}
+        elevateNodesOnSelect={false}
         proOptions={{ hideAttribution: true }}
       >
         <Background color="#27272a" gap={16} />
         <Controls className="bg-zinc-800 border border-zinc-700" position="top-left" />
-        <MiniMap
-          className="bg-zinc-800 border border-zinc-700"
-          nodeColor={n => n.data?.color ?? '#6b7280'}
-          position="top-right"
-        />
       </ReactFlow>
     </div>
   );

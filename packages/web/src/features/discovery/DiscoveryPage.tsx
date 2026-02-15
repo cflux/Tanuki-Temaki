@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useDiscoveryStore } from '../../store/discoveryStore';
 import { seriesApi, recommendationApi, userApi } from '../../lib/api';
@@ -36,7 +36,7 @@ export function DiscoveryPage() {
     byProvider: Array<{ provider: string; count: number }>;
     byMediaType: Array<{ mediaType: string; count: number }>;
   } | null>(null);
-  const { user, preferPersonalized } = useUserStore();
+  const { user, preferPersonalized, resultsMediaFilter: savedResultsMediaFilter, setResultsMediaFilter: saveResultsMediaFilter } = useUserStore();
   const {
     relationshipGraph,
     mediaType,
@@ -377,7 +377,7 @@ export function DiscoveryPage() {
     }
   };
 
-  const handleExplore = async (seriesUrl: string) => {
+  const handleExplore = useCallback(async (seriesUrl: string) => {
     // Find the series in the relationship graph
     const series = relationshipGraph?.nodes.find(n => n.series.url === seriesUrl)?.series;
     if (!series) return;
@@ -385,7 +385,7 @@ export function DiscoveryPage() {
     // Update search box and trigger discovery
     setUrl(series.title);
     await performDiscovery(series.title);
-  };
+  }, [relationshipGraph]);
 
   const handleSeriesSelect = async (anilistId: number, title: string) => {
     // Close modal
@@ -499,10 +499,10 @@ export function DiscoveryPage() {
     setSeriesOptions([]);
   };
 
-  const handleSeriesClick = (seriesId: string) => {
+  const handleSeriesClick = useCallback((seriesId: string) => {
     setSelectedSeries(seriesId);
     setViewMode('table');
-  };
+  }, [setSelectedSeries, setViewMode]);
 
   const handleClearDatabase = async () => {
     if (!confirm('⚠️ Clear ALL cached data?\n\nThis will delete all series, tags, and relationships from the database. This cannot be undone!')) {
@@ -551,6 +551,16 @@ export function DiscoveryPage() {
 
     loadUserServices();
   }, [user]);
+
+  // Initialize resultsMediaFilter from saved preference on mount
+  useEffect(() => {
+    setResultsMediaFilter(savedResultsMediaFilter);
+  }, []); // Only run once on mount
+
+  // Save resultsMediaFilter preference when it changes
+  useEffect(() => {
+    saveResultsMediaFilter(resultsMediaFilter);
+  }, [resultsMediaFilter, saveResultsMediaFilter]);
 
   // Fetch cache stats on mount and after discoveries
   useEffect(() => {
@@ -681,6 +691,46 @@ export function DiscoveryPage() {
                 {isLoading ? 'Searching...' : 'Discover'}
               </button>
             </div>
+
+            {/* Results Filter - Icon only */}
+            <div className="flex gap-1 bg-zinc-800 rounded-lg p-1">
+              <button
+                onClick={() => setResultsMediaFilter('BOTH')}
+                className={`px-2 h-9 flex items-center justify-center gap-0.5 rounded text-base transition-colors whitespace-nowrap ${
+                  resultsMediaFilter === 'BOTH'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
+                }`}
+                disabled={isLoading}
+                title="Show both anime and manga in results"
+              >
+                <span>📺</span><span>📖</span>
+              </button>
+              <button
+                onClick={() => setResultsMediaFilter('ANIME')}
+                className={`w-9 h-9 flex items-center justify-center rounded text-base transition-colors ${
+                  resultsMediaFilter === 'ANIME'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
+                }`}
+                disabled={isLoading}
+                title="Show only anime in results"
+              >
+                📺
+              </button>
+              <button
+                onClick={() => setResultsMediaFilter('MANGA')}
+                className={`w-9 h-9 flex items-center justify-center rounded text-base transition-colors ${
+                  resultsMediaFilter === 'MANGA'
+                    ? 'bg-green-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
+                }`}
+                disabled={isLoading}
+                title="Show only manga in results"
+              >
+                📖
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -713,42 +763,6 @@ export function DiscoveryPage() {
         <div className="flex gap-6">
           {/* Sidebar */}
           <div className="w-80 flex-shrink-0 space-y-6">
-            {/* Media Type Filter */}
-            <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-              <h3 className="text-lg font-bold mb-3">Show in Results</h3>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setResultsMediaFilter('BOTH')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    resultsMediaFilter === 'BOTH'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  📺📖 Both Anime & Manga
-                </button>
-                <button
-                  onClick={() => setResultsMediaFilter('ANIME')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    resultsMediaFilter === 'ANIME'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  📺 Anime Only
-                </button>
-                <button
-                  onClick={() => setResultsMediaFilter('MANGA')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    resultsMediaFilter === 'MANGA'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  📖 Manga Only
-                </button>
-              </div>
-            </div>
 
             {/* View Mode Toggle */}
             <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
