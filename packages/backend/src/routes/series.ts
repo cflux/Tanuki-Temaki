@@ -505,7 +505,7 @@ router.get('/debug-anilist/:anilistId', async (req, res, next) => {
     }
 
     // Extract relations info
-    const relations = media.relations?.edges?.map(edge => ({
+    const relations = media.relations?.edges?.map((edge: any) => ({
       id: edge.node.id,
       title: edge.node.title.english || edge.node.title.romaji,
       type: edge.node.type,
@@ -515,14 +515,14 @@ router.get('/debug-anilist/:anilistId', async (req, res, next) => {
     })) || [];
 
     // Extract recommendations info
-    const recommendations = media.recommendations?.edges?.map(edge => ({
+    const recommendations = media.recommendations?.edges?.map((edge: any) => ({
       id: edge.node.mediaRecommendation?.id,
       title: edge.node.mediaRecommendation?.title.english || edge.node.mediaRecommendation?.title.romaji,
       type: edge.node.mediaRecommendation?.type,
       rating: edge.node.rating,
       format: edge.node.mediaRecommendation?.format,
       externalLinks: edge.node.mediaRecommendation?.externalLinks,
-    })).filter(r => r.id) || [];
+    })).filter((r: any) => r.id) || [];
 
     // Get the processed result from getRelatedAnimeAllPlatforms
     const relatedMedia = anilistAdapter.getRelatedAnimeAllPlatforms(media);
@@ -585,10 +585,10 @@ query ($id: Int) {
       interpretation: {
         totalRelatedMedia: relatedMedia.length,
         byType: {
-          anime: relatedMedia.filter(r => r.type === 'ANIME').length,
-          manga: relatedMedia.filter(r => r.type === 'MANGA').length,
+          anime: relatedMedia.filter((r: any) => r.type === 'ANIME').length,
+          manga: relatedMedia.filter((r: any) => r.type === 'MANGA').length,
         },
-        relatedMedia: relatedMedia.map(r => ({
+        relatedMedia: relatedMedia.map((r: any) => ({
           id: r.anilistId,
           title: r.title,
           type: r.type,

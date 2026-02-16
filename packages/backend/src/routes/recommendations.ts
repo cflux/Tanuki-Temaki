@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Router as RouterType } from 'express';
 import { z } from 'zod';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { logger } from '../lib/logger.js';
@@ -8,7 +9,7 @@ import { SeriesCacheService } from '../services/seriesCache.js';
 import { TagSearchService } from '../services/tagSearch.js';
 import type { SeriesRelationship } from '@tanuki-temaki/shared';
 
-const router = Router();
+const router: RouterType = Router();
 let recommendationService: PersonalizedRecommendationService;
 
 // Dependency injection - will be set in main server file

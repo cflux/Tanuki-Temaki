@@ -7,7 +7,7 @@ import { setAuthCookies, clearAuthCookies } from '../utils/cookies.js';
 import { logger } from '../lib/logger.js';
 import { createExchangeToken, exchangeToken } from '../services/tokenExchange.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Google OAuth - Initiate
 router.get('/google', passport.authenticate('google', { scope: ['profile'], session: false }));
@@ -17,7 +17,7 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=oauth_failed` }),
   (req, res) => {
-    const user = req.user as { userId: string; username: string | null; isNewUser: boolean };
+    const user = req.user as unknown as { userId: string; username: string | null; isNewUser: boolean };
 
     // Create one-time exchange token instead of setting cookies
     // This allows OAuth to work across different domains (localhost → IP address)
@@ -37,7 +37,7 @@ router.get(
   '/github/callback',
   passport.authenticate('github', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=oauth_failed` }),
   (req, res) => {
-    const user = req.user as { userId: string; username: string | null; isNewUser: boolean };
+    const user = req.user as unknown as { userId: string; username: string | null; isNewUser: boolean };
 
     // Create one-time exchange token instead of setting cookies
     // This allows OAuth to work across different domains (localhost → IP address)

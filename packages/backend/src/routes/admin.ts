@@ -6,7 +6,7 @@ import { AniListAdapter } from '../adapters/anilist.js';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 const prisma = new PrismaClient();
 
 // Dependency injection - will be set in main server file

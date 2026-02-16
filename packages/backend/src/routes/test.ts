@@ -3,7 +3,7 @@ import { AniListAdapter } from '../adapters/anilist.js';
 import { logger } from '../lib/logger.js';
 import { ANILIST_API_URL, JSON_HEADERS } from '../config/constants.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 const anilistAdapter = new AniListAdapter();
 
 /**

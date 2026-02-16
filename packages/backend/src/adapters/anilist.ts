@@ -447,7 +447,7 @@ export class AniListAdapter {
       }
 
       // Debug: Log the types of all relations
-      const relationTypes = data.Media.relations?.edges?.map(e => ({
+      const relationTypes = data.Media.relations?.edges?.map((e: any) => ({
         title: e.node.title.english || e.node.title.romaji,
         type: e.node.type,
         relationType: e.relationType,

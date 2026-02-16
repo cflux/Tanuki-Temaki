@@ -6,7 +6,7 @@ import { logger } from '../lib/logger.js';
 import { validateRequired, validateRating } from '../utils/validators.js';
 import { USER_DATA_ERRORS } from '../config/errorMessages.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // All routes require authentication
 router.use(requireAuth);
