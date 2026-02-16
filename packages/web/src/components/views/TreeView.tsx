@@ -823,7 +823,6 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
 
       // Build a full tree structure for each seed by recursively following edges
       const childParentMap = new Map<string, Set<string>>(); // childId -> Set<seedId>
-      const _nodeTreeMap = new Map<string, TagTree>(); // nodeId -> TagTree (for lookup)
 
       // Create edge lookup maps for O(1) access instead of O(n) iteration
       const edgesFrom = new Map<string, string[]>(); // nodeId -> [childIds]
@@ -940,9 +939,8 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         const countDescendants = (tree: TagTree): number => {
           return tree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
         };
-        const _totalDescendants = countDescendants(seedTree);
-
-        // console.log(`[TreeView] Seed "${seedTree.series?.series.title}" has ${seedTree.children.length} direct children, ${_totalDescendants} total descendants`);
+        // const totalDescendants = countDescendants(seedTree);
+        // console.log(`[TreeView] Seed "${seedTree.series?.series.title}" has ${seedTree.children.length} direct children, ${totalDescendants} total descendants`);
       });
 
       // Debug: Count children by parent count
@@ -950,14 +948,14 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
         const parents = childParentMap.get(node.series.id);
         return !parents || parents.size === 0;
       });
-      const _singleParentItems = childItems.filter(({ node }) => {
-        const parents = childParentMap.get(node.series.id);
-        return parents && parents.size === 1;
-      });
-      const _multiParentItems = childItems.filter(({ node }) => {
-        const parents = childParentMap.get(node.series.id);
-        return parents && parents.size > 1;
-      });
+      // const singleParentItems = childItems.filter(({ node }) => {
+      //   const parents = childParentMap.get(node.series.id);
+      //   return parents && parents.size === 1;
+      // });
+      // const multiParentItems = childItems.filter(({ node }) => {
+      //   const parents = childParentMap.get(node.series.id);
+      //   return parents && parents.size > 1;
+      // });
 
       // console.log('[TreeView] Child assignment:', {
       //   orphans: orphanItems.length,
