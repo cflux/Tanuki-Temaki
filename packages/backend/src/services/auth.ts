@@ -17,16 +17,16 @@ interface OAuthProfile {
 }
 
 export class AuthService {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-  private static readonly JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || '15m';
-  private static readonly JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d';
+  private static readonly JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  private static readonly JWT_ACCESS_EXPIRY: string = process.env.JWT_ACCESS_EXPIRY || '15m';
+  private static readonly JWT_REFRESH_EXPIRY: string = process.env.JWT_REFRESH_EXPIRY || '7d';
 
   /**
    * Generate JWT access token (15min expiry)
    */
   static generateAccessToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_ACCESS_EXPIRY as string });
+    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_ACCESS_EXPIRY });
   }
 
   /**
@@ -34,7 +34,7 @@ export class AuthService {
    */
   static generateRefreshToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_REFRESH_EXPIRY as string });
+    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_REFRESH_EXPIRY });
   }
 
   /**

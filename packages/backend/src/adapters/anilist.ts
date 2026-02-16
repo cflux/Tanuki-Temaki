@@ -766,7 +766,7 @@ export class AniListAdapter {
           anilistId: edge.node.id,
           title: edge.node.title.english || edge.node.title.romaji,
           relationType: edge.relationType || 'RELATED',
-          type: edge.node.type,
+          type: edge.node.type as 'ANIME' | 'MANGA',
           streamingLinks,
           crunchyrollUrl, // Keep for backwards compatibility
           availableOnCrunchyroll: !!crunchyrollUrl,
@@ -788,7 +788,7 @@ export class AniListAdapter {
           anilistId: rec.id,
           title: rec.title.english || rec.title.romaji,
           relationType: 'RECOMMENDATION',
-          type: rec.type,
+          type: rec.type as 'ANIME' | 'MANGA',
           streamingLinks,
           crunchyrollUrl, // Keep for backwards compatibility
           availableOnCrunchyroll: !!crunchyrollUrl,
@@ -874,7 +874,7 @@ export class AniListAdapter {
 
       logger.info('Found media by tag on AniList', {
         tagName,
-        capitalizedTag,
+        formattedSearch,
         mediaType,
         count: results.length,
         totalAvailable: data?.Page?.pageInfo?.total,
@@ -884,7 +884,7 @@ export class AniListAdapter {
     } catch (error) {
       logger.error('Error searching AniList by tag', {
         tagName,
-        capitalizedTag,
+        formattedSearch,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       return [];

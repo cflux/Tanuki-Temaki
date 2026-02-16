@@ -88,6 +88,9 @@ export class TagSearchService {
 
     const allSeries = await prisma.series.findMany({
       where: mediaType !== 'all' ? { mediaType } : undefined,
+      include: {
+        tags: true,
+      },
     });
     logger.debug('Fetched series from database', { count: allSeries.length });
 
@@ -158,7 +161,7 @@ export class TagSearchService {
               cachedSeries.push({
                 id: existing.id,
                 provider: existing.provider,
-                mediaType: existing.mediaType || media.type,
+                mediaType: (existing.mediaType || media.type) as 'ANIME' | 'MANGA',
                 externalId: existing.externalId,
                 url: existing.url,
                 title: existing.title,

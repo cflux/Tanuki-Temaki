@@ -348,14 +348,14 @@ export class SeriesCacheService {
       id: `anilist-${media.id}`,
       title: media.title.english || media.title.romaji,
       description: media.description || '',
-      titleImage: media.coverImage?.large || media.coverImage?.medium || null,
+      titleImage: media.coverImage?.large || null,
       mediaType,
       anilistId: media.id,
       format: media.format,
       episodes: media.episodes,
       chapters: media.chapters,
       season: media.season,
-      year: media.seasonYear || media.startDate?.year,
+      year: media.seasonYear,
     }));
   }
 

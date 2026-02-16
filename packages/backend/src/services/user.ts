@@ -305,7 +305,7 @@ export class UserService {
       return [];
     }
     // Normalize service names to match current canonical names
-    return services.map(s => this.normalizeServiceName(s));
+    return services.map(s => this.normalizeServiceName(s as string));
   }
 
   // ==================== WATCHLIST ====================

@@ -443,7 +443,7 @@ export class RelationshipTracer {
         const relatedSeries: Series = {
           id: related.id,
           provider: related.provider,
-          mediaType: related.mediaType || 'ANIME',
+          mediaType: (related.mediaType || 'ANIME') as 'ANIME' | 'MANGA',
           externalId: related.externalId,
           url: related.url,
           title: related.title,
