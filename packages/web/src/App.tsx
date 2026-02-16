@@ -8,6 +8,7 @@ import { WatchlistPage } from './pages/WatchlistPage';
 import { RatedSeriesPage } from './pages/RatedSeriesPage';
 import { NotedSeriesPage } from './pages/NotedSeriesPage';
 import { IsAdultTestPage } from './pages/IsAdultTestPage';
+import { MaintenancePage } from './pages/MaintenancePage';
 import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
@@ -123,6 +124,7 @@ function App() {
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/rated" element={<RatedSeriesPage />} />
           <Route path="/noted" element={<NotedSeriesPage />} />
+          <Route path="/admin/maintenance" element={<MaintenancePage />} />
           <Route path="/test/isadult" element={<IsAdultTestPage />} />
         </Routes>
 

@@ -104,3 +104,11 @@ export const ANILIST_CONFIG = {
 export const API_DELAYS = {
   RATE_LIMIT_RETRY: 1000, // 1 second delay before retrying when rate limited
 } as const;
+
+// ============================================================================
+// Admin Configuration
+// ============================================================================
+
+export const ADMIN_USERNAMES = new Set(
+  (process.env.ADMIN_USERNAMES || '').split(',').map(u => u.trim().toUpperCase()).filter(Boolean)
+);

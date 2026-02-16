@@ -663,3 +663,31 @@ export const recommendationApi = {
     return data;
   },
 };
+
+/**
+ * Admin-only API endpoints
+ */
+export const adminApi = {
+  /**
+   * Get cache statistics
+   * Requires admin privileges
+   */
+  async getCacheStats(): Promise<{
+    totalSeries: number;
+    totalTags: number;
+    totalRelationships: number;
+    byProvider: Array<{ provider: string; count: number }>;
+    byMediaType: Array<{ mediaType: string; count: number }>;
+  }> {
+    const { data } = await api.get('/api/admin/cache/stats');
+    return data;
+  },
+
+  /**
+   * Clear all cached data
+   * Requires admin privileges
+   */
+  async clearCache(): Promise<void> {
+    await api.delete('/api/admin/cache/clear');
+  },
+};

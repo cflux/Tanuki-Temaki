@@ -30,13 +30,6 @@ export function DiscoveryPage() {
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userServices, setUserServices] = useState<string[]>([]);
-  const [cacheStats, setCacheStats] = useState<{
-    totalSeries: number;
-    totalTags: number;
-    totalRelationships: number;
-    byProvider: Array<{ provider: string; count: number }>;
-    byMediaType: Array<{ mediaType: string; count: number }>;
-  } | null>(null);
   const { user, preferPersonalized, resultsMediaFilter: savedResultsMediaFilter, setResultsMediaFilter: saveResultsMediaFilter, filterAdultContent } = useUserStore();
   const {
     relationshipGraph,
@@ -505,35 +498,6 @@ export function DiscoveryPage() {
     setViewMode('table');
   }, [setSelectedSeries, setViewMode]);
 
-  const handleClearDatabase = async () => {
-    if (!confirm('⚠️ Clear ALL cached data?\n\nThis will delete all series, tags, and relationships from the database. This cannot be undone!')) {
-      return;
-    }
-
-    try {
-      await seriesApi.clearDatabase();
-      // Reset the UI state
-      setRootSeries(null);
-      setRelationshipGraph(null);
-      setError(null);
-      setCacheStats(null);
-      alert('✅ Database cleared successfully!');
-      // Refresh cache stats
-      fetchCacheStats();
-    } catch (error) {
-      setError('Failed to clear database');
-      console.error('Clear database error:', error);
-    }
-  };
-
-  const fetchCacheStats = async () => {
-    try {
-      const stats = await seriesApi.getCacheStats();
-      setCacheStats(stats);
-    } catch (error) {
-      console.error('Failed to fetch cache stats:', error);
-    }
-  };
 
   // Load user's service preferences
   useEffect(() => {
@@ -562,17 +526,6 @@ export function DiscoveryPage() {
   useEffect(() => {
     saveResultsMediaFilter(resultsMediaFilter);
   }, [resultsMediaFilter, saveResultsMediaFilter]);
-
-  // Fetch cache stats on mount and after discoveries
-  useEffect(() => {
-    fetchCacheStats();
-  }, []);
-
-  useEffect(() => {
-    if (relationshipGraph) {
-      fetchCacheStats();
-    }
-  }, [relationshipGraph]);
 
   // Handle navigation from other pages (e.g., explore from ratings page)
   useEffect(() => {
@@ -900,66 +853,7 @@ export function DiscoveryPage() {
                   })()}
                 </div>
               </div>
-
-              {/* Clear Database Button (for testing) */}
-              <div className="flex w-full mt-4" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-                <div className="bg-orange-500 p-[1px] w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-                  <button
-                    onClick={handleClearDatabase}
-                    className="w-full px-4 py-2 bg-cyber-bg hover:bg-red-500 hover:text-black border border-red-500 text-red-400 text-sm font-medium transition-all uppercase tracking-wider"
-                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                    title="Delete all cached data from database"
-                  >
-                    🗑️ CLEAR DATABASE
-                  </button>
-                </div>
-              </div>
             </div>
-
-            {/* Cache Stats */}
-            {cacheStats && (
-              <div className="bg-cyber-bg-card p-4 border border-cyber-border">
-                <h3 className="text-lg font-bold mb-3 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">DATABASE CACHE</h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-2xl font-bold text-cyber-accent font-mono">
-                      {cacheStats.totalSeries}
-                    </div>
-                    <div className="text-sm text-cyber-text-dim uppercase tracking-wide">TOTAL SERIES</div>
-                  </div>
-
-                  {/* Media Type Breakdown */}
-                  {cacheStats.byMediaType.length > 0 && (
-                    <div className="pt-2 border-t border-cyber-border-dim">
-                      <div className="text-xs font-semibold text-cyber-text-dim mb-2 uppercase tracking-wider">BY TYPE</div>
-                      {cacheStats.byMediaType.map(({ mediaType, count }) => (
-                        <div key={mediaType} className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-cyber-text-dim uppercase tracking-wide">
-                            {mediaType === 'ANIME' ? '📺 ANIME' : '📖 MANGA'}
-                          </span>
-                          <span className="text-sm font-semibold text-cyber-accent font-mono">
-                            {count}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="pt-2 border-t border-cyber-border-dim">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-cyber-text-dim uppercase tracking-wide">TAGS</span>
-                      <span className="text-sm font-semibold text-cyber-text font-mono">{cacheStats.totalTags}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-cyber-text-dim uppercase tracking-wide">RELATIONS</span>
-                      <span className="text-sm font-semibold text-cyber-text font-mono">{cacheStats.totalRelationships}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Service filters */}
             {(animeServices.length > 0 || mangaServices.length > 0) && (

@@ -13,6 +13,7 @@ import userRouter from './routes/user.js';
 import recommendationsRouter, { setDependencies as setRecommendationsDependencies } from './routes/recommendations.js';
 import tagsRouter from './routes/tags.js';
 import testRouter from './routes/test.js';
+import adminRouter from './routes/admin.js';
 import passport from './config/passport.js';
 import { prisma } from './lib/prisma.js';
 import {
@@ -51,6 +52,7 @@ app.use('/api/user', userRouter);
 app.use('/api/series', seriesRouter);
 app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/tags', tagsRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api/test', testRouter);
 
 // Error handling

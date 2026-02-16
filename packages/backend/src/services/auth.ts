@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { ADMIN_USERNAMES } from '../config/constants';
 
 const prisma = new PrismaClient();
 
@@ -98,16 +99,17 @@ export class AuthService {
   static async updateUsername(userId: string, username: string): Promise<void> {
     await prisma.user.update({
       where: { id: userId },
-      data: { username },
+      data: { username: username.toUpperCase() },
     });
   }
 
   /**
-   * Check if username is available
+   * Check if username is available (case-insensitive)
    */
   static async isUsernameAvailable(username: string): Promise<boolean> {
+    const normalizedUsername = username.toUpperCase();
     const existingUser = await prisma.user.findUnique({
-      where: { username },
+      where: { username: normalizedUsername },
     });
     return !existingUser;
   }
@@ -134,7 +136,7 @@ export class AuthService {
    * Get user by ID
    */
   static async getUserById(userId: string) {
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -143,5 +145,21 @@ export class AuthService {
         updatedAt: true,
       },
     });
+
+    if (!user) {
+      return null;
+    }
+
+    const isAdmin = ADMIN_USERNAMES.has(user.username.toUpperCase());
+    console.log('[Admin Check]', {
+      username: user.username,
+      adminUsernames: Array.from(ADMIN_USERNAMES),
+      isAdmin,
+    });
+
+    return {
+      ...user,
+      isAdmin,
+    };
   }
 }

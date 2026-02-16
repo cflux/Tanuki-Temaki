@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth';
+import { ADMIN_USERNAMES } from '../config/constants';
 
 // Extend Express Request type to include user
 declare global {
@@ -8,6 +9,7 @@ declare global {
       user?: {
         userId: string;
         username: string;
+        isAdmin: boolean;
       };
     }
   }
@@ -35,6 +37,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
   req.user = {
     userId: payload.userId,
     username: payload.username,
+    isAdmin: ADMIN_USERNAMES.has(payload.username.toUpperCase()),
   };
 
   next();
@@ -54,8 +57,27 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
       req.user = {
         userId: payload.userId,
         username: payload.username,
+        isAdmin: ADMIN_USERNAMES.has(payload.username.toUpperCase()),
       };
     }
+  }
+
+  next();
+};
+
+/**
+ * Middleware to require admin privileges
+ * Returns 403 if user is not an admin
+ */
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (!req.user.isAdmin) {
+    res.status(403).json({ error: 'Admin privileges required' });
+    return;
   }
 
   next();

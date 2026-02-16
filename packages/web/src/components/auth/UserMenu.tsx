@@ -77,6 +77,11 @@ export const UserMenu: React.FC = () => {
               {user.username.charAt(0).toUpperCase()}
             </div>
             <span className="font-medium">{user.username}</span>
+            {user.isAdmin && (
+              <span className="text-xs px-1.5 py-0.5 bg-cyber-accent text-cyber-bg font-bold">
+                [ADMIN]
+              </span>
+            )}
             <svg
               className={`w-4 h-4 transition-transform ${
                 showDropdown ? 'rotate-180' : ''
@@ -120,6 +125,17 @@ export const UserMenu: React.FC = () => {
               >
                 [NOTE] MY NOTES
               </button>
+              {user.isAdmin && (
+                <>
+                  <div className="border-t border-cyber-border my-1"></div>
+                  <button
+                    onClick={() => { setShowDropdown(false); navigate('/admin/maintenance'); }}
+                    className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-accent uppercase tracking-wide text-sm font-bold"
+                  >
+                    [ADMIN] MAINTENANCE
+                  </button>
+                </>
+              )}
               <div className="border-t border-cyber-border my-1"></div>
               <button
                 onClick={handleLogout}
