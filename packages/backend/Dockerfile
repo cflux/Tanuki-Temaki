@@ -6,7 +6,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy workspace configuration
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
 COPY packages/backend/package.json ./packages/backend/
 COPY shared/package.json ./shared/
 

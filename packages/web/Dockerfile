@@ -13,7 +13,7 @@ ENV VITE_WS_URL=$VITE_WS_URL
 WORKDIR /app
 
 # Copy workspace configuration
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
 COPY packages/web/package.json ./packages/web/
 COPY shared/package.json ./shared/
 
