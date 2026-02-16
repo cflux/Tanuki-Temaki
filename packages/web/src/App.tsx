@@ -13,6 +13,7 @@ import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
+import { Logo } from './components/Logo';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
 
@@ -90,7 +91,7 @@ function App() {
         {/* Fixed Logo with clipped corner */}
         <Link
           to="/"
-          className="fixed top-2 left-4 z-50 hover:opacity-80 transition-opacity"
+          className="fixed top-2 left-4 z-50 group"
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
         >
           <div
@@ -98,10 +99,10 @@ function App() {
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
           >
             <div
-              className="bg-cyber-bg p-2"
+              className="bg-cyber-bg p-2 text-cyber-accent"
               style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
             >
-              <img src="/logo.png" alt="Tanuki Temaki" className="h-28" />
+              <Logo className="h-28 transition-all group-hover:drop-shadow-[0_0_10px_currentColor]" />
             </div>
           </div>
         </Link>

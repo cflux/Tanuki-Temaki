@@ -13,11 +13,10 @@ import userRouter from './routes/user.js';
 import recommendationsRouter, { setDependencies as setRecommendationsDependencies } from './routes/recommendations.js';
 import tagsRouter from './routes/tags.js';
 import testRouter from './routes/test.js';
-import adminRouter from './routes/admin.js';
+import adminRouter, { setDependencies as setAdminDependencies } from './routes/admin.js';
 import passport from './config/passport.js';
 import { prisma } from './lib/prisma.js';
 import {
-  extensionBridge,
   seriesCache,
   relationshipTracer,
 } from './index.js';
@@ -44,6 +43,7 @@ app.use('/api', rateLimiter({
 // Inject dependencies into routes
 setSeriesDependencies(seriesCache, relationshipTracer);
 setRecommendationsDependencies(relationshipTracer, seriesCache);
+setAdminDependencies(seriesCache, relationshipTracer);
 
 // Routes
 app.use('/api', healthRouter);
@@ -63,7 +63,6 @@ app.use(errorHandler);
 const server = app.listen(HTTP_PORT, () => {
   logger.info(`HTTP server listening on port ${HTTP_PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`Extension connected: ${extensionBridge.isConnected()}`);
 
   // Start scheduled tasks
   Scheduler.start();
@@ -79,9 +78,6 @@ const shutdown = async () => {
   server.close(() => {
     logger.info('HTTP server closed');
   });
-
-  extensionBridge.close();
-  logger.info('Extension bridge closed');
 
   await prisma.$disconnect();
   logger.info('Database connection closed');

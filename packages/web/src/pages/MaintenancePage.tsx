@@ -7,7 +7,6 @@ interface CacheStats {
   totalSeries: number;
   totalTags: number;
   totalRelationships: number;
-  byProvider: Array<{ provider: string; count: number }>;
   byMediaType: Array<{ mediaType: string; count: number }>;
 }
 
@@ -17,6 +16,12 @@ export function MaintenancePage() {
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [isClearing, setIsClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
+  const [isSeedingPopular, setIsSeedingPopular] = useState(false);
+  const [seedPopularSuccess, setSeedPopularSuccess] = useState(false);
+  const [seedPopularProgress, setSeedPopularProgress] = useState<string[]>([]);
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [expandSuccess, setExpandSuccess] = useState(false);
+  const [expandProgress, setExpandProgress] = useState<string[]>([]);
 
   // Redirect non-admins
   useEffect(() => {
@@ -66,6 +71,78 @@ export function MaintenancePage() {
     }
   };
 
+  const handleSeedFromPopular = async () => {
+    if (!confirm('Seed database with top 10 popular series from AniList? This may take several minutes.')) {
+      return;
+    }
+
+    setIsSeedingPopular(true);
+    setSeedPopularProgress([]);
+    setSeedPopularSuccess(false);
+
+    try {
+      await adminApi.seedFromPopularStream((step, message, data) => {
+        setSeedPopularProgress(prev => [...prev, message]);
+      });
+
+      setSeedPopularSuccess(true);
+
+      // Refresh stats after completion
+      const stats = await adminApi.getCacheStats();
+      setCacheStats(stats);
+
+      // Clear progress after a delay
+      setTimeout(() => {
+        setSeedPopularProgress([]);
+        setSeedPopularSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to seed from popular:', error);
+      setSeedPopularProgress(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      setTimeout(() => {
+        setSeedPopularProgress([]);
+      }, 5000);
+    } finally {
+      setIsSeedingPopular(false);
+    }
+  };
+
+  const handleExpandDatabase = async () => {
+    if (!confirm('Expand database by tracing relationships for series without recommendations? This may take several minutes.')) {
+      return;
+    }
+
+    setIsExpanding(true);
+    setExpandProgress([]);
+    setExpandSuccess(false);
+
+    try {
+      await adminApi.expandDatabaseStream((step, message, data) => {
+        setExpandProgress(prev => [...prev, message]);
+      });
+
+      setExpandSuccess(true);
+
+      // Refresh stats after completion
+      const stats = await adminApi.getCacheStats();
+      setCacheStats(stats);
+
+      // Clear progress after a delay
+      setTimeout(() => {
+        setExpandProgress([]);
+        setExpandSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to expand database:', error);
+      setExpandProgress(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      setTimeout(() => {
+        setExpandProgress([]);
+      }, 5000);
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
   if (!user?.isAdmin) {
     return null;
   }
@@ -105,23 +182,6 @@ export function MaintenancePage() {
               </div>
             </div>
 
-            {/* By Provider */}
-            {cacheStats.byProvider && cacheStats.byProvider.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-cyber-text-dim uppercase tracking-wide mb-2">
-                  BY PROVIDER
-                </h3>
-                <div className="space-y-1">
-                  {cacheStats.byProvider.map((item) => (
-                    <div key={item.provider} className="flex justify-between text-sm font-mono">
-                      <span className="text-cyber-text">{item.provider}:</span>
-                      <span className="text-cyber-accent">{item?.count?.toLocaleString() || 0}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* By Media Type */}
             {cacheStats.byMediaType && cacheStats.byMediaType.length > 0 && (
               <div>
@@ -141,7 +201,7 @@ export function MaintenancePage() {
           </div>
         )}
 
-        {/* Success Message */}
+        {/* Success Messages */}
         {clearSuccess && (
           <div className="mb-6 bg-cyber-bg-card border-2 border-cyber-accent p-4">
             <div className="text-cyber-accent font-semibold uppercase tracking-wide">
@@ -149,6 +209,109 @@ export function MaintenancePage() {
             </div>
           </div>
         )}
+        {seedPopularSuccess && (
+          <div className="mb-6 bg-cyber-bg-card border-2 border-cyber-accent p-4">
+            <div className="text-cyber-accent font-semibold uppercase tracking-wide">
+              [OK] POPULAR SERIES SEEDING STARTED
+            </div>
+            <div className="text-cyber-text-dim text-sm mt-1 font-mono">
+              Processing in background. Check logs for progress.
+            </div>
+          </div>
+        )}
+        {expandSuccess && (
+          <div className="mb-6 bg-cyber-bg-card border-2 border-cyber-accent p-4">
+            <div className="text-cyber-accent font-semibold uppercase tracking-wide">
+              [OK] DATABASE EXPANSION STARTED
+            </div>
+            <div className="text-cyber-text-dim text-sm mt-1 font-mono">
+              Processing in background. Check logs for progress.
+            </div>
+          </div>
+        )}
+
+        {/* Seed Database Section */}
+        <div className="mb-6 bg-cyber-bg-card border border-cyber-border p-6">
+          <h2 className="text-xl font-semibold text-cyber-text-bright uppercase tracking-wider mb-4 border-b border-cyber-border pb-2">
+            SEED DATABASE
+          </h2>
+
+          <p className="text-cyber-text-dim mb-4 font-mono text-sm">
+            Populate the database with series data from AniList. Operations run in the background.
+          </p>
+
+          <div className="space-y-4">
+            {/* Seed from Popular */}
+            <div>
+              <h3 className="text-sm font-semibold text-cyber-text mb-2 uppercase tracking-wide">
+                [1] SEED FROM MOST POPULAR
+              </h3>
+              <p className="text-cyber-text-dim text-xs mb-3 font-mono">
+                Fetches top 10 most popular series from AniList and traces their relationships (1 level deep).
+              </p>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={handleSeedFromPopular}
+                    disabled={isSeedingPopular}
+                    className="px-6 py-3 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    {isSeedingPopular ? '[...] SEEDING POPULAR' : '[+] SEED FROM POPULAR'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress Display */}
+              {seedPopularProgress.length > 0 && (
+                <div className="mt-3 bg-cyber-bg-elevated border border-cyber-border p-3 max-h-60 overflow-y-auto">
+                  <div className="text-xs font-mono space-y-1">
+                    {seedPopularProgress.map((msg, idx) => (
+                      <div key={idx} className={msg.startsWith('ERROR') ? 'text-red-400' : msg.includes('✓') ? 'text-cyber-accent' : 'text-cyber-text-dim'}>
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Expand Database */}
+            <div>
+              <h3 className="text-sm font-semibold text-cyber-text mb-2 uppercase tracking-wide">
+                [2] EXPAND CURRENT DATABASE
+              </h3>
+              <p className="text-cyber-text-dim text-xs mb-3 font-mono">
+                Finds 10 series with no relationships and traces their relationships (1 level deep).
+              </p>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={handleExpandDatabase}
+                    disabled={isExpanding}
+                    className="px-6 py-3 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    {isExpanding ? '[...] EXPANDING DATABASE' : '[>>] EXPAND DATABASE'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress Display */}
+              {expandProgress.length > 0 && (
+                <div className="mt-3 bg-cyber-bg-elevated border border-cyber-border p-3 max-h-60 overflow-y-auto">
+                  <div className="text-xs font-mono space-y-1">
+                    {expandProgress.map((msg, idx) => (
+                      <div key={idx} className={msg.startsWith('ERROR') ? 'text-red-400' : msg.includes('✓') ? 'text-cyber-accent' : 'text-cyber-text-dim'}>
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Danger Zone */}
         <div className="bg-cyber-bg-card border-2 border-red-500 p-6">

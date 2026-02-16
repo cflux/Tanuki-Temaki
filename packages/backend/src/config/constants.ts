@@ -19,8 +19,6 @@ export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 
 export const HTTP_PORT = Number(process.env.PORT) || 3000;
 
-export const WS_PORT = Number(process.env.WS_PORT) || 8765;
-
 // ============================================================================
 // Time Durations (in milliseconds)
 // ============================================================================

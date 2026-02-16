@@ -676,7 +676,6 @@ export const adminApi = {
     totalSeries: number;
     totalTags: number;
     totalRelationships: number;
-    byProvider: Array<{ provider: string; count: number }>;
     byMediaType: Array<{ mediaType: string; count: number }>;
   }> {
     const { data } = await api.get('/api/admin/cache/stats');
@@ -689,5 +688,179 @@ export const adminApi = {
    */
   async clearCache(): Promise<void> {
     await api.delete('/api/admin/cache/clear');
+  },
+
+  /**
+   * Seed database with top 10 popular series from AniList
+   * Traces relationships 1 level deep for each
+   * Requires admin privileges
+   */
+  async seedFromPopular(): Promise<{ success: boolean; message: string; status: string }> {
+    const { data } = await api.post('/api/admin/seed/popular');
+    return data;
+  },
+
+  /**
+   * Seed database with streaming progress updates
+   * Requires admin privileges
+   */
+  async seedFromPopularStream(
+    onProgress: (step: string, message: string, data?: any) => void
+  ): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/admin/seed/popular-stream`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Accept': 'text/event-stream',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.error) {
+                  reader.cancel();
+                  reject(new Error(data.error));
+                  return;
+                }
+
+                if (data.done) {
+                  reader.cancel();
+                  resolve();
+                  return;
+                }
+
+                // Progress update
+                onProgress(data.step, data.message, data);
+              } catch (error) {
+                console.error('Failed to parse SSE data:', error);
+              }
+            }
+          }
+        }
+
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
+
+  /**
+   * Expand database by seeding series with no relationships
+   * Finds 10 series with no relationships and traces them 1 level deep
+   * Requires admin privileges
+   */
+  async expandDatabase(): Promise<{ success: boolean; message: string; status: string }> {
+    const { data } = await api.post('/api/admin/seed/expand');
+    return data;
+  },
+
+  /**
+   * Expand database with streaming progress updates
+   * Requires admin privileges
+   */
+  async expandDatabaseStream(
+    onProgress: (step: string, message: string, data?: any) => void
+  ): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/admin/seed/expand-stream`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Accept': 'text/event-stream',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.error) {
+                  reader.cancel();
+                  reject(new Error(data.error));
+                  return;
+                }
+
+                if (data.done) {
+                  reader.cancel();
+                  resolve();
+                  return;
+                }
+
+                // Progress update
+                onProgress(data.step, data.message, data);
+              } catch (error) {
+                console.error('Failed to parse SSE data:', error);
+              }
+            }
+          }
+        }
+
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
   },
 };
