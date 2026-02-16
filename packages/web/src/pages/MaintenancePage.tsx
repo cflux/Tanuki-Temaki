@@ -81,7 +81,7 @@ export function MaintenancePage() {
     setSeedPopularSuccess(false);
 
     try {
-      await adminApi.seedFromPopularStream((step, message, data) => {
+      await adminApi.seedFromPopularStream((_step, message, _data) => {
         setSeedPopularProgress(prev => [...prev, message]);
       });
 
@@ -117,7 +117,7 @@ export function MaintenancePage() {
     setExpandSuccess(false);
 
     try {
-      await adminApi.expandDatabaseStream((step, message, data) => {
+      await adminApi.expandDatabaseStream((_step, message, _data) => {
         setExpandProgress(prev => [...prev, message]);
       });
 

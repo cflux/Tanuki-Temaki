@@ -10,6 +10,10 @@ Ensure your Docker server has:
 - At least 2GB RAM available
 - At least 5GB disk space
 
+ # Clone the repository
+  git clone <your-repo-url>
+  cd Tanuki-Temaki
+
 ### 2. Setup Environment Variables
 
 Create a `.env` file in the project root:
@@ -66,13 +70,13 @@ ADMIN_USERNAMES=your_google_username
 
 ```bash
 # Build all images
-docker-compose build
+docker compose build
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Check logs
-docker-compose logs -f
+docker compose logs -f
 
 # Wait for migrations to complete (you'll see "HTTP server listening on port 3000")
 ```

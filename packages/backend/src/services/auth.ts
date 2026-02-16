@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { ADMIN_USERNAMES } from '../config/constants';
+import { logger } from '../lib/logger.js';
 
 const prisma = new PrismaClient();
 

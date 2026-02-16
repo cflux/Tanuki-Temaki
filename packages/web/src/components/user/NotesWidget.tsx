@@ -28,7 +28,7 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
     setSaveStatus('saving');
 
     try {
-      if (note.trim()) {
+      if (note && note.trim()) {
         await userApi.saveNote(seriesId, note.trim());
         setSaveStatus('saved');
         onNoteChange?.(note.trim());
@@ -107,7 +107,7 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
       {isExpanded && (
         <div className="mt-3 space-y-2">
           <textarea
-            value={note}
+            value={note || ''}
             onChange={(e) => setNote(e.target.value)}
             placeholder="ADD YOUR PRIVATE NOTES..."
             className="w-full px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm resize-none font-mono transition-all"
@@ -179,7 +179,7 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
           </div>
 
           <div className="text-xs text-cyber-text-dim font-mono uppercase tracking-wide">
-            {note.length} CHARACTERS
+            {note?.length || 0} CHARACTERS
           </div>
         </div>
       )}

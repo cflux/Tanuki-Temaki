@@ -1,6 +1,9 @@
 import axios from 'axios';
 import type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote } from '@tanuki-temaki/shared';
 
+// Re-export types for use in components
+export type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote };
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const api = axios.create({
@@ -236,7 +239,7 @@ export const seriesApi = {
                 }
 
                 // Progress update
-                onProgress(data);
+                onProgress?.(data);
               } catch (error) {
                 console.error('Failed to parse SSE data:', error);
               }
@@ -566,7 +569,7 @@ export const recommendationApi = {
     maxDepth?: number,
     topSeriesCount?: number,
     personalized: boolean = false,
-    onProgress: (step: string, message: string, data?: any) => void
+    onProgress?: (step: string, message: string, data?: any) => void
   ): Promise<SeriesRelationship> {
     return new Promise((resolve, reject) => {
       // Build request body, only including optional params if provided (let backend use defaults)
@@ -635,7 +638,7 @@ export const recommendationApi = {
                       return;
                     }
 
-                    onProgress(parsed.step, parsed.message, parsed);
+                    onProgress?.(parsed.step, parsed.message, parsed);
                   } catch (e) {
                     console.error('Failed to parse SSE data:', data, e);
                   }
@@ -771,7 +774,7 @@ export const adminApi = {
                 }
 
                 // Progress update
-                onProgress(data.step, data.message, data);
+                onProgress?.(data.step, data.message, data);
               } catch (error) {
                 console.error('Failed to parse SSE data:', error);
               }
@@ -858,7 +861,7 @@ export const adminApi = {
                 }
 
                 // Progress update
-                onProgress(data.step, data.message, data);
+                onProgress?.(data.step, data.message, data);
               } catch (error) {
                 console.error('Failed to parse SSE data:', error);
               }
