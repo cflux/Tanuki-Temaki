@@ -251,7 +251,7 @@ export class TagSearchService {
       return bPopularity - aPopularity; // Higher popularity first
     });
 
-    const result = sorted.slice(0, limit);
+    const result = sorted.slice(0, limit) as Series[];
     logger.debug('Returning top series for tag', { count: result.length, tagValue });
     return result;
   }

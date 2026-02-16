@@ -884,7 +884,6 @@ export class AniListAdapter {
     } catch (error) {
       logger.error('Error searching AniList by tag', {
         tagName,
-        formattedSearch,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       return [];

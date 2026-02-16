@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { ADMIN_USERNAMES } from '../config/constants';
 import { logger } from '../lib/logger.js';
@@ -26,7 +26,8 @@ export class AuthService {
    */
   static generateAccessToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_ACCESS_EXPIRY });
+    const options: SignOptions = { expiresIn: this.JWT_ACCESS_EXPIRY };
+    return jwt.sign(payload, this.JWT_SECRET, options);
   }
 
   /**
@@ -34,7 +35,8 @@ export class AuthService {
    */
   static generateRefreshToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    return jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_REFRESH_EXPIRY });
+    const options: SignOptions = { expiresIn: this.JWT_REFRESH_EXPIRY };
+    return jwt.sign(payload, this.JWT_SECRET, options);
   }
 
   /**
