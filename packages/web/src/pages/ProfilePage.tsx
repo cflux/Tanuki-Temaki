@@ -117,7 +117,7 @@ export const ProfilePage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin h-12 w-12 border-2 border-cyber-border border-t-cyber-accent"></div>
         </div>
       </div>
     );
@@ -141,30 +141,35 @@ export const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pt-24 md:pt-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Profile</h1>
+      <div className="mb-8 border-b border-cyber-border pb-4">
+        <h1 className="text-3xl font-bold text-cyber-text-bright uppercase tracking-widest mb-2">[USER] PROFILE</h1>
 
         {!isEditingUsername ? (
           <div className="flex items-center gap-3">
-            <p className="text-zinc-400">@{user.username}</p>
-            <button
-              onClick={handleEditUsername}
-              className="text-sm text-blue-500 hover:text-blue-400 transition-colors"
-            >
-              Edit Username
-            </button>
+            <p className="text-cyber-text-dim font-mono">@{user.username}</p>
+            <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+              <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                <button
+                  onClick={handleEditUsername}
+                  className="px-3 py-1 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-xs font-medium transition-all uppercase tracking-wide"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  EDIT
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-2 max-w-md">
             <div className="flex items-center gap-2">
-              <span className="text-zinc-400">@</span>
+              <span className="text-cyber-text-dim font-mono">@</span>
               <input
                 type="text"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
-                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                className="px-3 py-1.5 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent font-mono flex-1"
                 placeholder="new_username"
                 autoFocus
                 disabled={isSavingUsername}
@@ -172,36 +177,41 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Status messages */}
-            <div className="min-h-[20px] text-sm">
+            <div className="min-h-[20px] text-sm font-mono uppercase tracking-wide">
               {isCheckingUsername && (
-                <p className="text-zinc-400">Checking availability...</p>
+                <p className="text-cyber-text-dim">CHECKING...</p>
               )}
               {!isCheckingUsername && usernameError && (
                 <p className="text-red-400">{usernameError}</p>
               )}
               {!isCheckingUsername && isUsernameAvailable && newUsername !== user.username && (
-                <p className="text-green-400">Username available!</p>
+                <p className="text-green-400">AVAILABLE!</p>
               )}
               {!isCheckingUsername && isUsernameAvailable === false && !usernameError && (
-                <p className="text-red-400">Username already taken</p>
+                <p className="text-red-400">TAKEN</p>
               )}
             </div>
 
             {/* Action buttons */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveUsername}
-                disabled={!isUsernameAvailable || isSavingUsername || newUsername === user.username || isCheckingUsername}
-                className="px-4 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed"
-              >
-                {isSavingUsername ? 'Saving...' : 'Save'}
-              </button>
+              <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <button
+                    onClick={handleSaveUsername}
+                    disabled={!isUsernameAvailable || isSavingUsername || newUsername === user.username || isCheckingUsername}
+                    className="px-4 py-1.5 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all disabled:border-cyber-border-dim disabled:text-cyber-text-dim disabled:cursor-not-allowed uppercase tracking-wide"
+                    style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                  >
+                    {isSavingUsername ? 'SAVING...' : 'SAVE'}
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={handleCancelEdit}
                 disabled={isSavingUsername}
-                className="px-4 py-1.5 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+                className="px-4 py-1.5 text-cyber-text-dim hover:text-cyber-text text-sm transition-colors uppercase tracking-wide"
               >
-                Cancel
+                CANCEL
               </button>
             </div>
           </div>
@@ -210,19 +220,19 @@ export const ProfilePage: React.FC = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-          <div className="text-3xl font-bold text-blue-500">{ratings.length}</div>
-          <div className="text-sm text-zinc-400 mt-1">Series Rated</div>
+        <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+          <div className="text-3xl font-bold text-cyber-accent font-mono">{ratings.length}</div>
+          <div className="text-sm text-cyber-text-dim mt-1 uppercase tracking-wide">SERIES RATED</div>
         </div>
 
-        <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-          <div className="text-3xl font-bold text-green-500">{likedTags.length}</div>
-          <div className="text-sm text-zinc-400 mt-1">Liked Tags</div>
+        <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+          <div className="text-3xl font-bold text-green-500 font-mono">{likedTags.length}</div>
+          <div className="text-sm text-cyber-text-dim mt-1 uppercase tracking-wide">LIKED TAGS</div>
         </div>
 
-        <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-          <div className="text-3xl font-bold text-red-500">{dislikedTags.length}</div>
-          <div className="text-sm text-zinc-400 mt-1">Disliked Tags</div>
+        <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+          <div className="text-3xl font-bold text-red-500 font-mono">{dislikedTags.length}</div>
+          <div className="text-sm text-cyber-text-dim mt-1 uppercase tracking-wide">DISLIKED TAGS</div>
         </div>
       </div>
 
@@ -230,10 +240,10 @@ export const ProfilePage: React.FC = () => {
         {/* Tag Preferences */}
         <div className="space-y-6">
           {/* Liked Tags */}
-          <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-green-500">👍</span>
-              Tags You Like
+          <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border pb-2">
+              <span className="text-green-500">✓</span>
+              TAGS YOU LIKE
             </h2>
 
             {likedTags.length > 0 ? (
@@ -241,25 +251,25 @@ export const ProfilePage: React.FC = () => {
                 {likedTags.map(([tag, score]) => (
                   <div
                     key={tag}
-                    className="flex items-center justify-between py-2 px-3 bg-zinc-800 rounded"
+                    className="flex items-center justify-between py-2 px-3 bg-cyber-bg-elevated border border-cyber-border"
                   >
-                    <span className="text-zinc-300">{tag}</span>
-                    <span className="text-green-500 font-mono">+{score}</span>
+                    <span className="text-cyber-text uppercase tracking-wide text-sm">{tag}</span>
+                    <span className="text-green-500 font-mono font-bold">+{score}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-zinc-500 text-sm">
-                No liked tags yet. Vote on tags while browsing series!
+              <p className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide">
+                NO LIKED TAGS YET. VOTE ON TAGS WHILE BROWSING SERIES!
               </p>
             )}
           </div>
 
           {/* Disliked Tags */}
-          <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-red-500">👎</span>
-              Tags You Dislike
+          <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border pb-2">
+              <span className="text-red-500">✗</span>
+              TAGS YOU DISLIKE
             </h2>
 
             {dislikedTags.length > 0 ? (
@@ -267,24 +277,24 @@ export const ProfilePage: React.FC = () => {
                 {dislikedTags.map(([tag, score]) => (
                   <div
                     key={tag}
-                    className="flex items-center justify-between py-2 px-3 bg-zinc-800 rounded"
+                    className="flex items-center justify-between py-2 px-3 bg-cyber-bg-elevated border border-cyber-border"
                   >
-                    <span className="text-zinc-300">{tag}</span>
-                    <span className="text-red-500 font-mono">{score}</span>
+                    <span className="text-cyber-text uppercase tracking-wide text-sm">{tag}</span>
+                    <span className="text-red-500 font-mono font-bold">{score}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-zinc-500 text-sm">
-                No disliked tags yet. Vote on tags while browsing series!
+              <p className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide">
+                NO DISLIKED TAGS YET. VOTE ON TAGS WHILE BROWSING SERIES!
               </p>
             )}
           </div>
         </div>
 
         {/* Ratings History */}
-        <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-          <h2 className="text-xl font-bold mb-4">Your Ratings</h2>
+        <div className="bg-cyber-bg-card p-6 border border-cyber-border">
+          <h2 className="text-xl font-bold mb-4 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border pb-2">YOUR RATINGS</h2>
 
           {ratings.length > 0 ? (
             <div className="space-y-4">
@@ -295,27 +305,27 @@ export const ProfilePage: React.FC = () => {
                   <div key={rating}>
                     <div className="flex items-center gap-2 mb-2">
                       {rating === '0' ? (
-                        <span className="text-red-500 text-sm font-medium">👎 Disliked</span>
+                        <span className="text-red-500 text-sm font-medium uppercase tracking-wide">✗ DISLIKED</span>
                       ) : (
-                        <span className="text-yellow-500 text-sm font-medium">
+                        <span className="text-cyber-accent text-sm font-medium font-mono">
                           {'★'.repeat(parseInt(rating))} ({rating}/5)
                         </span>
                       )}
-                      <span className="text-zinc-500 text-sm">({items.length})</span>
+                      <span className="text-cyber-text-dim text-sm font-mono">({items.length})</span>
                     </div>
 
                     <div className="space-y-1 pl-4">
                       {items.slice(0, 5).map((item) => (
                         <div
                           key={item.id}
-                          className="text-sm text-zinc-400 hover:text-zinc-300 cursor-pointer"
+                          className="text-sm text-cyber-text-dim hover:text-cyber-text cursor-pointer font-mono"
                         >
                           • {(item as any).series?.title || 'Unknown Series'}
                         </div>
                       ))}
                       {items.length > 5 && (
-                        <div className="text-xs text-zinc-600">
-                          ...and {items.length - 5} more
+                        <div className="text-xs text-cyber-text-dim font-mono">
+                          ...AND {items.length - 5} MORE
                         </div>
                       )}
                     </div>
@@ -324,15 +334,15 @@ export const ProfilePage: React.FC = () => {
               })}
             </div>
           ) : (
-            <p className="text-zinc-500 text-sm">
-              No ratings yet. Start rating series to build your profile!
+            <p className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide">
+              NO RATINGS YET. START RATING SERIES TO BUILD YOUR PROFILE!
             </p>
           )}
         </div>
       </div>
 
       {/* Service Preferences */}
-      <div className="mt-8 bg-zinc-900 rounded-lg p-6 border border-zinc-800">
+      <div className="mt-8 bg-cyber-bg-card p-6 border border-cyber-border">
         <ServicePreferences userId={user.id} />
       </div>
     </div>

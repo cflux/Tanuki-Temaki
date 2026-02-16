@@ -1,4 +1,6 @@
-import 'dotenv/config';
+// MUST be first to load environment variables before other imports
+import './env.js';
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';

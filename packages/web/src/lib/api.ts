@@ -343,6 +343,15 @@ export const authApi = {
       return false;
     }
   },
+
+  /**
+   * Exchange one-time token for auth cookies
+   * Used after OAuth redirect to set proper cookies for current domain
+   */
+  async exchangeToken(token: string): Promise<{ success: boolean; needsUsername: boolean }> {
+    const { data } = await api.post('/api/auth/exchange', { token });
+    return data;
+  },
 };
 
 // User types now imported from @tanuki-temaki/shared

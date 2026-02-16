@@ -4,14 +4,40 @@
  */
 
 // ============================================================================
-// API URLs
+// URL Configuration - Derived from HOST
+// ============================================================================
+
+const HOST = process.env.HOST || 'localhost';
+const PORT = Number(process.env.PORT) || 3000;
+const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 5173;
+const USE_HTTPS = process.env.NODE_ENV === 'production' && !HOST.includes('localhost');
+const PROTOCOL = USE_HTTPS ? 'https' : 'http';
+
+// OAuth callbacks must use localhost in development (Google/GitHub don't allow private IPs)
+// In production, use the actual HOST
+const OAUTH_HOST = process.env.NODE_ENV === 'production' ? HOST : 'localhost';
+
+// Construct URLs from HOST
+export const BACKEND_URL = `${PROTOCOL}://${HOST}:${PORT}`;
+export const FRONTEND_URL = `${PROTOCOL}://${HOST}:${FRONTEND_PORT}`;
+
+// OAuth callbacks use localhost in dev, HOST in production
+const OAUTH_BACKEND_URL = `${PROTOCOL}://${OAUTH_HOST}:${PORT}`;
+export const GOOGLE_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/google/callback`;
+export const GITHUB_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/github/callback`;
+
+// Debug logging
+console.log('[BACKEND CONSTANTS] HOST:', HOST);
+console.log('[BACKEND CONSTANTS] OAUTH_HOST:', OAUTH_HOST);
+console.log('[BACKEND CONSTANTS] FRONTEND_URL:', FRONTEND_URL);
+console.log('[BACKEND CONSTANTS] BACKEND_URL:', BACKEND_URL);
+console.log('[BACKEND CONSTANTS] GOOGLE_CALLBACK_URL:', GOOGLE_CALLBACK_URL);
+
+// ============================================================================
+// External API URLs
 // ============================================================================
 
 export const ANILIST_API_URL = 'https://graphql.anilist.co';
-
-export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 
 // ============================================================================
 // Server Ports

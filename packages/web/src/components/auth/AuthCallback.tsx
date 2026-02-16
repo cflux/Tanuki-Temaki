@@ -15,6 +15,7 @@ export const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleCallback = async () => {
       const status = searchParams.get('status');
+      const token = searchParams.get('token');
       const errorParam = searchParams.get('error');
 
       if (errorParam) {
@@ -23,38 +24,41 @@ export const AuthCallback: React.FC = () => {
         return;
       }
 
-      if (status === 'needs_username') {
-        // User needs to set username
-        try {
-          const user = await authApi.getCurrentUser();
-          if (user) {
-            setUser(user);
-            setShowUsernameModal(true);
-          } else {
-            setError('Failed to fetch user data');
-            setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
-          }
-        } catch (err) {
+      if (!token) {
+        setError('Missing authentication token');
+        setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
+        return;
+      }
+
+      try {
+        // Exchange the token for proper auth cookies
+        const response = await authApi.exchangeToken(token);
+
+        if (!response.success) {
+          setError('Failed to complete authentication');
+          setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
+          return;
+        }
+
+        // Fetch user data (cookies are now set)
+        const user = await authApi.getCurrentUser();
+        if (!user) {
           setError('Failed to fetch user data');
           setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
+          return;
         }
-      } else if (status === 'success') {
-        // User logged in successfully
-        try {
-          const user = await authApi.getCurrentUser();
-          if (user) {
-            setUser(user);
-            navigate('/');
-          } else {
-            setError('Failed to fetch user data');
-            setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
-          }
-        } catch (err) {
-          setError('Failed to fetch user data');
-          setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
+
+        setUser(user);
+
+        // Check if username is needed
+        if (status === 'needs_username' || response.needsUsername) {
+          setShowUsernameModal(true);
+        } else {
+          navigate('/');
         }
-      } else {
-        setError('Invalid callback status');
+      } catch (err) {
+        console.error('Auth callback error:', err);
+        setError('Failed to complete authentication');
         setTimeout(() => navigate('/'), NAVIGATION_DELAY.REDIRECT);
       }
     };

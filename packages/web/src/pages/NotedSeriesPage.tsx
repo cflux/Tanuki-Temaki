@@ -37,21 +37,21 @@ export function NotedSeriesPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-zinc-400">Loading noted series...</div>
+        <div className="animate-spin h-12 w-12 border-2 border-cyber-border border-t-cyber-accent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 pt-24 md:pt-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">📝 My Notes</h1>
+        <h1 className="text-3xl font-bold mb-6 text-cyber-text-bright uppercase tracking-widest border-b border-cyber-border pb-4">[NOTE] MY NOTES</h1>
 
         {notedSeries.length === 0 ? (
-          <div className="bg-zinc-900 rounded-lg p-8 text-center border border-zinc-800">
-            <p className="text-zinc-400 mb-4">You haven't added notes to any series yet</p>
-            <p className="text-sm text-zinc-500">
-              Add private notes to series from the discovery page
+          <div className="bg-cyber-bg-card p-8 text-center border border-cyber-border">
+            <p className="text-cyber-text-dim mb-4 font-mono uppercase tracking-wide">YOU HAVEN'T ADDED NOTES TO ANY SERIES YET</p>
+            <p className="text-sm text-cyber-text-dim font-mono">
+              ADD PRIVATE NOTES TO SERIES FROM THE DISCOVERY PAGE
             </p>
           </div>
         ) : (
@@ -59,34 +59,34 @@ export function NotedSeriesPage() {
             {notedSeries.map((item) => (
               <div
                 key={item.id}
-                className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 hover:border-zinc-700 transition-colors"
+                className="bg-cyber-bg-card border border-cyber-border p-6 hover:border-cyber-accent transition-colors"
               >
                 <div className="flex gap-4">
                   {item.series.titleImage && (
                     <img
                       src={item.series.titleImage}
                       alt={item.series.title}
-                      className="w-32 h-48 object-cover rounded flex-shrink-0"
+                      className="w-32 h-48 object-cover flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   )}
                   <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-xl">{item.series.title}</h3>
-                      <span className="px-2 py-1 bg-blue-600/20 border border-blue-600/50 text-blue-300 rounded text-xs">
-                        {item.series.mediaType}
+                    <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+                      <h3 className="font-semibold text-xl text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                      <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent text-xs uppercase tracking-wide">
+                        {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'} {item.series.mediaType}
                       </span>
                     </div>
 
-                    <div className="bg-zinc-800/50 rounded-lg p-4 mb-3 border border-zinc-700">
-                      <div className="text-xs text-zinc-500 mb-2">Your Note:</div>
-                      <p className="text-sm text-zinc-300 whitespace-pre-wrap">{item.note}</p>
+                    <div className="bg-cyber-bg-elevated p-4 mb-3 border border-cyber-border">
+                      <div className="text-xs text-cyber-text-dim mb-2 font-mono uppercase tracking-wide">YOUR NOTE:</div>
+                      <p className="text-sm text-cyber-text whitespace-pre-wrap font-mono">{item.note}</p>
                     </div>
 
-                    <div className="text-xs text-zinc-500">
-                      Last updated {new Date(item.updatedAt).toLocaleDateString()}
+                    <div className="text-xs text-cyber-text-dim font-mono uppercase tracking-wide">
+                      LAST UPDATED {new Date(item.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>

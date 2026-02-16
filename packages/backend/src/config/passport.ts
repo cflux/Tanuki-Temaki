@@ -1,7 +1,8 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../services/auth.js';
+import { GOOGLE_CALLBACK_URL, GITHUB_CALLBACK_URL } from './constants.js';
 
 // Configure Google OAuth Strategy
 passport.use(
@@ -9,7 +10,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback',
+      callbackURL: GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -32,7 +33,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID || '',
       clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
-      callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/api/auth/github/callback',
+      callbackURL: GITHUB_CALLBACK_URL,
     },
     async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {

@@ -552,6 +552,20 @@ export function DiscoveryPage() {
     }
   }, [location]);
 
+  // Force table view on mobile (tree view not supported on small screens)
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && viewMode === 'tree') {
+        setViewMode('table');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [viewMode, setViewMode]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Loading Overlay */}
@@ -567,9 +581,169 @@ export function DiscoveryPage() {
       />
 
       {/* Search Bar */}
-      <header className="border-b border-cyber-accent bg-cyber-bg-elevated backdrop-blur sticky top-0 z-40 shadow-cyber-sm">
-        <div className="mx-auto px-4 py-3 max-w-[1920px] pl-20">
-          <div className="flex items-center gap-4 justify-center">
+      <header className="border-b border-cyber-accent bg-cyber-bg-elevated backdrop-blur sticky top-8 md:top-0 z-40 shadow-cyber-sm before:content-[''] before:absolute before:inset-x-0 before:bottom-full before:h-8 before:bg-cyber-bg before:md:hidden">
+        <div className="mx-auto px-2 md:px-4 py-2 md:py-3 max-w-[1920px] md:pl-20">
+          {/* Mobile Layout */}
+          <div className="md:hidden space-y-2">
+            {/* Row 1: Search Mode + Media Type */}
+            <div className="flex gap-2 justify-center">
+              {/* Search Mode Selector */}
+              <div className="flex gap-1 bg-cyber-bg p-0.5 border border-cyber-border">
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setSearchMode('series')}
+                      className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
+                        searchMode === 'series'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      SER
+                    </button>
+                  </div>
+                </div>
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setSearchMode('tag')}
+                      className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
+                        searchMode === 'tag'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      TAG
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Media Type Selector */}
+              <div className="flex gap-1 bg-cyber-bg p-0.5 border border-cyber-border">
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setMediaType('ANIME')}
+                      className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
+                        mediaType === 'ANIME'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      ANIM
+                    </button>
+                  </div>
+                </div>
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setMediaType('MANGA')}
+                      className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
+                        mediaType === 'MANGA'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      MANG
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Search Input + GO Button + Results Filter */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
+                placeholder={
+                  searchMode === 'tag'
+                    ? 'TAG/GENRE...'
+                    : `${mediaType}...`
+                }
+                className="flex-1 px-3 py-1.5 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent text-base font-mono uppercase"
+                disabled={isLoading}
+              />
+              <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <button
+                    onClick={handleDiscover}
+                    disabled={isLoading || !url.trim()}
+                    className="px-4 py-1.5 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg disabled:border-cyber-border-dim disabled:text-cyber-text-dim disabled:hover:bg-cyber-bg font-medium transition-all text-xs uppercase"
+                    style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                  >
+                    {isLoading ? 'GO' : 'GO'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Results Filter */}
+              <div className="flex gap-1 bg-cyber-bg p-0.5 border border-cyber-border">
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setResultsMediaFilter('BOTH')}
+                      className={`px-2 py-1 text-[10px] transition-all font-bold ${
+                        resultsMediaFilter === 'BOTH'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      ALL
+                    </button>
+                  </div>
+                </div>
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setResultsMediaFilter('ANIME')}
+                      className={`px-2 py-1 text-[10px] transition-all font-bold ${
+                        resultsMediaFilter === 'ANIME'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      TV
+                    </button>
+                  </div>
+                </div>
+                <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setResultsMediaFilter('MANGA')}
+                      className={`px-2 py-1 text-[10px] transition-all font-bold ${
+                        resultsMediaFilter === 'MANGA'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      disabled={isLoading}
+                    >
+                      BK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center gap-4 justify-center">
             {/* Search Mode Selector */}
             <div className="flex gap-1 bg-cyber-bg p-1 border border-cyber-border">
               <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
@@ -654,7 +828,7 @@ export function DiscoveryPage() {
                     ? 'SEARCH BY TAG/GENRE...'
                     : `SEARCH ${mediaType.toUpperCase()}...`
                 }
-                className="flex-1 px-4 py-2 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm transition-all text-sm font-mono uppercase"
+                className="flex-1 px-4 py-2 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm transition-all text-base font-mono uppercase"
                 disabled={isLoading}
               />
               <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
@@ -754,12 +928,12 @@ export function DiscoveryPage() {
       {/* Results */}
       <main className="flex-1 px-4 py-6 max-w-[1920px] mx-auto w-full">
         {relationshipGraph && (
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <div className="w-80 flex-shrink-0 space-y-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar - Hidden on mobile */}
+          <div className="hidden md:block md:w-80 md:flex-shrink-0 space-y-6">
 
-            {/* View Mode Toggle */}
-            <div className="bg-cyber-bg-card p-4 border border-cyber-border">
+            {/* View Mode Toggle - Hidden on mobile, tree view disabled on mobile */}
+            <div className="hidden md:block bg-cyber-bg-card p-4 border border-cyber-border">
               <h3 className="text-lg font-bold mb-3 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">VIEW MODE</h3>
               <div className="flex flex-col gap-2">
                 <div className="flex w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>

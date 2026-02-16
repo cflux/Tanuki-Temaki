@@ -52,55 +52,64 @@ export function WatchlistPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-zinc-400">Loading watchlist...</div>
+        <div className="animate-spin h-12 w-12 border-2 border-cyber-border border-t-cyber-accent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 pt-24 md:pt-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">📝 My Watchlist</h1>
+        <h1 className="text-3xl font-bold mb-6 text-cyber-text-bright uppercase tracking-widest border-b border-cyber-border pb-4">[LIST] WATCHLIST</h1>
 
         {/* Media Type Filter */}
         <div className="mb-6">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterMediaType('all')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                filterMediaType === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-              }`}
-            >
-              All Types ({watchlist.length})
-            </button>
+          <div className="flex flex-wrap gap-2">
+            <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+              <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                <button
+                  onClick={() => setFilterMediaType('all')}
+                  className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
+                    filterMediaType === 'all'
+                      ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                      : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
+                  }`}
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  ALL ({watchlist.length})
+                </button>
+              </div>
+            </div>
             {['ANIME', 'MANGA'].map(type => {
               const count = watchlist.filter(item => item.series.mediaType === type).length;
               return (
-                <button
-                  key={type}
-                  onClick={() => setFilterMediaType(type)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    filterMediaType === type
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  {type === 'ANIME' ? '📺' : '📖'} {type} ({count})
-                </button>
+                <div key={type} className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <button
+                      onClick={() => setFilterMediaType(type)}
+                      className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
+                        filterMediaType === type
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
+                      }`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      {type === 'ANIME' ? '[TV]' : '[BK]'} {type} ({count})
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
         </div>
 
         {filteredWatchlist.length === 0 ? (
-          <div className="bg-zinc-900 rounded-lg p-8 text-center border border-zinc-800">
-            <p className="text-zinc-400 mb-4">
-              {watchlist.length === 0 ? 'Your watchlist is empty' : `No ${filterMediaType === 'all' ? '' : filterMediaType.toLowerCase()} series in your watchlist`}
+          <div className="bg-cyber-bg-card p-8 text-center border border-cyber-border">
+            <p className="text-cyber-text-dim mb-4 font-mono uppercase tracking-wide">
+              {watchlist.length === 0 ? 'YOUR WATCHLIST IS EMPTY' : `NO ${filterMediaType === 'all' ? '' : filterMediaType} SERIES IN YOUR WATCHLIST`}
             </p>
-            <p className="text-sm text-zinc-500">
-              Add series you want to watch/read later from the discovery page
+            <p className="text-sm text-cyber-text-dim font-mono">
+              ADD SERIES YOU WANT TO WATCH/READ LATER FROM THE DISCOVERY PAGE
             </p>
           </div>
         ) : (
@@ -108,7 +117,7 @@ export function WatchlistPage() {
             {filteredWatchlist.map((item) => (
               <div
                 key={item.id}
-                className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-colors"
+                className="bg-cyber-bg-card border border-cyber-border overflow-hidden hover:border-cyber-accent transition-colors"
               >
                 {item.series.titleImage && (
                   <img
@@ -121,21 +130,26 @@ export function WatchlistPage() {
                   />
                 )}
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{item.series.title}</h3>
-                  <div className="flex items-center gap-2 mb-3 text-xs">
-                    <span className="px-2 py-1 bg-blue-600/20 border border-blue-600/50 text-blue-300 rounded">
-                      {item.series.mediaType}
+                  <h3 className="font-semibold text-lg mb-2 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                  <div className="flex items-center gap-2 mb-3 text-xs flex-wrap">
+                    <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent uppercase tracking-wide">
+                      {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'} {item.series.mediaType}
                     </span>
-                    <span className="text-zinc-500">
-                      Added {new Date(item.addedAt).toLocaleDateString()}
+                    <span className="text-cyber-text-dim font-mono uppercase tracking-wide">
+                      ADDED {new Date(item.addedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <button
-                    onClick={() => handleRemove(item.seriesId)}
-                    className="w-full px-3 py-2 bg-red-600/20 border border-red-600/50 text-red-300 rounded-lg text-sm hover:bg-red-600/30 transition-colors"
-                  >
-                    Remove from Watchlist
-                  </button>
+                  <div className="inline-flex w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <div className="bg-red-500 p-[1px] w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <button
+                        onClick={() => handleRemove(item.seriesId)}
+                        className="w-full px-3 py-2 bg-cyber-bg border border-red-500 text-red-400 text-sm hover:bg-red-500 hover:text-black transition-all uppercase tracking-wider"
+                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      >
+                        REMOVE
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

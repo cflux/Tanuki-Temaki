@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { FRONTEND_URL, COOKIE_CONFIG } from '../config/constants.js';
 import { setAuthCookies, clearAuthCookies } from '../utils/cookies.js';
 import { logger } from '../lib/logger.js';
+import { createExchangeToken, exchangeToken } from '../services/tokenExchange.js';
 
 const router = express.Router();
 
@@ -18,19 +19,13 @@ router.get(
   (req, res) => {
     const user = req.user as { userId: string; username: string | null; isNewUser: boolean };
 
-    // Generate tokens
-    const accessToken = AuthService.generateAccessToken(user.userId, user.username || 'temporary');
-    const refreshToken = AuthService.generateRefreshToken(user.userId, user.username || 'temporary');
+    // Create one-time exchange token instead of setting cookies
+    // This allows OAuth to work across different domains (localhost → IP address)
+    const token = createExchangeToken(user.userId, user.username, user.isNewUser);
 
-    // Set httpOnly cookies
-    setAuthCookies(res, accessToken, refreshToken);
-
-    // Redirect to frontend with status
-    if (user.isNewUser || !user.username) {
-      res.redirect(`${FRONTEND_URL}/auth/callback?status=needs_username`);
-    } else {
-      res.redirect(`${FRONTEND_URL}/auth/callback?status=success`);
-    }
+    // Redirect to frontend with exchange token
+    const status = user.isNewUser || !user.username ? 'needs_username' : 'success';
+    res.redirect(`${FRONTEND_URL}/auth/callback?status=${status}&token=${token}`);
   }
 );
 
@@ -44,21 +39,43 @@ router.get(
   (req, res) => {
     const user = req.user as { userId: string; username: string | null; isNewUser: boolean };
 
-    // Generate tokens
-    const accessToken = AuthService.generateAccessToken(user.userId, user.username || 'temporary');
-    const refreshToken = AuthService.generateRefreshToken(user.userId, user.username || 'temporary');
+    // Create one-time exchange token instead of setting cookies
+    // This allows OAuth to work across different domains (localhost → IP address)
+    const token = createExchangeToken(user.userId, user.username, user.isNewUser);
 
-    // Set httpOnly cookies
-    setAuthCookies(res, accessToken, refreshToken);
-
-    // Redirect to frontend with status
-    if (user.isNewUser || !user.username) {
-      res.redirect(`${FRONTEND_URL}/auth/callback?status=needs_username`);
-    } else {
-      res.redirect(`${FRONTEND_URL}/auth/callback?status=success`);
-    }
+    // Redirect to frontend with exchange token
+    const status = user.isNewUser || !user.username ? 'needs_username' : 'success';
+    res.redirect(`${FRONTEND_URL}/auth/callback?status=${status}&token=${token}`);
   }
 );
+
+// Exchange one-time token for auth cookies
+router.post('/exchange', (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token required' });
+  }
+
+  // Exchange token for user data
+  const userData = exchangeToken(token);
+
+  if (!userData) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  // Generate JWT tokens
+  const accessToken = AuthService.generateAccessToken(userData.userId, userData.username || 'temporary');
+  const refreshToken = AuthService.generateRefreshToken(userData.userId, userData.username || 'temporary');
+
+  // Set httpOnly cookies for the current domain
+  setAuthCookies(res, accessToken, refreshToken);
+
+  res.json({
+    success: true,
+    needsUsername: userData.isNewUser || !userData.username
+  });
+});
 
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {

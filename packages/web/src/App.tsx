@@ -14,6 +14,7 @@ import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { Logo } from './components/Logo';
+import { MobileMenu } from './components/MobileMenu';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
 
@@ -91,7 +92,7 @@ function App() {
         {/* Fixed Logo with clipped corner */}
         <Link
           to="/"
-          className="fixed top-2 left-4 z-50 group"
+          className="fixed top-2 left-2 md:left-4 z-50 group"
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
         >
           <div
@@ -99,17 +100,22 @@ function App() {
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
           >
             <div
-              className="bg-cyber-bg p-2 text-cyber-accent"
+              className="bg-cyber-bg p-1 md:p-2 text-cyber-accent"
               style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
             >
-              <Logo className="h-28 transition-all group-hover:drop-shadow-[0_0_10px_currentColor]" />
+              <Logo className="h-16 md:h-28 transition-all group-hover:drop-shadow-[0_0_10px_currentColor]" />
             </div>
           </div>
         </Link>
 
+        {/* Mobile Menu */}
+        <MobileMenu />
+
+        {/* Desktop Header */}
         <header className="border-b border-cyber-accent bg-cyber-bg-elevated shadow-cyber-sm">
-          <div className="w-full pl-44 pr-4 py-4 flex justify-end items-center">
-            <div className="flex items-center gap-3">
+          <div className="w-full pl-4 md:pl-44 pr-4 py-4 flex justify-end items-center">
+            {/* Desktop Navigation - Hidden on Mobile */}
+            <div className="hidden md:flex items-center gap-3">
               <ThemeSwitcher />
               <SafeModeToggle />
               <PersonalizeToggle />
