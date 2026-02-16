@@ -18,7 +18,7 @@ COPY packages/web/package.json ./packages/web/
 COPY shared/package.json ./shared/
 
 # Install pnpm and dependencies
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@9
 RUN pnpm install --frozen-lockfile
 
 # Copy source code

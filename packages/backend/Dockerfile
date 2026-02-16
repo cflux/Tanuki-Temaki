@@ -11,7 +11,7 @@ COPY packages/backend/package.json ./packages/backend/
 COPY shared/package.json ./shared/
 
 # Install pnpm and dependencies
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@9
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -33,7 +33,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@9
 
 # Copy package files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
