@@ -58,25 +58,30 @@ export function WatchlistButton({ seriesId, initialStatus }: WatchlistButtonProp
 
   if (!user) {
     return (
-      <div className="text-xs text-zinc-500">
-        Sign in to add to watchlist
+      <div className="text-xs text-cyber-text-dim uppercase tracking-wide">
+        SIGN IN TO ADD TO WATCHLIST
       </div>
     );
   }
 
   return (
-    <button
-      onClick={handleToggle}
-      disabled={isLoading}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-        status
-          ? 'bg-green-600/20 border border-green-600/50 text-green-300 hover:bg-green-600/30'
-          : 'bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700'
-      }`}
-      title={status ? 'Remove from watchlist' : 'Add to watchlist'}
-    >
-      <span>{status ? '✓' : '+'}</span>
-      <span>{status ? 'In Watchlist' : 'Watchlist'}</span>
-    </button>
+    <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+      <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+        <button
+          onClick={handleToggle}
+          disabled={isLoading}
+          className={`px-3 py-1.5 text-sm font-medium transition-all flex items-center gap-2 uppercase tracking-wider ${
+            status
+              ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+              : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+          }`}
+          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+          title={status ? 'Remove from watchlist' : 'Add to watchlist'}
+        >
+          <span className="font-bold">{status ? '[OK]' : '[+]'}</span>
+          <span>{status ? 'IN WATCHLIST' : 'WATCHLIST'}</span>
+        </button>
+      </div>
+    </div>
   );
 }

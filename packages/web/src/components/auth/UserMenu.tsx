@@ -48,12 +48,17 @@ export const UserMenu: React.FC = () => {
   if (!user) {
     return (
       <>
-        <button
-          onClick={() => setShowLoginModal(true)}
-          className="h-10 flex items-center px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-        >
-          Sign In
-        </button>
+        <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+          <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="h-10 flex items-center px-4 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg font-medium transition-all uppercase tracking-wider shadow-cyber-md hover:shadow-cyber-lg"
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              SIGN IN
+            </button>
+          </div>
+        </div>
         <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       </>
     );
@@ -61,60 +66,69 @@ export const UserMenu: React.FC = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="h-10 flex items-center gap-2 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-medium transition-colors"
-      >
-        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-          {user.username.charAt(0).toUpperCase()}
+      <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+        <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="h-10 flex items-center gap-2 px-4 bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-text hover:text-cyber-accent font-medium transition-all uppercase tracking-wide"
+            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+          >
+            <div className="w-6 h-6 bg-cyber-accent border border-cyber-accent flex items-center justify-center text-cyber-bg font-medium text-sm">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+            <span className="font-medium">{user.username}</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${
+                showDropdown ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
-        <span className="font-medium text-zinc-100">{user.username}</span>
-        <svg
-          className={`w-4 h-4 text-zinc-400 transition-transform ${
-            showDropdown ? 'rotate-180' : ''
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+      </div>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-zinc-900 rounded-lg shadow-lg border border-zinc-800 py-2 z-50">
-          <button
-            onClick={handleProfileClick}
-            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
-          >
-            👤 Profile
-          </button>
-          <div className="border-t border-zinc-800 my-1"></div>
-          <button
-            onClick={() => { setShowDropdown(false); navigate('/watchlist'); }}
-            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
-          >
-            📝 Watchlist
-          </button>
-          <button
-            onClick={() => { setShowDropdown(false); navigate('/rated'); }}
-            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
-          >
-            ⭐ Rated Series
-          </button>
-          <button
-            onClick={() => { setShowDropdown(false); navigate('/noted'); }}
-            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-zinc-300"
-          >
-            📝 My Notes
-          </button>
-          <div className="border-t border-zinc-800 my-1"></div>
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-4 py-2 hover:bg-zinc-800 transition-colors text-red-400"
-          >
-            Sign Out
-          </button>
+        <div className="absolute right-0 mt-2 w-48 z-50" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+          <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+            <div className="bg-cyber-bg-elevated shadow-cyber-lg py-2" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+              <button
+                onClick={handleProfileClick}
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+              >
+                [USER] PROFILE
+              </button>
+              <div className="border-t border-cyber-border my-1"></div>
+              <button
+                onClick={() => { setShowDropdown(false); navigate('/watchlist'); }}
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+              >
+                [LIST] WATCHLIST
+              </button>
+              <button
+                onClick={() => { setShowDropdown(false); navigate('/rated'); }}
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+              >
+                [STAR] RATED SERIES
+              </button>
+              <button
+                onClick={() => { setShowDropdown(false); navigate('/noted'); }}
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+              >
+                [NOTE] MY NOTES
+              </button>
+              <div className="border-t border-cyber-border my-1"></div>
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-red-500 hover:text-black transition-colors text-red-400 uppercase tracking-wide text-sm"
+              >
+                [EXIT] SIGN OUT
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

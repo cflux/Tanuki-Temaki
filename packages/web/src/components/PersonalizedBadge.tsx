@@ -9,26 +9,26 @@ export function PersonalizedBadge({ score }: PersonalizedBadgeProps) {
   if (score === undefined) return null;
 
   // Determine badge color based on score
-  let colorClass = 'bg-purple-600/20 border-purple-600/50 text-purple-300';
-  let emoji = '✨';
+  let colorClass = 'bg-transparent border border-cyber-accent text-cyber-accent shadow-cyber-sm';
+  let icon = '[AI]';
 
   if (score > 10) {
     // Highly recommended
-    colorClass = 'bg-green-600/20 border-green-600/50 text-green-300';
-    emoji = '🌟';
+    colorClass = 'bg-transparent border border-cyber-accent-bright text-cyber-accent-bright shadow-cyber-md';
+    icon = '[++]';
   } else if (score < -50) {
     // Not recommended
-    colorClass = 'bg-red-600/20 border-red-600/50 text-red-300';
-    emoji = '⚠️';
+    colorClass = 'bg-transparent border border-red-500 text-red-400';
+    icon = '[!!]';
   }
 
   return (
     <div
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${colorClass}`}
+      className={`inline-flex items-center gap-1 px-2 py-1 border text-xs font-medium uppercase tracking-wide ${colorClass}`}
       title={`Personalized Score: ${score > 0 ? '+' : ''}${score}`}
     >
-      <span>{emoji}</span>
-      <span>Personalized</span>
+      <span>{icon}</span>
+      <span>PERSONALIZED</span>
     </div>
   );
 }

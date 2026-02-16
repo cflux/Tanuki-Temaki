@@ -614,59 +614,79 @@ export function DiscoveryPage() {
       />
 
       {/* Search Bar */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-cyber-accent bg-cyber-bg-elevated backdrop-blur sticky top-0 z-40 shadow-cyber-sm">
         <div className="mx-auto px-4 py-3 max-w-[1920px] pl-20">
           <div className="flex items-center gap-4 justify-center">
             {/* Search Mode Selector */}
-            <div className="flex gap-1 bg-zinc-800 rounded-lg p-1">
-              <button
-                onClick={() => setSearchMode('series')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  searchMode === 'series'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-                disabled={isLoading}
-              >
-                🎬 Series
-              </button>
-              <button
-                onClick={() => setSearchMode('tag')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  searchMode === 'tag'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-                disabled={isLoading}
-              >
-                🏷️ Tag
-              </button>
+            <div className="flex gap-1 bg-cyber-bg p-1 border border-cyber-border">
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setSearchMode('series')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
+                      searchMode === 'series'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                  >
+                    [SERIES]
+                  </button>
+                </div>
+              </div>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setSearchMode('tag')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
+                      searchMode === 'tag'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                  >
+                    [TAG]
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Media Type Selector */}
-            <div className="flex gap-1 bg-zinc-800 rounded-lg p-1">
-              <button
-                onClick={() => setMediaType('ANIME')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  mediaType === 'ANIME'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-                disabled={isLoading}
-              >
-                📺 Anime
-              </button>
-              <button
-                onClick={() => setMediaType('MANGA')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  mediaType === 'MANGA'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-                disabled={isLoading}
-              >
-                📖 Manga
-              </button>
+            <div className="flex gap-1 bg-cyber-bg p-1 border border-cyber-border">
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setMediaType('ANIME')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
+                      mediaType === 'ANIME'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                  >
+                    [TV] ANIME
+                  </button>
+                </div>
+              </div>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setMediaType('MANGA')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
+                      mediaType === 'MANGA'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                  >
+                    [BOOK] MANGA
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Search */}
@@ -678,59 +698,79 @@ export function DiscoveryPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
                 placeholder={
                   searchMode === 'tag'
-                    ? 'Search by tag/genre (e.g. action, romance, comedy)...'
-                    : `Search ${mediaType.toLowerCase()} by title${mediaType === 'ANIME' ? ' or Crunchyroll URL' : ''}...`
+                    ? 'SEARCH BY TAG/GENRE...'
+                    : `SEARCH ${mediaType.toUpperCase()}...`
                 }
-                className="flex-1 px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="flex-1 px-4 py-2 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm transition-all text-sm font-mono uppercase"
                 disabled={isLoading}
               />
-              <button
-                onClick={handleDiscover}
-                disabled={isLoading || !url.trim()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-800 disabled:text-zinc-500 rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
-              >
-                {isLoading ? 'Searching...' : 'Discover'}
-              </button>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={handleDiscover}
+                    disabled={isLoading || !url.trim()}
+                    className="px-6 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg disabled:border-cyber-border-dim disabled:text-cyber-text-dim disabled:hover:bg-cyber-bg font-medium transition-all text-sm whitespace-nowrap uppercase tracking-wider shadow-cyber-md hover:shadow-cyber-lg"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    {isLoading ? 'SEARCHING...' : 'DISCOVER'}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Results Filter - Icon only */}
-            <div className="flex gap-1 bg-zinc-800 rounded-lg p-1">
-              <button
-                onClick={() => setResultsMediaFilter('BOTH')}
-                className={`px-2 h-9 flex items-center justify-center gap-0.5 rounded text-base transition-colors whitespace-nowrap ${
-                  resultsMediaFilter === 'BOTH'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
-                }`}
-                disabled={isLoading}
-                title="Show both anime and manga in results"
-              >
-                <span>📺</span><span>📖</span>
-              </button>
-              <button
-                onClick={() => setResultsMediaFilter('ANIME')}
-                className={`w-9 h-9 flex items-center justify-center rounded text-base transition-colors ${
-                  resultsMediaFilter === 'ANIME'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
-                }`}
-                disabled={isLoading}
-                title="Show only anime in results"
-              >
-                📺
-              </button>
-              <button
-                onClick={() => setResultsMediaFilter('MANGA')}
-                className={`w-9 h-9 flex items-center justify-center rounded text-base transition-colors ${
-                  resultsMediaFilter === 'MANGA'
-                    ? 'bg-green-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
-                }`}
-                disabled={isLoading}
-                title="Show only manga in results"
-              >
-                📖
-              </button>
+            <div className="flex gap-1 bg-cyber-bg p-1 border border-cyber-border">
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setResultsMediaFilter('BOTH')}
+                    className={`px-2 h-9 flex items-center justify-center gap-0.5 text-xs transition-all font-bold ${
+                      resultsMediaFilter === 'BOTH'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                    title="Show both anime and manga in results"
+                  >
+                    ALL
+                  </button>
+                </div>
+              </div>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setResultsMediaFilter('ANIME')}
+                    className={`w-9 h-9 flex items-center justify-center text-xs transition-all font-bold ${
+                      resultsMediaFilter === 'ANIME'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                    title="Show only anime in results"
+                  >
+                    TV
+                  </button>
+                </div>
+              </div>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setResultsMediaFilter('MANGA')}
+                    className={`w-9 h-9 flex items-center justify-center text-xs transition-all font-bold ${
+                      resultsMediaFilter === 'MANGA'
+                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
+                    }`}
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    disabled={isLoading}
+                    title="Show only manga in results"
+                  >
+                    BK
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -739,16 +779,16 @@ export function DiscoveryPage() {
       {/* Error Display */}
       {error && (
         <div className="mx-auto px-4 py-4 max-w-[1920px]">
-          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+          <div className="bg-cyber-bg-card border-2 border-red-500 p-4 shadow-[0_0_12px_rgba(255,0,0,0.5)]">
             <div className="flex items-start gap-3">
               <span className="text-2xl">⚠️</span>
               <div className="flex-1">
-                <h3 className="text-red-400 font-semibold mb-1">Search Error</h3>
-                <p className="text-red-200 text-sm">{error}</p>
+                <h3 className="text-red-400 font-semibold mb-1 uppercase tracking-wider">SEARCH ERROR</h3>
+                <p className="text-red-200 text-sm font-mono">{error}</p>
               </div>
               <button
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-300 transition-colors"
+                className="text-red-400 hover:text-red-300 transition-colors font-bold"
                 aria-label="Dismiss error"
               >
                 ✕
@@ -766,53 +806,63 @@ export function DiscoveryPage() {
           <div className="w-80 flex-shrink-0 space-y-6">
 
             {/* View Mode Toggle */}
-            <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-              <h3 className="text-lg font-bold mb-3">View Mode</h3>
+            <div className="bg-cyber-bg-card p-4 border border-cyber-border">
+              <h3 className="text-lg font-bold mb-3 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">VIEW MODE</h3>
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    viewMode === 'tree'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  🌳 Tree View
-                </button>
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    viewMode === 'table'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  📋 Table View
-                </button>
+                <div className="flex w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <div className="bg-cyber-accent p-[1px] w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                    <button
+                      onClick={() => setViewMode('tree')}
+                      className={`px-4 py-2 font-medium transition-all uppercase tracking-wide w-full ${
+                        viewMode === 'tree'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                          : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                      }`}
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    >
+                      [TREE] VIEW
+                    </button>
+                  </div>
+                </div>
+                <div className="flex w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <div className="bg-cyber-accent p-[1px] w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`px-4 py-2 font-medium transition-all uppercase tracking-wide w-full ${
+                        viewMode === 'table'
+                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                          : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                      }`}
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    >
+                      [LIST] VIEW
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-              <h3 className="text-lg font-bold mb-3">Current Search</h3>
+            <div className="bg-cyber-bg-card p-4 border border-cyber-border">
+              <h3 className="text-lg font-bold mb-3 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">CURRENT SEARCH</h3>
               <div className="space-y-3">
                 <div>
-                  <div className="text-2xl font-bold text-blue-500">
+                  <div className="text-2xl font-bold text-cyber-accent font-mono">
                     {relationshipGraph.nodes.length}
                   </div>
-                  <div className="text-sm text-zinc-400">Series Found</div>
+                  <div className="text-sm text-cyber-text-dim uppercase tracking-wide">SERIES FOUND</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-500">
+                  <div className="text-2xl font-bold text-cyber-accent-bright font-mono">
                     {relationshipGraph.edges.length}
                   </div>
-                  <div className="text-sm text-zinc-400">Relationships</div>
+                  <div className="text-sm text-cyber-text-dim uppercase tracking-wide">RELATIONSHIPS</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-500">
+                  <div className="text-2xl font-bold text-cyber-accent-dim font-mono">
                     {new Set(relationshipGraph.nodes.map(n => n.cluster)).size}
                   </div>
-                  <div className="text-sm text-zinc-400">Clusters</div>
+                  <div className="text-sm text-cyber-text-dim uppercase tracking-wide">CLUSTERS</div>
                 </div>
                 <div>
                   {(() => {
@@ -841,10 +891,10 @@ export function DiscoveryPage() {
 
                     return (
                       <>
-                        <div className={`text-2xl font-bold ${ageColor}`}>
+                        <div className={`text-2xl font-bold ${ageColor} font-mono`}>
                           {ageText}
                         </div>
-                        <div className="text-sm text-zinc-400">Data Age</div>
+                        <div className="text-sm text-cyber-text-dim uppercase tracking-wide">DATA AGE</div>
                       </>
                     );
                   })()}
@@ -852,39 +902,42 @@ export function DiscoveryPage() {
               </div>
 
               {/* Clear Database Button (for testing) */}
-              <button
-                onClick={handleClearDatabase}
-                className="w-full mt-4 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-300 rounded-lg text-sm font-medium transition-colors"
-                title="Delete all cached data from database"
-              >
-                🗑️ Clear Database
-              </button>
+              <div className="flex w-full mt-4" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-orange-500 p-[1px] w-full" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={handleClearDatabase}
+                    className="w-full px-4 py-2 bg-cyber-bg hover:bg-red-500 hover:text-black border border-red-500 text-red-400 text-sm font-medium transition-all uppercase tracking-wider"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    title="Delete all cached data from database"
+                  >
+                    🗑️ CLEAR DATABASE
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Cache Stats */}
             {cacheStats && (
-              <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-                <h3 className="text-lg font-bold mb-3">Database Cache</h3>
+              <div className="bg-cyber-bg-card p-4 border border-cyber-border">
+                <h3 className="text-lg font-bold mb-3 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">DATABASE CACHE</h3>
                 <div className="space-y-3">
                   <div>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-cyber-accent font-mono">
                       {cacheStats.totalSeries}
                     </div>
-                    <div className="text-sm text-zinc-400">Total Series</div>
+                    <div className="text-sm text-cyber-text-dim uppercase tracking-wide">TOTAL SERIES</div>
                   </div>
 
                   {/* Media Type Breakdown */}
                   {cacheStats.byMediaType.length > 0 && (
-                    <div className="pt-2 border-t border-zinc-800">
-                      <div className="text-xs font-semibold text-zinc-500 mb-2">By Type</div>
+                    <div className="pt-2 border-t border-cyber-border-dim">
+                      <div className="text-xs font-semibold text-cyber-text-dim mb-2 uppercase tracking-wider">BY TYPE</div>
                       {cacheStats.byMediaType.map(({ mediaType, count }) => (
                         <div key={mediaType} className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-zinc-400">
-                            {mediaType === 'ANIME' ? '📺 Anime' : '📖 Manga'}
+                          <span className="text-sm text-cyber-text-dim uppercase tracking-wide">
+                            {mediaType === 'ANIME' ? '📺 ANIME' : '📖 MANGA'}
                           </span>
-                          <span className={`text-sm font-semibold ${
-                            mediaType === 'ANIME' ? 'text-blue-400' : 'text-green-400'
-                          }`}>
+                          <span className="text-sm font-semibold text-cyber-accent font-mono">
                             {count}
                           </span>
                         </div>
@@ -892,16 +945,16 @@ export function DiscoveryPage() {
                     </div>
                   )}
 
-                  <div className="pt-2 border-t border-zinc-800">
+                  <div className="pt-2 border-t border-cyber-border-dim">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-zinc-400">Tags</span>
-                      <span className="text-sm font-semibold text-zinc-300">{cacheStats.totalTags}</span>
+                      <span className="text-sm text-cyber-text-dim uppercase tracking-wide">TAGS</span>
+                      <span className="text-sm font-semibold text-cyber-text font-mono">{cacheStats.totalTags}</span>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-zinc-400">Relations</span>
-                      <span className="text-sm font-semibold text-zinc-300">{cacheStats.totalRelationships}</span>
+                      <span className="text-sm text-cyber-text-dim uppercase tracking-wide">RELATIONS</span>
+                      <span className="text-sm font-semibold text-cyber-text font-mono">{cacheStats.totalRelationships}</span>
                     </div>
                   </div>
                 </div>
@@ -910,44 +963,49 @@ export function DiscoveryPage() {
 
             {/* Service filters */}
             {(animeServices.length > 0 || mangaServices.length > 0) && (
-              <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold">Filter by Service</h3>
+              <div className="bg-cyber-bg-card p-4 border border-cyber-border">
+                <div className="flex items-center justify-between mb-3 border-b border-cyber-border-dim pb-2">
+                  <h3 className="text-lg font-bold text-cyber-text-bright uppercase tracking-wider">FILTER BY SERVICE</h3>
                   {user && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          const userServices = await userApi.getAvailableServices();
-                          // Deselect all services NOT in user's preferences
-                          const allServices = [...animeServices, ...mangaServices];
-                          allServices.forEach(service => {
-                            const isInPreferences = userServices.includes(service);
-                            const isCurrentlyDeselected = deselectedServices.has(service);
-                            // If service is not in preferences and not already deselected, deselect it
-                            if (!isInPreferences && !isCurrentlyDeselected) {
-                              toggleService(service);
+                    <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                      <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const userServices = await userApi.getAvailableServices();
+                              // Deselect all services NOT in user's preferences
+                              const allServices = [...animeServices, ...mangaServices];
+                              allServices.forEach(service => {
+                                const isInPreferences = userServices.includes(service);
+                                const isCurrentlyDeselected = deselectedServices.has(service);
+                                // If service is not in preferences and not already deselected, deselect it
+                                if (!isInPreferences && !isCurrentlyDeselected) {
+                                  toggleService(service);
+                                }
+                                // If service is in preferences and currently deselected, re-select it
+                                else if (isInPreferences && isCurrentlyDeselected) {
+                                  toggleService(service);
+                                }
+                              });
+                            } catch (error) {
+                              console.error('Failed to load service preferences:', error);
                             }
-                            // If service is in preferences and currently deselected, re-select it
-                            else if (isInPreferences && isCurrentlyDeselected) {
-                              toggleService(service);
-                            }
-                          });
-                        } catch (error) {
-                          console.error('Failed to load service preferences:', error);
-                        }
-                      }}
-                      className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                      title="Apply your saved service preferences"
-                    >
-                      Apply My Services
-                    </button>
+                          }}
+                          className="text-xs px-3 py-1.5 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg transition-all uppercase tracking-wider"
+                          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                          title="Apply your saved service preferences"
+                        >
+                          APPLY MY SERVICES
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 
                 {/* Anime Streaming Services */}
                 {animeServices.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-zinc-400 mb-2">📺 Anime Streaming</h4>
+                    <h4 className="text-sm font-semibold text-cyber-text-dim mb-2 uppercase tracking-wider">[TV] ANIME STREAMING</h4>
                     <div className="flex flex-wrap gap-2">
                       {animeServices.map((service) => {
                         // Get platform icon for anime platforms
@@ -972,17 +1030,21 @@ export function DiscoveryPage() {
                         };
 
                         return (
-                          <button
-                            key={service}
-                            onClick={() => toggleService(service)}
-                            className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                              deselectedServices.has(service)
-                                ? 'bg-zinc-800 text-zinc-600 line-through'
-                                : 'bg-orange-600/20 border border-orange-600/50 text-orange-300 hover:bg-orange-600/30'
-                            }`}
-                          >
-                            {getAnimePlatformIcon(service)} {service}
-                          </button>
+                          <div key={service} className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                            <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                              <button
+                                onClick={() => toggleService(service)}
+                                className={`px-3 py-1.5 text-sm transition-all uppercase tracking-wide ${
+                                  deselectedServices.has(service)
+                                    ? 'bg-cyber-bg-elevated text-cyber-text-dim line-through border border-cyber-border-dim'
+                                    : 'bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg'
+                                }`}
+                                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                              >
+                                {getAnimePlatformIcon(service)} {service}
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
@@ -992,7 +1054,7 @@ export function DiscoveryPage() {
                 {/* Manga Reading Platforms */}
                 {mangaServices.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-zinc-400 mb-2">📖 Manga Reading</h4>
+                    <h4 className="text-sm font-semibold text-cyber-text-dim mb-2 uppercase tracking-wider">[BOOK] MANGA READING</h4>
                     <div className="flex flex-wrap gap-2">
                       {mangaServices.map((service) => {
                         // Get platform icon for manga platforms
@@ -1019,17 +1081,21 @@ export function DiscoveryPage() {
                         };
 
                         return (
-                          <button
-                            key={service}
-                            onClick={() => toggleService(service)}
-                            className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                              deselectedServices.has(service)
-                                ? 'bg-zinc-800 text-zinc-600 line-through'
-                                : 'bg-green-600/20 border border-green-600/50 text-green-300 hover:bg-green-600/30'
-                            }`}
-                          >
-                            {getMangaPlatformIcon(service)} {service}
-                          </button>
+                          <div key={service} className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                            <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                              <button
+                                onClick={() => toggleService(service)}
+                                className={`px-3 py-1.5 text-sm transition-all uppercase tracking-wide ${
+                                  deselectedServices.has(service)
+                                    ? 'bg-cyber-bg-elevated text-cyber-text-dim line-through border border-cyber-border-dim'
+                                    : 'bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg'
+                                }`}
+                                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                              >
+                                {getMangaPlatformIcon(service)} {service}
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
@@ -1040,18 +1106,18 @@ export function DiscoveryPage() {
 
             {/* Tag filters */}
             {allTags.length > 0 && (
-              <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
+              <div className="bg-cyber-bg-card p-4 border border-cyber-border">
                 <div className="mb-3">
-                  <h3 className="text-lg font-bold mb-2">Filter by Tag</h3>
+                  <h3 className="text-lg font-bold mb-2 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border-dim pb-2">FILTER BY TAG</h3>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer select-none">
+                    <label className="flex items-center gap-2 text-sm text-cyber-text-dim cursor-pointer select-none uppercase tracking-wide">
                       <input
                         type="checkbox"
                         checked={filterMode === 'all'}
                         onChange={e => setFilterMode(e.target.checked ? 'all' : 'primary')}
-                        className="accent-blue-500"
+                        className="accent-cyber-accent"
                       />
-                      Match all (not just primary)
+                      MATCH ALL
                     </label>
                     <div className="flex gap-2">
                       <button
@@ -1064,10 +1130,10 @@ export function DiscoveryPage() {
                             }
                           });
                         }}
-                        className="text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded transition-colors"
+                        className="text-xs px-2 py-1 bg-transparent border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent transition-all uppercase tracking-wide"
                         title="Clear all tag filters"
                       >
-                        Clear All
+                        CLEAR ALL
                       </button>
                     </div>
                   </div>
@@ -1079,7 +1145,7 @@ export function DiscoveryPage() {
                     const isRequired = requiredTags.has(tag);
                     const isExcluded = excludedTags.has(tag);
 
-                    let className = 'px-2 py-0.5 rounded text-xs transition-colors ';
+                    let className = 'px-2 py-0.5 text-xs transition-all uppercase tracking-wide font-mono ';
                     let title = `${count} series`;
 
                     if (isPrimary) {
@@ -1088,16 +1154,16 @@ export function DiscoveryPage() {
                     title += ' - Click to cycle: ';
 
                     if (isRequired) {
-                      // Required state - green
-                      className += 'bg-green-600/30 border border-green-600/50 text-green-300 hover:bg-green-600/40';
+                      // Required state - cyber accent
+                      className += 'bg-cyber-bg border border-cyber-accent text-cyber-accent shadow-cyber-sm hover:bg-cyber-accent hover:text-cyber-bg';
                       title += 'Required (show only) → Excluded → Neutral';
                     } else if (isExcluded) {
                       // Excluded state - red with strikethrough
-                      className += 'bg-red-600/30 border border-red-600/50 text-red-300 hover:bg-red-600/40 line-through';
+                      className += 'bg-cyber-bg border border-red-500 text-red-400 line-through hover:bg-red-500 hover:text-black';
                       title += 'Excluded (hide) → Neutral → Required';
                     } else {
-                      // Neutral state - gray
-                      className += 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600';
+                      // Neutral state - dim
+                      className += 'bg-cyber-bg border border-cyber-border-dim text-cyber-text-dim hover:border-cyber-border hover:text-cyber-text';
                       title += 'Neutral → Required → Excluded';
                     }
 
@@ -1112,7 +1178,7 @@ export function DiscoveryPage() {
                         {isExcluded && '✗ '}
                         {isPrimary && '★ '}
                         {tag}
-                        <span className={`ml-1 ${isExcluded ? 'text-red-400' : isRequired ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`ml-1 ${isExcluded ? 'text-red-400' : isRequired ? 'text-cyber-accent-bright' : 'text-cyber-text-dim'}`}>
                           {count}
                         </span>
                       </button>

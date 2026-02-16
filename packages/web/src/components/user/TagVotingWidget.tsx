@@ -44,7 +44,7 @@ export const TagVotingWidget: React.FC<TagVotingWidgetProps> = ({
 
   if (!user) {
     return (
-      <span className="px-2 py-1 bg-zinc-800 text-zinc-300 rounded-md text-sm">
+      <span className="px-2 py-1 bg-transparent border border-cyber-border-dim text-cyber-text-dim text-sm uppercase tracking-wide font-mono">
         {tagValue}
       </span>
     );
@@ -52,22 +52,22 @@ export const TagVotingWidget: React.FC<TagVotingWidgetProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-1 px-2 py-1 rounded-md text-sm transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors uppercase tracking-wide font-mono ${
         vote === 1
-          ? 'bg-green-900/30 text-green-400 border border-green-700/50'
+          ? 'bg-transparent text-cyber-accent border border-cyber-accent shadow-cyber-sm'
           : vote === -1
-          ? 'bg-red-900/30 text-red-400 border border-red-700/50'
-          : 'bg-zinc-800 text-zinc-300 border border-transparent'
+          ? 'bg-transparent text-red-400 border border-red-500'
+          : 'bg-transparent text-cyber-text-dim border border-cyber-border-dim'
       }`}
     >
       {/* Upvote button */}
       <button
         onClick={() => handleVote(1)}
         disabled={isLoading}
-        className={`p-0.5 rounded transition-colors ${
+        className={`p-0.5 transition-colors ${
           vote === 1
-            ? 'text-green-400'
-            : 'text-zinc-500 hover:text-green-400'
+            ? 'text-cyber-accent'
+            : 'text-cyber-border hover:text-cyber-accent'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         title="Upvote this tag"
       >
@@ -88,10 +88,10 @@ export const TagVotingWidget: React.FC<TagVotingWidgetProps> = ({
       <button
         onClick={() => handleVote(-1)}
         disabled={isLoading}
-        className={`p-0.5 rounded transition-colors ${
+        className={`p-0.5 transition-colors ${
           vote === -1
             ? 'text-red-400'
-            : 'text-zinc-500 hover:text-red-400'
+            : 'text-cyber-border hover:text-red-400'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         title="Downvote this tag"
       >

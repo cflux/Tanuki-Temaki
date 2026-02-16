@@ -83,7 +83,7 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
       {/* Toggle button */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+        className="flex items-center gap-2 text-sm text-cyber-text-dim hover:text-cyber-accent transition-colors uppercase tracking-wide"
       >
         <svg
           className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -94,9 +94,9 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
         <span>
-          {note ? 'Edit note' : 'Add note'}
+          {note ? 'EDIT NOTE' : 'ADD NOTE'}
           {note && !isExpanded && (
-            <span className="ml-2 text-zinc-500">
+            <span className="ml-2 text-cyber-text-dim font-mono normal-case">
               ({note.length > 50 ? `${note.substring(0, 50)}...` : note})
             </span>
           )}
@@ -109,44 +109,59 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add your private notes about this series..."
-            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            placeholder="ADD YOUR PRIVATE NOTES..."
+            className="w-full px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text placeholder-cyber-text-dim focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm resize-none font-mono transition-all"
             rows={4}
             disabled={isSaving}
           />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleSave}
-                disabled={isSaving || note === (initialNote ?? '')}
-                className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed"
-              >
-                {saveStatus === 'saving' ? 'Saving...' : 'Save'}
-              </button>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving || note === (initialNote ?? '')}
+                    className="px-4 py-1.5 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all disabled:border-cyber-border-dim disabled:text-cyber-text-dim disabled:cursor-not-allowed uppercase tracking-wider"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    {saveStatus === 'saving' ? 'SAVING...' : 'SAVE'}
+                  </button>
+                </div>
+              </div>
 
               {note && (
-                <button
-                  onClick={handleDelete}
-                  disabled={isSaving}
-                  className="px-4 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Delete
-                </button>
+                <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isSaving}
+                      className="px-4 py-1.5 bg-cyber-bg border border-red-500 text-red-400 hover:bg-red-500 hover:text-black text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
+                </div>
               )}
 
-              <button
-                onClick={() => setIsExpanded(false)}
-                disabled={isSaving}
-                className="px-4 py-1.5 text-zinc-400 rounded-lg text-sm hover:text-zinc-300 transition-colors"
-              >
-                Cancel
-              </button>
+              <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    disabled={isSaving}
+                    className="px-4 py-1.5 text-cyber-text-dim text-sm hover:text-cyber-accent transition-colors uppercase tracking-wider"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Status indicator */}
             {saveStatus === 'saved' && (
-              <span className="text-sm text-green-500 flex items-center gap-1">
+              <span className="text-sm text-cyber-accent flex items-center gap-1 uppercase tracking-wide">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -154,17 +169,17 @@ export const NotesWidget: React.FC<NotesWidgetProps> = ({
                     clipRule="evenodd"
                   />
                 </svg>
-                Saved
+                SAVED
               </span>
             )}
 
             {saveStatus === 'error' && (
-              <span className="text-sm text-red-500">Failed to save</span>
+              <span className="text-sm text-red-500 uppercase tracking-wide">FAILED TO SAVE</span>
             )}
           </div>
 
-          <div className="text-xs text-zinc-500">
-            {note.length} characters
+          <div className="text-xs text-cyber-text-dim font-mono uppercase tracking-wide">
+            {note.length} CHARACTERS
           </div>
         </div>
       )}

@@ -3,6 +3,18 @@ export default {
   darkMode: ['class'],
   content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
   theme: {
+    // Override all border-radius to 0px for sharp cyberpunk aesthetic
+    borderRadius: {
+      none: '0px',
+      sm: '0px',
+      DEFAULT: '0px',
+      md: '0px',
+      lg: '0px',
+      xl: '0px',
+      '2xl': '0px',
+      '3xl': '0px',
+      full: '0px',
+    },
     extend: {
       colors: {
         border: 'hsl(var(--border))',
@@ -38,11 +50,61 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Cyberpunk color palette using CSS custom properties
+        cyber: {
+          bg: 'var(--cyber-bg)',
+          'bg-elevated': 'var(--cyber-bg-elevated)',
+          'bg-card': 'var(--cyber-bg-card)',
+          accent: 'var(--cyber-accent)',
+          'accent-dim': 'var(--cyber-accent-dim)',
+          'accent-bright': 'var(--cyber-accent-bright)',
+          text: 'var(--cyber-text)',
+          'text-dim': 'var(--cyber-text-dim)',
+          'text-bright': 'var(--cyber-text-bright)',
+          border: 'var(--cyber-border)',
+          'border-dim': 'var(--cyber-border-dim)',
+        },
       },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+      fontFamily: {
+        mono: [
+          'JetBrains Mono',
+          'Fira Code',
+          'Consolas',
+          'Monaco',
+          'Courier New',
+          'monospace',
+        ],
+      },
+      boxShadow: {
+        'cyber-sm': '0 0 4px var(--cyber-accent)',
+        'cyber-md': '0 0 8px var(--cyber-accent)',
+        'cyber-lg': '0 0 12px var(--cyber-accent)',
+        'cyber-xl': '0 0 20px var(--cyber-accent)',
+        'cyber-inner': 'inset 0 0 8px var(--cyber-accent)',
+      },
+      animation: {
+        'cyber-pulse': 'cyber-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'scan-line': 'scan-line 8s linear infinite',
+      },
+      keyframes: {
+        'cyber-pulse': {
+          '0%, 100%': {
+            opacity: '1',
+            boxShadow: '0 0 8px var(--cyber-accent)',
+          },
+          '50%': {
+            opacity: '0.8',
+            boxShadow: '0 0 20px var(--cyber-accent)',
+          },
+        },
+        'scan-line': {
+          '0%': {
+            transform: 'translateY(-100%)',
+          },
+          '100%': {
+            transform: 'translateY(100vh)',
+          },
+        },
       },
     },
   },

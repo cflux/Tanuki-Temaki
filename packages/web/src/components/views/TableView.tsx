@@ -197,38 +197,48 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
   };
 
   return (
-    <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-4">
+    <div className="bg-cyber-bg-card border border-cyber-border p-4">
       {/* Search and Sort Controls */}
       <div className="mb-4 flex items-center gap-4">
         <input
           type="text"
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search series..."
-          className="flex-1 max-w-md px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-zinc-200 placeholder-zinc-500"
+          placeholder="SEARCH SERIES..."
+          className="flex-1 max-w-md px-4 py-2 bg-cyber-bg border border-cyber-border focus:outline-none focus:border-cyber-accent focus:shadow-cyber-sm text-cyber-text placeholder-cyber-text-dim font-mono uppercase transition-all"
         />
 
         <div className="flex gap-2">
-          <button
-            onClick={() => toggleSort('title')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              sortBy === 'title'
-                ? 'bg-blue-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-            }`}
-          >
-            Title {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </button>
-          <button
-            onClick={() => toggleSort('rating')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              sortBy === 'rating'
-                ? 'bg-blue-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-            }`}
-          >
-            Rating {sortBy === 'rating' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </button>
+          <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+            <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+              <button
+                onClick={() => toggleSort('title')}
+                className={`px-3 py-2 text-sm font-medium transition-all uppercase tracking-wide ${
+                  sortBy === 'title'
+                    ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                    : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                }`}
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+              >
+                TITLE {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </button>
+            </div>
+          </div>
+          <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+            <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+              <button
+                onClick={() => toggleSort('rating')}
+                className={`px-3 py-2 text-sm font-medium transition-all uppercase tracking-wide ${
+                  sortBy === 'rating'
+                    ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                    : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                }`}
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+              >
+                RATING {sortBy === 'rating' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -250,8 +260,8 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
           const volumes = metadata?.volumes;
           const episodes = metadata?.episodes;
           const mediaType = series.mediaType || 'ANIME';
-          const mediaIcon = mediaType === 'MANGA' ? '📖' : '📺';
-          const mediaBadgeColor = mediaType === 'MANGA' ? 'bg-green-600/20 border-green-600/50 text-green-300' : 'bg-blue-600/20 border-blue-600/50 text-blue-300';
+          const mediaIcon = mediaType === 'MANGA' ? '[BOOK]' : '[TV]';
+          const mediaBadgeColor = mediaType === 'MANGA' ? 'bg-transparent border border-cyber-accent text-cyber-accent' : 'bg-transparent border border-cyber-accent text-cyber-accent';
 
           // Personalization data (if personalized mode is enabled)
           const personalizedScore = (series as any).personalizedScore;
@@ -267,12 +277,12 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
             <div
               key={series.id}
               ref={isSelected ? selectedCardRef : null}
-              className={`bg-zinc-800/50 rounded-lg border transition-all ${
+              className={`bg-cyber-bg-card border transition-all ${
                 isSeedSeries
-                  ? 'border-purple-500 ring-2 ring-purple-500/30'
+                  ? 'border-cyber-accent shadow-cyber-lg'
                   : isSelected
-                  ? 'border-blue-500 ring-2 ring-blue-500/50'
-                  : 'border-zinc-700 hover:border-zinc-600'
+                  ? 'border-cyber-accent shadow-cyber-md'
+                  : 'border-cyber-border hover:border-cyber-accent'
               } ${!isOnUserService ? 'opacity-40' : ''}`}
               title={!isOnUserService ? 'Not available on your preferred services' : ''}
             >
@@ -281,57 +291,107 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                 {/* Cover Image */}
                 <div className="flex-shrink-0">
                   {series.titleImage ? (
-                    <img
-                      src={series.titleImage}
-                      alt={series.title}
-                      className="object-cover rounded"
-                      style={{ width: 120, height: 160 }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
+                    <div
+                      className="bg-cyber-accent flex items-center justify-center"
+                      style={{
+                        width: 124,
+                        height: 164,
+                        clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
                       }}
-                    />
+                    >
+                      <img
+                        src={series.titleImage}
+                        alt={series.title}
+                        className="object-cover"
+                        style={{
+                          width: 120,
+                          height: 160,
+                          clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div
-                      className="bg-zinc-700 rounded flex items-center justify-center text-zinc-500"
-                      style={{ width: 120, height: 160 }}
+                      className="bg-cyber-accent flex items-center justify-center"
+                      style={{
+                        width: 124,
+                        height: 164,
+                        clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
+                      }}
                     >
-                      No Image
+                      <div
+                        className="bg-cyber-bg-elevated flex items-center justify-center text-cyber-text-dim uppercase tracking-wide text-xs"
+                        style={{
+                          width: 120,
+                          height: 160,
+                          clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
+                        }}
+                      >
+                        NO IMAGE
+                      </div>
                     </div>
                   )}
                 </div>
 
                 {/* Title and Description */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex flex-col">
                   {/* Title with media type badge */}
                   <div className="flex items-start gap-2 mb-2 flex-wrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs border flex-shrink-0 ${mediaBadgeColor}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs border flex-shrink-0 uppercase tracking-wide ${mediaBadgeColor}`}>
                       {mediaIcon} {mediaType}
                     </span>
                     {isSeedSeries && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-purple-600/20 border-purple-600/50 text-purple-300 flex-shrink-0">
-                        🎯 {isTagBasedSearch ? 'SEED SERIES' : 'ROOT SERIES'}
+                      <span className="inline-flex items-center px-2 py-0.5 text-xs border bg-transparent border-cyber-accent text-cyber-accent flex-shrink-0 uppercase tracking-wide shadow-cyber-sm">
+                        [*] {isTagBasedSearch ? 'SEED SERIES' : 'ROOT SERIES'}
                       </span>
                     )}
                     {personalizedScore !== undefined && (
                       <PersonalizedBadge score={personalizedScore} />
                     )}
-                    <h3 className="font-semibold text-lg text-zinc-100 flex items-center gap-2">
+                    <h3 className="font-semibold text-lg text-cyber-text-bright flex items-center gap-2 uppercase tracking-wide">
                       {series.title}
-                      {series.isAdult && <span className="text-base" title="Adult content">🔞</span>}
+                      {series.isAdult && <span className="text-base text-red-500" title="Adult content">[18+]</span>}
                     </h3>
+                  </div>
+
+                  {/* Ratings Row */}
+                  <div className="flex gap-6 mb-3 items-center">
+                    {/* Series Rating */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-cyber-text-dim uppercase tracking-wide">SERIES:</span>
+                      {series.rating ? (
+                        <span className="text-cyber-accent font-semibold text-lg font-mono">
+                          ★ {series.rating.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span className="text-cyber-text-dim font-mono text-sm">N/A</span>
+                      )}
+                    </div>
+
+                    {/* Your Rating */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-cyber-text-dim uppercase tracking-wide">YOUR RATING:</span>
+                      <RatingWidget
+                        seriesId={series.id}
+                        initialRating={userRating}
+                      />
+                    </div>
                   </div>
 
                   {/* Metadata (chapters/episodes) */}
                   {(chapters || volumes || episodes) && (
-                    <div className="mb-2 flex gap-3 text-xs text-zinc-400">
+                    <div className="mb-2 flex gap-3 text-xs text-cyber-text-dim uppercase tracking-wide font-mono">
                       {mediaType === 'MANGA' ? (
                         <>
-                          {chapters && <span>📚 {chapters} chapters</span>}
-                          {volumes && <span>📕 {volumes} volumes</span>}
+                          {chapters && <span>[CH] {chapters} CHAPTERS</span>}
+                          {volumes && <span>[VOL] {volumes} VOLUMES</span>}
                         </>
                       ) : (
                         <>
-                          {episodes && <span>📺 {episodes} episodes</span>}
+                          {episodes && <span>[EP] {episodes} EPISODES</span>}
                         </>
                       )}
                     </div>
@@ -346,7 +406,7 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                           href={url as string}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
+                          className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg border border-cyber-accent text-xs text-cyber-accent transition-all uppercase tracking-wide"
                           title={`View on ${platform}`}
                         >
                           {getPlatformIcon(platform)} {platform}
@@ -357,7 +417,7 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                         href={series.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-2 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/50 rounded text-xs text-orange-300 transition-colors"
+                        className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg border border-cyber-accent text-xs text-cyber-accent transition-all uppercase tracking-wide"
                         title={`View on ${series.provider}`}
                       >
                         {getPlatformIcon(series.provider)} {series.provider}
@@ -366,34 +426,13 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm text-zinc-400 line-clamp-3" title={series.description}>
+                  <p className="text-sm text-cyber-text-dim flex-1 font-mono" title={series.description}>
                     {series.description}
                   </p>
                 </div>
 
-                {/* Ratings Column */}
-                <div className="flex flex-col gap-4 items-end flex-shrink-0" style={{ minWidth: 280 }}>
-                  {/* Series Rating */}
-                  <div className="text-center">
-                    <div className="text-xs text-zinc-500 mb-1">Series Rating</div>
-                    {series.rating ? (
-                      <div className="text-amber-400 font-semibold text-xl">
-                        ★ {series.rating.toFixed(1)}
-                      </div>
-                    ) : (
-                      <span className="text-zinc-600">N/A</span>
-                    )}
-                  </div>
-
-                  {/* Your Rating */}
-                  <div>
-                    <div className="text-xs text-zinc-500 mb-2 text-center">Your Rating</div>
-                    <RatingWidget
-                      seriesId={series.id}
-                      initialRating={userRating}
-                    />
-                  </div>
-
+                {/* Action Buttons Column */}
+                <div className="flex flex-col gap-3 items-end flex-shrink-0">
                   {/* Watchlist Button */}
                   <WatchlistButton
                     seriesId={series.id}
@@ -402,23 +441,28 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
 
                   {/* Explore Button - only show for non-seed series */}
                   {!isSeedSeries && (
-                    <button
-                      onClick={() => onExplore?.(series.url)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors w-full"
-                      title="Explore relationships from this series"
-                    >
-                      Explore
-                    </button>
+                    <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                      <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                        <button
+                          onClick={() => onExplore?.(series.url)}
+                          className="px-4 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all uppercase tracking-wider shadow-cyber-md hover:shadow-cyber-lg"
+                          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                          title="Explore relationships from this series"
+                        >
+                          EXPLORE
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Row 2: Notes and Tags */}
-              <div className="border-t border-zinc-700 p-4">
+              <div className="border-t border-cyber-border p-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Notes Section */}
                   <div>
-                    <h4 className="text-sm font-semibold text-zinc-300 mb-2">Private Notes</h4>
+                    <h4 className="text-sm font-semibold text-cyber-text mb-2 uppercase tracking-wider">PRIVATE NOTES</h4>
                     <NotesWidget
                       seriesId={series.id}
                       initialNote={userNote}
@@ -427,17 +471,17 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
 
                   {/* Tags/Genres Section */}
                   <div>
-                    <h4 className="text-sm font-semibold text-zinc-300 mb-2">
-                      Tags & Genres
-                      <span className="text-xs text-zinc-500 font-normal ml-2">
-                        (Vote to personalize recommendations)
+                    <h4 className="text-sm font-semibold text-cyber-text mb-2 uppercase tracking-wider">
+                      TAGS & GENRES
+                      <span className="text-xs text-cyber-text-dim font-normal ml-2">
+                        (VOTE TO PERSONALIZE)
                       </span>
                     </h4>
 
                     {/* Genres with Voting */}
                     {series.genres.length > 0 && (
                       <div className="mb-3">
-                        <div className="text-xs text-zinc-500 mb-1">Genres:</div>
+                        <div className="text-xs text-cyber-text-dim mb-1 uppercase tracking-wide">GENRES:</div>
                         <div className="flex flex-wrap gap-2">
                           {series.genres.map((genre, idx) => (
                             <TagVotingWidget
@@ -454,7 +498,7 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                     {/* Tags with Voting */}
                     {series.tags.filter(tag => tag.source !== 'genre').length > 0 && (
                       <div>
-                        <div className="text-xs text-zinc-500 mb-1">Tags:</div>
+                        <div className="text-xs text-cyber-text-dim mb-1 uppercase tracking-wide">TAGS:</div>
                         <div className="flex flex-wrap gap-2">
                           {series.tags
                             .filter(tag => tag.source !== 'genre')
@@ -490,8 +534,8 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
 
       {/* Total count */}
       {filteredAndSortedData.length > 0 ? (
-        <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
-          <div className="text-sm text-zinc-400">
+        <div className="mt-4 pt-4 border-t border-cyber-border text-center">
+          <div className="text-sm text-cyber-text-dim uppercase tracking-wide font-mono">
             {(() => {
               const isTagBasedSearch = relationship.seedSeriesIds && relationship.seedSeriesIds.length > 0;
               const seedCount = isTagBasedSearch ? (relationship.seedSeriesIds?.length || 0) : 1;

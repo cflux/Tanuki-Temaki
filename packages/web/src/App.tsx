@@ -11,6 +11,7 @@ import { IsAdultTestPage } from './pages/IsAdultTestPage';
 import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
 
@@ -84,15 +85,30 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-zinc-950 text-zinc-50">
-        {/* Fixed Logo spanning both headers */}
-        <Link to="/" className="fixed top-2 left-4 z-50 hover:opacity-80 transition-opacity">
-          <img src="/logo.png" alt="Tanuki Temaki" className="h-28" />
+      <div className="min-h-screen bg-cyber-bg text-cyber-text">
+        {/* Fixed Logo with clipped corner */}
+        <Link
+          to="/"
+          className="fixed top-2 left-4 z-50 hover:opacity-80 transition-opacity"
+          style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+        >
+          <div
+            className="bg-cyber-accent p-[1px]"
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+          >
+            <div
+              className="bg-cyber-bg p-2"
+              style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+            >
+              <img src="/logo.png" alt="Tanuki Temaki" className="h-28" />
+            </div>
+          </div>
         </Link>
 
-        <header className="border-b border-zinc-800 bg-zinc-900">
-          <div className="w-full px-4 py-4 flex justify-end items-center">
+        <header className="border-b border-cyber-accent bg-cyber-bg-elevated shadow-cyber-sm">
+          <div className="w-full pl-44 pr-4 py-4 flex justify-end items-center">
             <div className="flex items-center gap-3">
+              <ThemeSwitcher />
               <SafeModeToggle />
               <PersonalizeToggle />
               <UserMenu />

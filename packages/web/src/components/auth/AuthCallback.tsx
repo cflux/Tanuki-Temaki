@@ -69,11 +69,11 @@ export const AuthCallback: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-red-600 text-xl mb-2">Authentication Error</div>
-          <p className="text-gray-600">{error}</p>
-          <p className="text-sm text-gray-500 mt-2">Redirecting...</p>
+      <div className="min-h-screen flex items-center justify-center bg-cyber-bg">
+        <div className="text-center border-2 border-red-500 p-8 shadow-[0_0_12px_rgba(255,0,0,0.5)]">
+          <div className="text-red-500 text-xl mb-2 uppercase tracking-widest font-bold">AUTHENTICATION ERROR</div>
+          <p className="text-cyber-text font-mono">{error}</p>
+          <p className="text-sm text-cyber-text-dim mt-2 uppercase tracking-wide font-mono">REDIRECTING...</p>
         </div>
       </div>
     );
@@ -81,10 +81,10 @@ export const AuthCallback: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-cyber-bg">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Completing authentication...</p>
+          <div className="animate-spin h-12 w-12 border-2 border-cyber-border border-t-cyber-accent mx-auto mb-4"></div>
+          <p className="text-cyber-text uppercase tracking-wider font-mono">COMPLETING AUTHENTICATION...</p>
         </div>
       </div>
       <UsernameModal isOpen={showUsernameModal} onClose={handleUsernameComplete} />

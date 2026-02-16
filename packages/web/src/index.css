@@ -33,7 +33,68 @@
 
     --ring: 216 34% 17%;
 
-    --radius: 0.5rem;
+    --radius: 0px;
+  }
+
+  /* Cyberpunk Theme: Matrix Green (Default) */
+  :root,
+  [data-theme='cyber-green'] {
+    --cyber-bg: #000000;
+    --cyber-bg-elevated: #0a0a0a;
+    --cyber-bg-card: #050505;
+    --cyber-accent: #00ff00;
+    --cyber-accent-dim: #00aa00;
+    --cyber-accent-bright: #88ff88;
+    --cyber-text: #b8ffb8;
+    --cyber-text-dim: #80ff80;
+    --cyber-text-bright: #e0ffe0;
+    --cyber-border: #00aa00;
+    --cyber-border-dim: #006600;
+  }
+
+  /* Cyberpunk Theme: Cyber Blue */
+  [data-theme='cyber-blue'] {
+    --cyber-bg: #000000;
+    --cyber-bg-elevated: #0a0a0a;
+    --cyber-bg-card: #050505;
+    --cyber-accent: #00d4ff;
+    --cyber-accent-dim: #0088bb;
+    --cyber-accent-bright: #88e8ff;
+    --cyber-text: #b8e8ff;
+    --cyber-text-dim: #80d4ff;
+    --cyber-text-bright: #e0f4ff;
+    --cyber-border: #0088bb;
+    --cyber-border-dim: #005577;
+  }
+
+  /* Cyberpunk Theme: Synthwave Purple */
+  [data-theme='cyber-purple'] {
+    --cyber-bg: #000000;
+    --cyber-bg-elevated: #0a0a0a;
+    --cyber-bg-card: #050505;
+    --cyber-accent: #d946ef;
+    --cyber-accent-dim: #aa33cc;
+    --cyber-accent-bright: #f088ff;
+    --cyber-text: #f0cfff;
+    --cyber-text-dim: #d8a0ff;
+    --cyber-text-bright: #fae0ff;
+    --cyber-border: #aa33cc;
+    --cyber-border-dim: #771188;
+  }
+
+  /* Cyberpunk Theme: Dystopia Red */
+  [data-theme='cyber-red'] {
+    --cyber-bg: #000000;
+    --cyber-bg-elevated: #0a0a0a;
+    --cyber-bg-card: #050505;
+    --cyber-accent: #ff0040;
+    --cyber-accent-dim: #cc0033;
+    --cyber-accent-bright: #ff8899;
+    --cyber-text: #ffb8cc;
+    --cyber-text-dim: #ff8099;
+    --cyber-text-bright: #ffe0e8;
+    --cyber-border: #cc0033;
+    --cyber-border-dim: #880022;
   }
 }
 
@@ -42,10 +103,11 @@
     @apply border-border;
   }
   html {
-    @apply bg-zinc-950;
+    @apply bg-cyber-bg;
   }
   body {
-    @apply bg-zinc-950 text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-cyber-bg text-cyber-text font-mono;
+    font-feature-settings: "liga" 1, "calt" 1;
+    font-display: swap;
   }
 }

@@ -43,8 +43,8 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
 
   if (!user) {
     return (
-      <div className="flex items-center gap-2 text-sm text-zinc-500">
-        <span>Sign in to rate</span>
+      <div className="flex items-center gap-2 text-sm text-cyber-text-dim uppercase tracking-wide">
+        <span>SIGN IN TO RATE</span>
       </div>
     );
   }
@@ -59,10 +59,10 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
         onMouseEnter={() => setHoveredRating(0)}
         onMouseLeave={() => setHoveredRating(null)}
         disabled={isLoading}
-        className={`p-1 rounded transition-colors ${
+        className={`p-1 transition-colors ${
           displayRating === 0
             ? 'text-red-500'
-            : 'text-zinc-500 hover:text-red-400'
+            : 'text-cyber-border hover:text-red-400'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         title="Didn't like"
       >
@@ -82,7 +82,7 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
       </button>
 
       {/* Divider */}
-      <div className="h-5 w-px bg-zinc-700 mx-1"></div>
+      <div className="h-5 w-px bg-cyber-border mx-1"></div>
 
       {/* Star ratings 1-5 */}
       {[1, 2, 3, 4, 5].map((star) => (
@@ -100,8 +100,8 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
           <svg
             className={`w-5 h-5 ${
               displayRating && displayRating >= star
-                ? 'text-yellow-500 fill-current'
-                : 'text-zinc-600 hover:text-yellow-400'
+                ? 'text-cyber-accent fill-current'
+                : 'text-cyber-border hover:text-cyber-accent'
             }`}
             fill={displayRating && displayRating >= star ? 'currentColor' : 'none'}
             stroke="currentColor"
@@ -119,8 +119,8 @@ export const RatingWidget: React.FC<RatingWidgetProps> = ({
 
       {/* Show current rating text */}
       {rating !== null && (
-        <span className="ml-2 text-sm text-zinc-400">
-          {rating === 0 ? 'Disliked' : `${rating}/5`}
+        <span className="ml-2 text-sm text-cyber-text-dim font-mono uppercase tracking-wide">
+          {rating === 0 ? 'DISLIKED' : `${rating}/5`}
         </span>
       )}
     </div>

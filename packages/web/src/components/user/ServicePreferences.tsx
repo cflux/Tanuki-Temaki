@@ -68,7 +68,7 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin h-8 w-8 border-2 border-cyber-border border-t-cyber-accent"></div>
       </div>
     );
   }
@@ -134,22 +134,22 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
       <div className="flex items-center gap-1">
         <label
           key={service}
-          className="flex items-center gap-2 p-2 bg-zinc-800 rounded cursor-pointer hover:bg-zinc-700 transition-colors flex-1"
+          className="flex items-center gap-2 p-2 bg-cyber-bg-card border border-cyber-border cursor-pointer hover:border-cyber-accent transition-colors flex-1"
         >
           <input
             type="checkbox"
             checked={selectedServices.includes(service)}
             onChange={() => handleToggleService(service)}
-            className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-zinc-900 flex-shrink-0"
+            className="w-3.5 h-3.5 border-cyber-border bg-cyber-bg text-cyber-accent focus:ring-cyber-accent focus:ring-offset-cyber-bg flex-shrink-0 accent-cyber-accent"
           />
-          <span className="text-xs text-zinc-300 leading-tight">{service}</span>
+          <span className="text-xs text-cyber-text leading-tight uppercase tracking-wide">{service}</span>
         </label>
         {url && (
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-300"
+            className="p-2 bg-cyber-bg-card border border-cyber-border hover:border-cyber-accent transition-colors text-cyber-text-dim hover:text-cyber-accent"
             title={`Visit ${service}`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -165,16 +165,16 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Service Preferences</h3>
-        <p className="text-sm text-zinc-400">
-          Select the streaming and reading platforms you have access to. This will help personalize your recommendations.
+        <h3 className="text-lg font-semibold mb-2 text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border pb-2">SERVICE PREFERENCES</h3>
+        <p className="text-sm text-cyber-text-dim font-mono">
+          SELECT YOUR STREAMING AND READING PLATFORMS TO PERSONALIZE RECOMMENDATIONS.
         </p>
       </div>
 
       {/* Anime Streaming */}
       {streamingServices.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium mb-2 text-zinc-300">Anime Streaming</h4>
+          <h4 className="text-sm font-medium mb-2 text-cyber-text uppercase tracking-wider">ANIME STREAMING</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
             {streamingServices.map((service) => (
               <ServiceCheckbox key={service} service={service} />
@@ -186,7 +186,7 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
       {/* Manga Reading */}
       {readingServices.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium mb-2 text-zinc-300">Manga Reading</h4>
+          <h4 className="text-sm font-medium mb-2 text-cyber-text uppercase tracking-wider">MANGA READING</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
             {readingServices.map((service) => (
               <ServiceCheckbox key={service} service={service} />
@@ -198,7 +198,7 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
       {/* Other Services */}
       {otherServices.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium mb-2 text-zinc-300">Other Platforms</h4>
+          <h4 className="text-sm font-medium mb-2 text-cyber-text uppercase tracking-wider">OTHER PLATFORMS</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
             {otherServices.map((service) => (
               <ServiceCheckbox key={service} service={service} />
@@ -208,23 +208,28 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
       )}
 
       {allServices.length === 0 && (
-        <p className="text-zinc-500 text-sm">
-          No services found in the database yet. Services will appear here as you browse series.
+        <p className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide">
+          NO SERVICES FOUND YET. SERVICES WILL APPEAR AS YOU BROWSE SERIES.
         </p>
       )}
 
       {/* Save Button */}
-      <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed"
-        >
-          {saveStatus === 'saving' ? 'Saving...' : 'Save Preferences'}
-        </button>
+      <div className="flex items-center gap-3 pt-4 border-t border-cyber-border">
+        <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+          <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-6 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg font-medium transition-all disabled:border-cyber-border-dim disabled:text-cyber-text-dim disabled:cursor-not-allowed uppercase tracking-wider shadow-cyber-md hover:shadow-cyber-lg"
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              {saveStatus === 'saving' ? 'SAVING...' : 'SAVE PREFERENCES'}
+            </button>
+          </div>
+        </div>
 
         {saveStatus === 'saved' && (
-          <span className="text-sm text-green-500 flex items-center gap-1">
+          <span className="text-sm text-cyber-accent flex items-center gap-1 uppercase tracking-wide">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -232,18 +237,18 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
                 clipRule="evenodd"
               />
             </svg>
-            Saved!
+            SAVED!
           </span>
         )}
 
         {saveStatus === 'error' && (
-          <span className="text-sm text-red-500">Failed to save preferences</span>
+          <span className="text-sm text-red-500 uppercase tracking-wide">FAILED TO SAVE</span>
         )}
 
         <div className="flex-1"></div>
 
-        <span className="text-sm text-zinc-500">
-          {selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} selected
+        <span className="text-sm text-cyber-text-dim font-mono uppercase tracking-wide">
+          {selectedServices.length} SERVICE{selectedServices.length !== 1 ? 'S' : ''} SELECTED
         </span>
       </div>
     </div>
