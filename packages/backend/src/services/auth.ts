@@ -17,9 +17,9 @@ interface OAuthProfile {
 }
 
 export class AuthService {
-  private static readonly JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-  private static readonly JWT_ACCESS_EXPIRY: string = process.env.JWT_ACCESS_EXPIRY || '15m';
-  private static readonly JWT_REFRESH_EXPIRY: string = process.env.JWT_REFRESH_EXPIRY || '7d';
+  private static readonly JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  private static readonly JWT_ACCESS_EXPIRY = (process.env.JWT_ACCESS_EXPIRY || '15m') as string | number;
+  private static readonly JWT_REFRESH_EXPIRY = (process.env.JWT_REFRESH_EXPIRY || '7d') as string | number;
 
   /**
    * Generate JWT access token (15min expiry)
