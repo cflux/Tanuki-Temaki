@@ -31,10 +31,17 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      HOST: ${HOST}
       DATABASE_URL: postgresql://tanuki:${POSTGRES_PASSWORD}@postgres:5432/tanuki_temaki
       PORT: 3000
+      FRONTEND_PORT: ${FRONTEND_PORT:-80}
       WS_PORT: 8765
-      CORS_ORIGIN: ${FRONTEND_URL:-http://localhost}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_USERNAMES: ${ADMIN_USERNAMES}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
     ports:
       - "3000:3000"
       - "8765:8765"
@@ -55,12 +62,11 @@ services:
       context: .
       dockerfile: packages/web/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
-        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8765}
+        HOST: ${HOST}
     container_name: tanuki-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
     networks:

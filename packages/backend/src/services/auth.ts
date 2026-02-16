@@ -151,9 +151,8 @@ export class AuthService {
     }
 
     const isAdmin = ADMIN_USERNAMES.has(user.username.toUpperCase());
-    console.log('[Admin Check]', {
+    logger.debug('Admin check', {
       username: user.username,
-      adminUsernames: Array.from(ADMIN_USERNAMES),
       isAdmin,
     });
 
