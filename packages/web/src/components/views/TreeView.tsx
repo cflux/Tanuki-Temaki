@@ -946,7 +946,7 @@ export function TreeView({ relationship, requiredTags, excludedTags, filterMode,
       });
 
       // Debug: Count children by parent count
-      const _orphanItems = childItems.filter(({ node }) => {
+      const orphanItems = childItems.filter(({ node }) => {
         const parents = childParentMap.get(node.series.id);
         return !parents || parents.size === 0;
       });
