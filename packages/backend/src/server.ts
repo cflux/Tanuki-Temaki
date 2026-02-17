@@ -1,6 +1,8 @@
 // MUST be first to load environment variables before other imports
 import './env.js';
 
+console.log('[SERVER] Environment loaded, importing dependencies...');
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -24,7 +26,11 @@ import {
 } from './index.js';
 import { Scheduler } from './services/scheduler.js';
 
+console.log('[SERVER] All imports loaded successfully');
+
 const app = express();
+
+console.log('[SERVER] Express app created, setting up middleware...');
 
 // Middleware
 app.use(cors({
@@ -61,6 +67,8 @@ app.use('/api/test', testRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+console.log('[SERVER] Middleware and routes configured, starting HTTP server...');
+
 // Start HTTP server
 const server = app.listen(HTTP_PORT, () => {
   logger.info(`HTTP server listening on port ${HTTP_PORT}`);
@@ -68,6 +76,12 @@ const server = app.listen(HTTP_PORT, () => {
 
   // Start scheduled tasks
   Scheduler.start();
+});
+
+// Log if listen errors occur
+server.on('error', (error: any) => {
+  console.error('[SERVER] Server error:', error);
+  logger.error('Server error', { error });
 });
 
 // Graceful shutdown
@@ -92,11 +106,13 @@ process.on('SIGINT', shutdown);
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
+  console.error('[SERVER] Uncaught exception:', error);
   logger.error('Uncaught exception', { error });
   shutdown();
 });
 
 process.on('unhandledRejection', (reason) => {
+  console.error('[SERVER] Unhandled rejection:', reason);
   logger.error('Unhandled rejection', { reason });
   shutdown();
 });

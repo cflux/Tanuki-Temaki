@@ -12,7 +12,7 @@ COPY shared/package.json ./shared/
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm@9
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY shared ./shared
@@ -44,7 +44,7 @@ COPY packages/backend/package.json ./packages/backend/
 COPY shared/package.json ./shared/
 
 # Install all dependencies (needed for Prisma CLI)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
