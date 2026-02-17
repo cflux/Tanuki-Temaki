@@ -6,7 +6,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "node ../../node_modules/.bin/esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:@prisma/client --external:prisma --packages=external",
+    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:@prisma/client --external:prisma --packages=external",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -48,6 +48,7 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/string-similarity": "^4.0.2",
     "@types/ws": "^8.5.10",
+    "esbuild": "^0.19.0",
     "prisma": "^5.8.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
