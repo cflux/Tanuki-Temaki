@@ -26,7 +26,7 @@ export class AuthService {
    */
   static generateAccessToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    const options: SignOptions = { expiresIn: this.JWT_ACCESS_EXPIRY };
+    const options = { expiresIn: this.JWT_ACCESS_EXPIRY } as SignOptions;
     return jwt.sign(payload, this.JWT_SECRET, options);
   }
 
@@ -35,7 +35,7 @@ export class AuthService {
    */
   static generateRefreshToken(userId: string, username: string): string {
     const payload: TokenPayload = { userId, username };
-    const options: SignOptions = { expiresIn: this.JWT_REFRESH_EXPIRY };
+    const options = { expiresIn: this.JWT_REFRESH_EXPIRY } as SignOptions;
     return jwt.sign(payload, this.JWT_SECRET, options);
   }
 
