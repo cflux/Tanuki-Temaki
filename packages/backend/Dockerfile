@@ -46,13 +46,14 @@ RUN pnpm install --frozen-lockfile --prod
 # Copy built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 COPY --from=builder /app/packages/backend/prisma ./packages/backend/prisma
-COPY --from=builder /app/packages/backend/node_modules/.prisma ./packages/backend/node_modules/.prisma
 COPY --from=builder /app/shared/dist ./shared/dist
+
+# Generate Prisma client in production
+WORKDIR /app/packages/backend
+RUN npx prisma generate
 
 # Create logs directory
 RUN mkdir -p /app/packages/backend/logs
-
-WORKDIR /app/packages/backend
 
 # Expose ports (HTTP API and WebSocket)
 EXPOSE 3000 8765
