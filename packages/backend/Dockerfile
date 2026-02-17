@@ -32,6 +32,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install system dependencies (OpenSSL required by Prisma)
+RUN apk add --no-cache openssl
+
 # Install pnpm
 RUN npm install -g pnpm@9
 
