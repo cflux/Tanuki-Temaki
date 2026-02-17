@@ -50,7 +50,7 @@ COPY --from=builder /app/shared/dist ./shared/dist
 
 # Generate Prisma client in production
 WORKDIR /app/packages/backend
-RUN npx prisma generate
+RUN pnpm exec prisma generate
 
 # Create logs directory
 RUN mkdir -p /app/packages/backend/logs
