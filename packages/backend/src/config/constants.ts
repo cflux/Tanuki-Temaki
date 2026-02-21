@@ -10,19 +10,25 @@
 const HOST = process.env.HOST || 'localhost';
 const PORT = Number(process.env.PORT) || 3000;
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 5173;
-const USE_HTTPS = process.env.NODE_ENV === 'production' && !HOST.includes('localhost');
+const isPrivateHost = HOST === 'localhost' || HOST === '127.0.0.1' || /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/.test(HOST);
+const USE_HTTPS = process.env.NODE_ENV === 'production' && !isPrivateHost;
 const PROTOCOL = USE_HTTPS ? 'https' : 'http';
+
+// Omit port from URL when it matches the protocol default (80 for http, 443 for https)
+const DEFAULT_PORT = USE_HTTPS ? 443 : 80;
+const backendPortStr = PORT === DEFAULT_PORT ? '' : `:${PORT}`;
+const frontendPortStr = FRONTEND_PORT === DEFAULT_PORT ? '' : `:${FRONTEND_PORT}`;
 
 // OAuth callbacks must use localhost in development (Google/GitHub don't allow private IPs)
 // In production, use the actual HOST
 const OAUTH_HOST = process.env.NODE_ENV === 'production' ? HOST : 'localhost';
 
 // Construct URLs from HOST
-export const BACKEND_URL = `${PROTOCOL}://${HOST}:${PORT}`;
-export const FRONTEND_URL = `${PROTOCOL}://${HOST}:${FRONTEND_PORT}`;
+export const BACKEND_URL = `${PROTOCOL}://${HOST}${backendPortStr}`;
+export const FRONTEND_URL = `${PROTOCOL}://${HOST}${frontendPortStr}`;
 
 // OAuth callbacks use localhost in dev, HOST in production
-const OAUTH_BACKEND_URL = `${PROTOCOL}://${OAUTH_HOST}:${PORT}`;
+const OAUTH_BACKEND_URL = `${PROTOCOL}://${OAUTH_HOST}${backendPortStr}`;
 export const GOOGLE_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/google/callback`;
 export const GITHUB_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/github/callback`;
 
@@ -79,7 +85,7 @@ export const COOKIE_CONFIG = {
     name: 'access_token',
     maxAge: FIFTEEN_MINUTES_MS,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: USE_HTTPS,
     sameSite: 'lax' as const,
     path: '/',
   },
@@ -87,7 +93,7 @@ export const COOKIE_CONFIG = {
     name: 'refresh_token',
     maxAge: SEVEN_DAYS_MS,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: USE_HTTPS,
     sameSite: 'lax' as const,
     path: '/',
   },

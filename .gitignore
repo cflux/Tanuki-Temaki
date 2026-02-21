@@ -60,3 +60,4 @@ packages/extension/dist-firefox/
 
 # Claude
 .claude/
+.pnpm-store/

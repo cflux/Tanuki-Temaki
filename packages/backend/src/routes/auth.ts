@@ -1,13 +1,68 @@
 import express from 'express';
-import passport from '../config/passport';
-import { AuthService } from '../services/auth';
-import { requireAuth } from '../middleware/auth';
+import passport from '../config/passport.js';
+import { AuthService } from '../services/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { FRONTEND_URL, COOKIE_CONFIG } from '../config/constants.js';
 import { setAuthCookies, clearAuthCookies } from '../utils/cookies.js';
 import { logger } from '../lib/logger.js';
 import { createExchangeToken, exchangeToken } from '../services/tokenExchange.js';
 
 const router: express.Router = express.Router();
+
+// Local registration
+router.post('/register', async (req, res) => {
+  const { email, username, password } = req.body;
+
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'Email, username, and password are required' });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Invalid email address' });
+  }
+
+  const usernameValidation = AuthService.validateUsernameFormat(username);
+  if (!usernameValidation.valid) {
+    return res.status(400).json({ error: usernameValidation.error });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  try {
+    const { userId, username: normalizedUsername } = await AuthService.createLocalUser(email, username, password);
+    const accessToken = AuthService.generateAccessToken(userId, normalizedUsername);
+    const refreshToken = AuthService.generateRefreshToken(userId, normalizedUsername);
+    setAuthCookies(res, accessToken, refreshToken);
+    return res.json({ success: true });
+  } catch (error: any) {
+    if (error.message?.includes('email') || error.message?.includes('username')) {
+      return res.status(409).json({ error: error.message });
+    }
+    logger.error('Registration error', { error: error.message });
+    return res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+// Local login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  const user = await AuthService.verifyLocalUser(email, password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  const accessToken = AuthService.generateAccessToken(user.userId, user.username);
+  const refreshToken = AuthService.generateRefreshToken(user.userId, user.username);
+  setAuthCookies(res, accessToken, refreshToken);
+  return res.json({ success: true });
+});
 
 // Google OAuth - Initiate
 router.get('/google', passport.authenticate('google', { scope: ['profile'], session: false }));

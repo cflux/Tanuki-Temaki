@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger.js';
 import { AniListAdapter } from '../adapters/anilist.js';

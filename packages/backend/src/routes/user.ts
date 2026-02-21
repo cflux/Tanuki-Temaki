@@ -1,6 +1,6 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth';
-import { UserService } from '../services/user';
+import { requireAuth } from '../middleware/auth.js';
+import { UserService } from '../services/user.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { logger } from '../lib/logger.js';
 import { validateRequired, validateRating } from '../utils/validators.js';

@@ -1,7 +1,10 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
-import { ADMIN_USERNAMES } from '../config/constants';
+import { ADMIN_USERNAMES } from '../config/constants.js';
 import { logger } from '../lib/logger.js';
+
+const BCRYPT_ROUNDS = 12;
 
 const prisma = new PrismaClient();
 
@@ -133,6 +136,52 @@ export class AuthService {
     }
 
     return { valid: true };
+  }
+
+  /**
+   * Create a new local (email/password) user account
+   */
+  static async createLocalUser(email: string, username: string, password: string): Promise<{ userId: string; username: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUsername = username.toUpperCase().trim();
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+    try {
+      const user = await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          username: normalizedUsername,
+          passwordHash,
+        },
+      });
+      return { userId: user.id, username: user.username };
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        if (field === 'email') throw new Error('An account with this email already exists');
+        if (field === 'username') throw new Error('This username is already taken');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Verify email/password credentials — timing-safe (always runs bcrypt)
+   */
+  static async verifyLocalUser(email: string, password: string): Promise<{ userId: string; username: string } | null> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, username: true, passwordHash: true },
+    });
+
+    // Always run bcrypt.compare to prevent timing attacks
+    const hashToCompare = user?.passwordHash ?? '$2b$12$invalidhashfortimingnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn';
+    const valid = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !valid) return null;
+    return { userId: user.id, username: user.username };
   }
 
   /**

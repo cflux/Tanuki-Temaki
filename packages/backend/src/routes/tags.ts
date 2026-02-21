@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Router as RouterType } from 'express';
-import { TagSearchService } from '../services/tagSearch';
-import { optionalAuth } from '../middleware/auth';
+import { TagSearchService } from '../services/tagSearch.js';
+import { optionalAuth } from '../middleware/auth.js';
 import type { Series } from '@tanuki-temaki/shared';
 
 const router: RouterType = Router();

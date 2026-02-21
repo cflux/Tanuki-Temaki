@@ -4,8 +4,10 @@
 FROM node:20-alpine AS builder
 
 # Build-time arguments for API URLs
-ARG VITE_API_URL
-ARG VITE_WS_URL
+# HOST is passed from docker-compose; VITE_API_URL/VITE_WS_URL can be overridden directly
+ARG HOST=localhost
+ARG VITE_API_URL=http://${HOST}:3000
+ARG VITE_WS_URL=ws://${HOST}:8765
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
@@ -47,7 +49,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

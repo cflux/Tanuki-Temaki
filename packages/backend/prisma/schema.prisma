@@ -88,12 +88,14 @@ model Relationship {
   @@map("relationships")
 }
 
-// User model - represents authenticated users (OAuth, no PII)
+// User model - represents authenticated users (OAuth or local email/password)
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String?  @unique  // Only set for local accounts
+  passwordHash String?           // bcrypt hash; null for OAuth-only users
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   oauthIdentities OAuthIdentity[]
   seriesRatings   UserSeriesRating[]
@@ -103,6 +105,7 @@ model User {
   watchlist       UserWatchlist[]
 
   @@index([username])
+  @@index([email])
   @@map("users")
 }
 

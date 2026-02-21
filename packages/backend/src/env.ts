@@ -13,7 +13,7 @@ const result = config({ path: envPath });
 
 if (result.error) {
   // .env file not found - this is expected in Docker deployments
-  if (result.error.code === 'ENOENT') {
+  if ((result.error as NodeJS.ErrnoException).code === 'ENOENT') {
     console.log('[ENV] No .env file found (using environment variables from docker-compose)');
   } else {
     console.error('[ENV] Failed to load .env:', result.error);

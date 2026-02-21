@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth';
-import { ADMIN_USERNAMES } from '../config/constants';
+import { AuthService } from '../services/auth.js';
+import { ADMIN_USERNAMES } from '../config/constants.js';
 
 // Extend Express Request type to include user
 declare global {

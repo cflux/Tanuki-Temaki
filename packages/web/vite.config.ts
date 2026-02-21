@@ -10,9 +10,11 @@ export default defineConfig(({ mode }) => {
   // Derive API URL from HOST (single source of truth)
   const HOST = env.HOST || 'localhost';
   const PORT = env.PORT || '3000';
-  const USE_HTTPS = mode === 'production' && !HOST.includes('localhost');
+  const isPrivateHost = HOST === 'localhost' || HOST === '127.0.0.1' || /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/.test(HOST);
+  const USE_HTTPS = mode === 'production' && !isPrivateHost;
   const PROTOCOL = USE_HTTPS ? 'https' : 'http';
-  const API_URL = `${PROTOCOL}://${HOST}:${PORT}`;
+  // Use VITE_API_URL from env if explicitly provided, otherwise derive from HOST
+  const API_URL = env.VITE_API_URL || `${PROTOCOL}://${HOST}:${PORT}`;
 
   console.log('[VITE CONFIG] HOST:', HOST);
   console.log('[VITE CONFIG] API_URL:', API_URL);

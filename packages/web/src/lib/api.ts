@@ -355,6 +355,22 @@ export const authApi = {
     const { data } = await api.post('/api/auth/exchange', { token });
     return data;
   },
+
+  /**
+   * Register a new local account with email and password
+   */
+  async register(email: string, username: string, password: string): Promise<{ success: boolean }> {
+    const { data } = await api.post('/api/auth/register', { email, username, password });
+    return data;
+  },
+
+  /**
+   * Sign in with email and password
+   */
+  async loginWithEmail(email: string, password: string): Promise<{ success: boolean }> {
+    const { data } = await api.post('/api/auth/login', { email, password });
+    return data;
+  },
 };
 
 // User types now imported from @tanuki-temaki/shared
