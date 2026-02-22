@@ -2,6 +2,7 @@ import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
+import { PersonalizedRecommendationService } from '../services/personalizedRecommendations.js';
 import { UserService } from '../services/user.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -29,6 +30,7 @@ const searchOneSchema = z.object({
 // Dependency injection - will be set in main server file
 let seriesCache: SeriesCacheService;
 let relationshipTracer: RelationshipTracer;
+let personalizedRecommendationService: PersonalizedRecommendationService;
 
 export function setDependencies(
   cache: SeriesCacheService,
@@ -36,6 +38,7 @@ export function setDependencies(
 ) {
   seriesCache = cache;
   relationshipTracer = tracer;
+  personalizedRecommendationService = new PersonalizedRecommendationService(tracer);
 }
 
 /**
@@ -328,12 +331,16 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 
 /**
  * GET /api/series/:id/trace-stream
- * Trace relationship graph with SSE progress updates
+ * Trace relationship graph with SSE progress updates.
+ * Accepts optional query params:
+ *   maxDepth (default 3)
+ *   personalized=true  – apply tag-vote / rating personalisation before returning
  */
 router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const maxDepth = parseInt(req.query.maxDepth as string) || 3;
+    const wantPersonalized = (req.query.personalized === 'true' || req.query.personalized === '1') && !!req.user;
 
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -341,7 +348,7 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    logger.info('Starting SSE trace', { seriesId: id, maxDepth });
+    logger.info('Starting SSE trace', { seriesId: id, maxDepth, personalized: wantPersonalized });
 
     // Get series to get URL
     const series = await seriesCache.getSeriesById(id);
@@ -358,7 +365,7 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
 
     try {
       // Trace relationships with progress callback
-      const relationship = await relationshipTracer.traceRelationships(
+      let relationship = await relationshipTracer.traceRelationships(
         series.url,
         maxDepth,
         sendProgress
@@ -394,6 +401,20 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
           }
           (node.series as any).userTagVotes = tagVotesObj;
         });
+
+        // Apply personalisation in-band — no extra HTTP round-trip needed
+        if (wantPersonalized) {
+          sendProgress({
+            step: 'personalizing',
+            current: relationship.nodes.length,
+            total: relationship.nodes.length,
+            message: 'Personalizing recommendations...',
+          });
+          relationship = await personalizedRecommendationService.getPersonalizedRecommendations(
+            relationship,
+            req.user.userId
+          );
+        }
       }
 
       // Send final result

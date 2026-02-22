@@ -113,6 +113,12 @@ export const MobileMenu = () => {
                     </div>
                     <div className="space-y-1">
                       <button
+                        onClick={() => handleNavigation('/home')}
+                        className="w-full text-left px-3 py-2 bg-cyber-bg border border-cyber-border hover:border-cyber-accent hover:bg-cyber-bg-card transition-colors text-cyber-text uppercase tracking-wide text-xs"
+                      >
+                        [HOME] DASHBOARD
+                      </button>
+                      <button
                         onClick={() => handleNavigation('/profile')}
                         className="w-full text-left px-3 py-2 bg-cyber-bg border border-cyber-border hover:border-cyber-accent hover:bg-cyber-bg-card transition-colors text-cyber-text uppercase tracking-wide text-xs"
                       >

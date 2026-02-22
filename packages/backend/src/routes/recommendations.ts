@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { logger } from '../lib/logger.js';
 import { PersonalizedRecommendationService } from '../services/personalizedRecommendations.js';
+import { RecommendationService } from '../services/recommendations.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { TagSearchService } from '../services/tagSearch.js';
@@ -34,6 +35,24 @@ const tagRecommendationsSchema = z.object({
   maxDepth: z.number().min(1).max(3).optional().default(1),
   topSeriesCount: z.number().min(1).max(10).optional().default(5),
   personalized: z.boolean().optional().default(false),
+});
+
+/**
+ * GET /api/recommendations
+ * Get "For You" top-10 recommendations based on user's ratings and tag votes
+ * Requires authentication
+ */
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const recommendations = await RecommendationService.getRecommendations(userId);
+    res.json({ recommendations });
+  } catch (error) {
+    logger.error('Error generating for-you recommendations', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    res.status(500).json({ error: 'Failed to generate recommendations' });
+  }
 });
 
 /**

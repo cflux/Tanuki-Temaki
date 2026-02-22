@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { DiscoveryPage } from './features/discovery/DiscoveryPage';
 import { AuthCallback } from './components/auth/AuthCallback';
 import { UserMenu } from './components/auth/UserMenu';
@@ -9,6 +9,8 @@ import { RatedSeriesPage } from './pages/RatedSeriesPage';
 import { NotedSeriesPage } from './pages/NotedSeriesPage';
 import { IsAdultTestPage } from './pages/IsAdultTestPage';
 import { MaintenancePage } from './pages/MaintenancePage';
+import { HomePage } from './pages/HomePage';
+import { SeriesPage } from './pages/SeriesPage';
 import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
@@ -17,6 +19,80 @@ import { Logo } from './components/Logo';
 import { MobileMenu } from './components/MobileMenu';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
+
+function LogoMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const go = (path: string) => {
+    setOpen(false);
+    navigate(path);
+  };
+
+  const clip = 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)';
+
+  return (
+    <div ref={ref} className="fixed top-2 left-2 md:left-4 z-50">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="block group focus:outline-none"
+        style={{ clipPath: clip }}
+        aria-label="Navigation menu"
+      >
+        <div className="bg-cyber-accent p-[1px]" style={{ clipPath: clip }}>
+          <div
+            className="bg-cyber-bg p-1 md:p-2 text-cyber-accent"
+            style={{ clipPath: clip }}
+          >
+            <Logo className="h-16 md:h-28 transition-all group-hover:drop-shadow-[0_0_10px_currentColor]" />
+          </div>
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute top-[calc(100%+4px)] left-0 min-w-[140px] bg-cyber-bg-elevated border border-cyber-accent shadow-cyber-sm z-50">
+          <button
+            onClick={() => go('/')}
+            className="w-full text-left px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-cyber-text hover:bg-cyber-accent hover:text-cyber-bg transition-colors border-b border-cyber-border"
+          >
+            [HOME]
+          </button>
+          <button
+            onClick={() => go('/search')}
+            className="w-full text-left px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-cyber-text hover:bg-cyber-accent hover:text-cyber-bg transition-colors"
+          >
+            [SEARCH]
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RootPage() {
+  const { user, isLoading } = useUserStore();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-12 w-12 border-2 border-cyber-border border-t-cyber-accent" />
+      </div>
+    );
+  }
+  if (user) return <HomePage />;
+  return <DiscoveryPage />;
+}
 
 function App() {
   const { user, setUser, setLoading, logout } = useUserStore();
@@ -89,24 +165,8 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-cyber-bg text-cyber-text">
-        {/* Fixed Logo with clipped corner */}
-        <Link
-          to="/"
-          className="fixed top-2 left-2 md:left-4 z-50 group"
-          style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-        >
-          <div
-            className="bg-cyber-accent p-[1px]"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-          >
-            <div
-              className="bg-cyber-bg p-1 md:p-2 text-cyber-accent"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-            >
-              <Logo className="h-16 md:h-28 transition-all group-hover:drop-shadow-[0_0_10px_currentColor]" />
-            </div>
-          </div>
-        </Link>
+        {/* Fixed Logo with navigation dropdown */}
+        <LogoMenu />
 
         {/* Mobile Menu */}
         <MobileMenu />
@@ -125,13 +185,16 @@ function App() {
         </header>
 
         <Routes>
-          <Route path="/" element={<DiscoveryPage />} />
+          <Route path="/" element={<RootPage />} />
+          <Route path="/search" element={<DiscoveryPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/rated" element={<RatedSeriesPage />} />
           <Route path="/noted" element={<NotedSeriesPage />} />
           <Route path="/admin/maintenance" element={<MaintenancePage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/series/:id" element={<SeriesPage />} />
           <Route path="/test/isadult" element={<IsAdultTestPage />} />
         </Routes>
 

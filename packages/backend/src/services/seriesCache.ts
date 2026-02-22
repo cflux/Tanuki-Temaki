@@ -5,6 +5,7 @@ import { AdapterRegistry } from '../adapters/registry.js';
 import { TagGenerator } from './tagGenerator.js';
 import { AniListMatcherService } from './anilistMatcher.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { CACHE_EXPIRATION } from '../config/constants.js';
 
 /**
  * Series caching service with database-first strategy
@@ -306,8 +307,8 @@ export class SeriesCacheService {
   }
 
   /**
-   * Search for multiple series results from AniList for user selection
-   * Returns basic info for each result without caching
+   * Search for multiple series results for user selection.
+   * Checks local DB first; only falls back to AniList if no cached results found.
    */
   async searchMultipleResults(
     title: string,
@@ -327,7 +328,47 @@ export class SeriesCacheService {
     season?: string;
     year?: number;
   }>> {
-    logger.info('Searching AniList for multiple results', { title, mediaType, limit, filterAdult });
+    logger.info('Searching for multiple results', { title, mediaType, limit, filterAdult });
+
+    // DB-first: avoid an AniList round-trip for titles we already know about,
+    // but only use results that are still within the SERIES_DATA cache window.
+    const dbResults = await prisma.series.findMany({
+      where: {
+        mediaType,
+        title: { contains: title, mode: 'insensitive' },
+        fetchedAt: {
+          gte: new Date(Date.now() - CACHE_EXPIRATION.SERIES_DATA),
+        },
+      },
+      take: limit,
+      orderBy: [{ rating: 'desc' }, { fetchedAt: 'desc' }],
+    });
+
+    if (dbResults.length > 0) {
+      const formatted = dbResults.map(s => {
+        const meta = s.metadata as Record<string, any>;
+        return {
+          id: s.id,
+          title: s.title,
+          description: s.description || '',
+          titleImage: s.titleImage,
+          mediaType: (s.mediaType || 'ANIME') as 'ANIME' | 'MANGA',
+          anilistId: meta?.anilistId as number,
+          format: meta?.format,
+          episodes: (meta?.episodes ?? meta?.totalEpisodes) as number | undefined,
+          chapters: meta?.chapters as number | undefined,
+          season: meta?.season as string | undefined,
+          year: (meta?.year ?? meta?.seasonYear) as number | undefined,
+        };
+      }).filter(r => !!r.anilistId);
+
+      if (formatted.length > 0) {
+        logger.info('DB-first: returning cached search results, skipping AniList', { count: formatted.length });
+        return formatted;
+      }
+    }
+
+    logger.info('No DB results, falling back to AniList search', { title, mediaType });
 
     const anilistAdapter = this.anilistMatcher.getAdapter();
 
@@ -585,6 +626,95 @@ export class SeriesCacheService {
     });
 
     return this.mapToSeries(dbSeries);
+  }
+
+  /**
+   * Refresh up to `limit` stale series entries from AniList.
+   * Targets entries whose fetchedAt is older than CACHE_EXPIRATION.SERIES_DATA.
+   * Preserves relationship metadata (anilistRelations, relationsLastFetched).
+   */
+  async refreshStale(limit: number): Promise<{ refreshed: number; skipped: number }> {
+    const staleThreshold = new Date(Date.now() - CACHE_EXPIRATION.SERIES_DATA);
+
+    const staleSeries = await prisma.series.findMany({
+      where: { fetchedAt: { lt: staleThreshold } },
+      take: limit,
+      orderBy: { fetchedAt: 'asc' },
+    });
+
+    let refreshed = 0;
+    let skipped = 0;
+
+    for (const series of staleSeries) {
+      const meta = series.metadata as Record<string, any>;
+      const anilistId = meta?.anilistId as number | undefined;
+
+      if (!anilistId) {
+        logger.warn('Skipping stale series refresh: no anilistId in metadata', { id: series.id, title: series.title });
+        skipped++;
+        continue;
+      }
+
+      try {
+        const anilistAdapter = this.anilistMatcher.getAdapter();
+        const anilistMedia = series.mediaType === 'MANGA'
+          ? await anilistAdapter.getMangaWithRelations(anilistId)
+          : await anilistAdapter.getAnimeWithRelations(anilistId);
+
+        if (!anilistMedia) {
+          logger.warn('AniList returned null for stale series', { id: series.id, anilistId });
+          skipped++;
+          continue;
+        }
+
+        const rawData = anilistAdapter.normalizeToRawSeriesData(anilistMedia, series.url);
+        const streamingLinks = anilistAdapter.extractAllStreamingLinks(anilistMedia.externalLinks);
+        const generatedTags = this.tagGenerator.generateTags(rawData);
+
+        // Merge fresh metadata but preserve cached relationship data
+        const freshMeta: Record<string, any> = {
+          ...rawData.metadata,
+          streamingLinks,
+        };
+        if (meta.anilistRelations) freshMeta.anilistRelations = meta.anilistRelations;
+        if (meta.relationsLastFetched) freshMeta.relationsLastFetched = meta.relationsLastFetched;
+
+        await prisma.series.update({
+          where: { id: series.id },
+          data: {
+            title: rawData.title,
+            titleImage: rawData.titleImage,
+            description: rawData.description,
+            rating: rawData.rating,
+            genres: rawData.genres,
+            metadata: freshMeta,
+            fetchedAt: new Date(),
+            tags: {
+              deleteMany: {},
+              create: generatedTags.map(tag => ({
+                value: tag.value,
+                source: tag.source,
+                confidence: tag.confidence,
+                category: tag.category,
+              })),
+            },
+          },
+        });
+
+        refreshed++;
+        logger.info('Refreshed stale series', { id: series.id, title: series.title });
+      } catch (error) {
+        logger.error('Failed to refresh stale series', {
+          id: series.id,
+          title: series.title,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        skipped++;
+      }
+    }
+
+    logger.info('refreshStale complete', { refreshed, skipped, limit });
+    return { refreshed, skipped };
   }
 
   /**

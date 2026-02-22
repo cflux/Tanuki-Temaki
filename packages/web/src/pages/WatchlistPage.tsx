@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { userApi } from '../lib/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export function WatchlistPage() {
   const { user, isLoading: authLoading } = useUserStore();
@@ -119,26 +119,30 @@ export function WatchlistPage() {
                 key={item.id}
                 className="bg-cyber-bg-card border border-cyber-border overflow-hidden hover:border-cyber-accent transition-colors"
               >
-                {item.series.titleImage && (
-                  <img
-                    src={item.series.titleImage}
-                    alt={item.series.title}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                )}
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
-                  <div className="flex items-center gap-2 mb-3 text-xs flex-wrap">
-                    <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent uppercase tracking-wide">
-                      {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'} {item.series.mediaType}
-                    </span>
-                    <span className="text-cyber-text-dim font-mono uppercase tracking-wide">
-                      ADDED {new Date(item.addedAt).toLocaleDateString()}
-                    </span>
+                <Link to={`/series/${item.seriesId}`} className="block">
+                  {item.series.titleImage && (
+                    <img
+                      src={item.series.titleImage}
+                      alt={item.series.title}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <div className="p-4 pb-2">
+                    <h3 className="font-semibold text-lg mb-2 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                      <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent uppercase tracking-wide">
+                        {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'} {item.series.mediaType}
+                      </span>
+                      <span className="text-cyber-text-dim font-mono uppercase tracking-wide">
+                        ADDED {new Date(item.addedAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
+                </Link>
+                <div className="p-4 pt-3">
                   <div className="inline-flex w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                     <div className="bg-red-500 p-[1px] w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                       <button

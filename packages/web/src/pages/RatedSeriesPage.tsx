@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { userApi } from '../lib/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export function RatedSeriesPage() {
   const { user, isLoading: authLoading } = useUserStore();
@@ -177,52 +177,53 @@ export function RatedSeriesPage() {
               {positiveSeries.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-cyber-bg-card border border-cyber-border p-6 hover:border-cyber-accent transition-colors"
+                  className="bg-cyber-bg-card border border-cyber-border hover:border-cyber-accent transition-colors"
                 >
-                  <div className="flex gap-4">
-                    {item.series.titleImage && (
-                      <img
-                        src={item.series.titleImage}
-                        alt={item.series.title}
-                        className="w-32 h-48 object-cover flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                    <div className="flex-1 flex flex-col">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="font-semibold text-xl flex-1 min-w-0 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
-                        <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent text-xs flex-shrink-0 uppercase tracking-wide">
-                          {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-1">
-                          <span className="text-2xl text-cyber-accent">{getRatingIcon(item.rating)}</span>
-                          <span className="text-sm text-cyber-text-dim ml-1 font-mono uppercase">
-                            {item.rating}/5
+                  <Link to={`/series/${item.seriesId}`} className="block p-6">
+                    <div className="flex gap-4">
+                      {item.series.titleImage && (
+                        <img
+                          src={item.series.titleImage}
+                          alt={item.series.title}
+                          className="w-32 h-48 object-cover flex-shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-semibold text-xl flex-1 min-w-0 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                          <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent text-xs flex-shrink-0 uppercase tracking-wide">
+                            {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'}
                           </span>
                         </div>
-                      </div>
 
-                      <div className="text-xs text-cyber-text-dim mb-3 font-mono uppercase tracking-wide">
-                        RATED {new Date(item.updatedAt).toLocaleDateString()}
-                      </div>
-
-                      <div className="mt-auto">
-                        <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                          <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                            <button
-                              onClick={() => navigate('/', { state: { exploreTitle: item.series.title, exploreMediaType: item.series.mediaType } })}
-                              className="px-4 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all uppercase tracking-wide"
-                              style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                            >
-                              EXPLORE
-                            </button>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex items-center gap-1">
+                            <span className="text-2xl text-cyber-accent">{getRatingIcon(item.rating)}</span>
+                            <span className="text-sm text-cyber-text-dim ml-1 font-mono uppercase">
+                              {item.rating}/5
+                            </span>
                           </div>
                         </div>
+
+                        <div className="text-xs text-cyber-text-dim font-mono uppercase tracking-wide">
+                          RATED {new Date(item.updatedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="px-6 pb-6">
+                    <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                        <button
+                          onClick={() => navigate('/search', { state: { exploreTitle: item.series.title, exploreMediaType: item.series.mediaType } })}
+                          className="px-4 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all uppercase tracking-wide"
+                          style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                        >
+                          EXPLORE
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -244,54 +245,55 @@ export function RatedSeriesPage() {
               {thumbsDownSeries.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-cyber-bg-card border border-cyber-border p-6 hover:border-cyber-accent transition-colors"
+                  className="bg-cyber-bg-card border border-cyber-border hover:border-cyber-accent transition-colors"
                 >
-                  <div className="flex gap-4">
-                    {item.series.titleImage && (
-                      <img
-                        src={item.series.titleImage}
-                        alt={item.series.title}
-                        className="w-32 h-48 object-cover flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-semibold text-xl flex-1 min-w-0 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
-                      <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent text-xs flex-shrink-0 uppercase tracking-wide">
-                        {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'}
-                      </span>
-                    </div>
+                  <Link to={`/series/${item.seriesId}`} className="block p-6">
+                    <div className="flex gap-4">
+                      {item.series.titleImage && (
+                        <img
+                          src={item.series.titleImage}
+                          alt={item.series.title}
+                          className="w-32 h-48 object-cover flex-shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-semibold text-xl flex-1 min-w-0 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                          <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent text-xs flex-shrink-0 uppercase tracking-wide">
+                            {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'}
+                          </span>
+                        </div>
 
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex items-center gap-1">
-                        <span className="text-2xl text-red-500">{getRatingIcon(item.rating)}</span>
-                        <span className="text-sm text-cyber-text-dim ml-1 font-mono uppercase">
-                          NOT FOR ME
-                        </span>
-                      </div>
-                    </div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex items-center gap-1">
+                            <span className="text-2xl text-red-500">{getRatingIcon(item.rating)}</span>
+                            <span className="text-sm text-cyber-text-dim ml-1 font-mono uppercase">
+                              NOT FOR ME
+                            </span>
+                          </div>
+                        </div>
 
-                    <div className="text-xs text-cyber-text-dim mb-3 font-mono uppercase tracking-wide">
-                      RATED {new Date(item.updatedAt).toLocaleDateString()}
-                    </div>
-
-                    <div className="mt-auto">
-                      <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                        <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                          <button
-                            onClick={() => navigate('/', { state: { exploreTitle: item.series.title, exploreMediaType: item.series.mediaType } })}
-                            className="px-4 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all uppercase tracking-wide"
-                            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                          >
-                            EXPLORE
-                          </button>
+                        <div className="text-xs text-cyber-text-dim font-mono uppercase tracking-wide">
+                          RATED {new Date(item.updatedAt).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
+                  <div className="px-6 pb-6">
+                    <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                        <button
+                          onClick={() => navigate('/search', { state: { exploreTitle: item.series.title, exploreMediaType: item.series.mediaType } })}
+                          className="px-4 py-2 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg text-sm font-medium transition-all uppercase tracking-wide"
+                          style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                        >
+                          EXPLORE
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

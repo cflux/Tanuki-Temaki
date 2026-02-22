@@ -23,6 +23,20 @@ export function MaintenancePage() {
   const [expandSuccess, setExpandSuccess] = useState(false);
   const [expandProgress, setExpandProgress] = useState<string[]>([]);
 
+  // Schedule state — expand database job
+  const [expandEnabled, setExpandEnabled] = useState(false);
+  const [expandTime, setExpandTime] = useState('00:00');
+  const [expandLastRun, setExpandLastRun] = useState<string | null>(null);
+  // Schedule state — refresh stale cache job
+  const [refreshEnabled, setRefreshEnabled] = useState(false);
+  const [refreshTime, setRefreshTime] = useState('02:00');
+  const [refreshLimit, setRefreshLimit] = useState(10);
+  const [refreshLastRun, setRefreshLastRun] = useState<string | null>(null);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [scheduleSaveSuccess, setScheduleSaveSuccess] = useState(false);
+  const [isRunningExpand, setIsRunningExpand] = useState(false);
+  const [isRunningRefresh, setIsRunningRefresh] = useState(false);
+
   // Redirect non-admins
   useEffect(() => {
     if (user && !user.isAdmin) {
@@ -30,8 +44,10 @@ export function MaintenancePage() {
     }
   }, [user, navigate]);
 
-  // Fetch cache stats on mount
+  // Fetch cache stats and schedule on mount
   useEffect(() => {
+    if (!user?.isAdmin) return;
+
     const fetchCacheStats = async () => {
       try {
         const stats = await adminApi.getCacheStats();
@@ -41,10 +57,77 @@ export function MaintenancePage() {
       }
     };
 
-    if (user?.isAdmin) {
-      fetchCacheStats();
-    }
+    const fetchSchedule = async () => {
+      try {
+        const schedule = await adminApi.getSchedule();
+        setExpandEnabled(schedule.expand.enabled);
+        setExpandTime(schedule.expand.time);
+        setExpandLastRun(schedule.expand.lastRunAt);
+        setRefreshEnabled(schedule.refreshCache.enabled);
+        setRefreshTime(schedule.refreshCache.time);
+        setRefreshLimit(schedule.refreshCache.limit);
+        setRefreshLastRun(schedule.refreshCache.lastRunAt);
+      } catch (error) {
+        console.error('Failed to fetch schedule:', error);
+      }
+    };
+
+    fetchCacheStats();
+    fetchSchedule();
   }, [user]);
+
+  const handleRunExpandNow = async () => {
+    setIsRunningExpand(true);
+    try {
+      const schedule = await adminApi.runExpandNow();
+      setExpandLastRun(schedule.expand.lastRunAt);
+      setRefreshLastRun(schedule.refreshCache.lastRunAt);
+    } catch (error) {
+      console.error('Failed to run expand job:', error);
+      alert('Failed to run expand job. Check console for details.');
+    } finally {
+      setIsRunningExpand(false);
+    }
+  };
+
+  const handleRunRefreshNow = async () => {
+    setIsRunningRefresh(true);
+    try {
+      const schedule = await adminApi.runRefreshNow();
+      setExpandLastRun(schedule.expand.lastRunAt);
+      setRefreshLastRun(schedule.refreshCache.lastRunAt);
+    } catch (error) {
+      console.error('Failed to run refresh job:', error);
+      alert('Failed to run refresh job. Check console for details.');
+    } finally {
+      setIsRunningRefresh(false);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    setIsSavingSchedule(true);
+    setScheduleSaveSuccess(false);
+    try {
+      const result = await adminApi.updateSchedule(
+        { enabled: expandEnabled, time: expandTime },
+        { enabled: refreshEnabled, time: refreshTime, limit: refreshLimit }
+      );
+      setExpandEnabled(result.expand.enabled);
+      setExpandTime(result.expand.time);
+      setExpandLastRun(result.expand.lastRunAt);
+      setRefreshEnabled(result.refreshCache.enabled);
+      setRefreshTime(result.refreshCache.time);
+      setRefreshLimit(result.refreshCache.limit);
+      setRefreshLastRun(result.refreshCache.lastRunAt);
+      setScheduleSaveSuccess(true);
+      setTimeout(() => setScheduleSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save schedule:', error);
+      alert('Failed to save schedule. Check console for details.');
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
 
   const handleClearDatabase = async () => {
     if (!confirm('Are you sure you want to clear the entire cache? This will remove all series, tags, and relationship data.')) {
@@ -229,6 +312,169 @@ export function MaintenancePage() {
             </div>
           </div>
         )}
+
+        {/* Schedule save success */}
+        {scheduleSaveSuccess && (
+          <div className="mb-6 bg-cyber-bg-card border-2 border-cyber-accent p-4">
+            <div className="text-cyber-accent font-semibold uppercase tracking-wide">
+              [OK] SCHEDULE SAVED SUCCESSFULLY
+            </div>
+          </div>
+        )}
+
+        {/* Scheduled Operations Section */}
+        <div className="mb-6 bg-cyber-bg-card border border-cyber-border p-6">
+          <h2 className="text-xl font-semibold text-cyber-text-bright uppercase tracking-wider mb-4 border-b border-cyber-border pb-2">
+            SCHEDULED OPERATIONS
+          </h2>
+
+          <p className="text-cyber-text-dim mb-6 font-mono text-sm">
+            Configure automatic jobs. All times are in server local time (24-hour HH:MM). Each job runs at most once per day at the specified time.
+          </p>
+
+          <div className="space-y-6">
+            {/* Sub-section: Expand Database */}
+            <div className="border border-cyber-border p-4">
+              <h3 className="text-sm font-semibold text-cyber-text-bright uppercase tracking-wider mb-3 border-b border-cyber-border pb-2">
+                [1] EXPAND DATABASE
+              </h3>
+              <p className="text-cyber-text-dim text-xs mb-3 font-mono">
+                Finds series with no relationships and traces them 1 level deep.
+              </p>
+              <div className="space-y-3">
+                {/* Enable/Disable toggle */}
+                <div className="flex items-center gap-4">
+                  <span className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">STATUS:</span>
+                  <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <div className={`p-[1px] ${expandEnabled ? 'bg-cyber-accent' : 'bg-cyber-border'}`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <button
+                        onClick={() => setExpandEnabled(!expandEnabled)}
+                        className={`px-4 py-2 text-sm font-medium transition-all uppercase tracking-wider ${
+                          expandEnabled
+                            ? 'bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg'
+                            : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                        }`}
+                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      >
+                        {expandEnabled ? '[ENABLED]' : '[DISABLED]'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {/* Time input */}
+                <div className="flex items-center gap-4">
+                  <label className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">TIME:</label>
+                  <input
+                    type="time"
+                    value={expandTime}
+                    onChange={(e) => setExpandTime(e.target.value)}
+                    className="px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
+                  />
+                </div>
+                {/* Last run + Run Now */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="text-cyber-text-dim text-xs font-mono uppercase tracking-wide">
+                    LAST RUN:{' '}
+                    <span className="text-cyber-text">
+                      {expandLastRun ? new Date(expandLastRun).toLocaleString() : 'NEVER'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleRunExpandNow}
+                    disabled={isRunningExpand}
+                    className="px-3 py-1 text-xs font-mono border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                  >
+                    {isRunningExpand ? '[...] RUNNING' : '[>] RUN NOW'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-section: Refresh Stale Cache */}
+            <div className="border border-cyber-border p-4">
+              <h3 className="text-sm font-semibold text-cyber-text-bright uppercase tracking-wider mb-3 border-b border-cyber-border pb-2">
+                [2] REFRESH STALE CACHE
+              </h3>
+              <p className="text-cyber-text-dim text-xs mb-3 font-mono">
+                Re-fetches series from AniList whose cached data is older than 7 days.
+              </p>
+              <div className="space-y-3">
+                {/* Enable/Disable toggle */}
+                <div className="flex items-center gap-4">
+                  <span className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">STATUS:</span>
+                  <div className="inline-flex" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                    <div className={`p-[1px] ${refreshEnabled ? 'bg-cyber-accent' : 'bg-cyber-border'}`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <button
+                        onClick={() => setRefreshEnabled(!refreshEnabled)}
+                        className={`px-4 py-2 text-sm font-medium transition-all uppercase tracking-wider ${
+                          refreshEnabled
+                            ? 'bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg'
+                            : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
+                        }`}
+                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      >
+                        {refreshEnabled ? '[ENABLED]' : '[DISABLED]'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {/* Time input */}
+                <div className="flex items-center gap-4">
+                  <label className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">TIME:</label>
+                  <input
+                    type="time"
+                    value={refreshTime}
+                    onChange={(e) => setRefreshTime(e.target.value)}
+                    className="px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
+                  />
+                </div>
+                {/* Limit input */}
+                <div className="flex items-center gap-4">
+                  <label className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">LIMIT:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={refreshLimit}
+                    onChange={(e) => setRefreshLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                    className="w-24 px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
+                  />
+                  <span className="text-cyber-text-dim text-xs font-mono">series per run (1–100)</span>
+                </div>
+                {/* Last run + Run Now */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="text-cyber-text-dim text-xs font-mono uppercase tracking-wide">
+                    LAST RUN:{' '}
+                    <span className="text-cyber-text">
+                      {refreshLastRun ? new Date(refreshLastRun).toLocaleString() : 'NEVER'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleRunRefreshNow}
+                    disabled={isRunningRefresh}
+                    className="px-3 py-1 text-xs font-mono border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                  >
+                    {isRunningRefresh ? '[...] RUNNING' : '[>] RUN NOW'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Save button — applies both jobs */}
+            <div className="inline-flex" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+              <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                <button
+                  onClick={handleSaveSchedule}
+                  disabled={isSavingSchedule}
+                  className="px-6 py-3 bg-cyber-bg border border-cyber-accent text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                >
+                  {isSavingSchedule ? '[...] SAVING' : '[OK] SAVE SCHEDULE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Seed Database Section */}
         <div className="mb-6 bg-cyber-bg-card border border-cyber-border p-6">

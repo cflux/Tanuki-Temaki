@@ -75,7 +75,7 @@ const server = app.listen(HTTP_PORT, () => {
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
   // Start scheduled tasks
-  Scheduler.start();
+  Scheduler.start().catch((err) => logger.error('Failed to start scheduler', { error: err }));
 });
 
 // Log if listen errors occur

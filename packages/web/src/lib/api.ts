@@ -177,17 +177,22 @@ export const seriesApi = {
   },
 
   /**
-   * Trace relationship graph with streaming progress updates
+   * Trace relationship graph with streaming progress updates.
+   * Pass personalized=true to have the backend apply tag-vote/rating
+   * personalisation in-band — avoids a second traceRelationships call.
    */
   async traceRelationshipsStream(
     seriesId: string,
     maxDepth = 2,
-    onProgress: (progress: any) => void
+    onProgress: (progress: any) => void,
+    personalized = false
   ): Promise<SeriesRelationship> {
     return new Promise(async (resolve, reject) => {
       try {
+        const params = new URLSearchParams({ maxDepth: String(maxDepth) });
+        if (personalized) params.set('personalized', 'true');
         const response = await fetch(
-          `${API_BASE_URL}/api/series/${seriesId}/trace-stream?maxDepth=${maxDepth}`,
+          `${API_BASE_URL}/api/series/${seriesId}/trace-stream?${params}`,
           {
             credentials: 'include', // Send cookies with the request
             headers: {
@@ -559,6 +564,32 @@ export const tagApi = {
   },
 };
 
+export interface RecommendedSeries {
+  series: {
+    id: string;
+    title: string;
+    url: string;
+    mediaType: string;
+    titleImage: string | null;
+    rating: number | null;
+    tags: Array<{ value: string; category: string | null }>;
+  };
+  score: number;
+  matchedTags: string[];
+  basedOnTitles: string[];
+}
+
+export const recommendationsApi = {
+  /**
+   * Get "For You" top-10 recommendations based on user ratings and tag votes
+   * Requires authentication
+   */
+  async getRecommendations(): Promise<{ recommendations: RecommendedSeries[] }> {
+    const { data } = await api.get<{ recommendations: RecommendedSeries[] }>('/api/recommendations');
+    return data;
+  },
+};
+
 export const recommendationApi = {
   /**
    * Get personalized recommendations for a series
@@ -813,6 +844,57 @@ export const adminApi = {
   async expandDatabase(): Promise<{ success: boolean; message: string; status: string }> {
     const { data } = await api.post('/api/admin/seed/expand');
     return data;
+  },
+
+  /**
+   * Get schedule configuration (expand database + refresh stale cache)
+   * Requires admin privileges
+   */
+  async getSchedule(): Promise<{
+    expand: { enabled: boolean; time: string; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+  }> {
+    const { data } = await api.get('/api/admin/schedule');
+    return data;
+  },
+
+  /**
+   * Update schedule configuration (expand database + refresh stale cache)
+   * Requires admin privileges
+   */
+  async updateSchedule(
+    expand: { enabled: boolean; time: string },
+    refreshCache: { enabled: boolean; time: string; limit: number }
+  ): Promise<{
+    expand: { enabled: boolean; time: string; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+  }> {
+    const { data } = await api.put('/api/admin/schedule', { expand, refreshCache });
+    return data;
+  },
+
+  /**
+   * Run the expand database scheduled job immediately
+   * Requires admin privileges
+   */
+  async runExpandNow(): Promise<{
+    expand: { enabled: boolean; time: string; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+  }> {
+    const { data } = await api.post('/api/admin/schedule/run-expand');
+    return data.schedule;
+  },
+
+  /**
+   * Run the refresh stale cache scheduled job immediately
+   * Requires admin privileges
+   */
+  async runRefreshNow(): Promise<{
+    expand: { enabled: boolean; time: string; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+  }> {
+    const { data } = await api.post('/api/admin/schedule/run-refresh');
+    return data.schedule;
   },
 
   /**

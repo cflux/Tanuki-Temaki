@@ -189,9 +189,14 @@ export function DiscoveryPage() {
         throw new Error(`No ${mediaType.toLowerCase()} found with title: ${searchQuery}`);
       }
 
-      // Use the single result
+      // Use the single result.
+      // Fetch by AniList ID rather than by title to avoid the local-cache
+      // substring match returning the wrong series for complex titles
+      // (e.g. "Another" matching inside "Chillin' in Another World…").
+      // fetchByAniListId deduplicates against the DB by anilistId, so it is
+      // safe whether the series is already cached or not.
       const selectedResult = results[0];
-      const series = await seriesApi.searchByTitle(selectedResult.title, mediaType, filterAdultContent);
+      const series = await seriesApi.fetchByAniListId(selectedResult.anilistId, mediaType);
       setRootSeries(series);
 
       // Step 2: Cache series data
@@ -203,8 +208,8 @@ export function DiscoveryPage() {
       // Small delay to show caching step
       await new Promise(resolve => setTimeout(resolve, NAVIGATION_DELAY.ROUTE_TRANSITION));
 
-      // Step 3: Trace relationships with streaming progress
-      const baseGraph = await seriesApi.traceRelationshipsStream(
+      // Step 3: Trace relationships (+ optional in-band personalisation)
+      const finalGraph = await seriesApi.traceRelationshipsStream(
         series.id,
         2,
         (progress) => {
@@ -223,6 +228,9 @@ export function DiscoveryPage() {
             } else {
               document.title = '🔄 Tracing... - Tanuki Temaki';
             }
+          } else if (progress.step === 'personalizing') {
+            step = 'tracing';
+            document.title = '✨ Personalizing... - Tanuki Temaki';
           } else if (progress.step === 'rate_limited') {
             step = 'rate_limited';
             document.title = '⏳ Rate Limited - Tanuki Temaki';
@@ -237,18 +245,24 @@ export function DiscoveryPage() {
             current: progress.current,
             total: progress.total,
           });
-        }
+        },
+        preferPersonalized && !!user
       );
 
-      // Step 4: Apply personalization if enabled and user is logged in
-      let finalGraph = baseGraph;
-      if (preferPersonalized && user) {
-        setLoadingProgress({
-          step: 'tracing',
-          message: 'Personalizing recommendations...',
-        });
-        document.title = '✨ Personalizing... - Tanuki Temaki';
-        finalGraph = await recommendationApi.getPersonalizedRecommendations(series.id, 2);
+      // Stamp every node with the user's current ratings from the DB.
+      // The personalized endpoint skips rating enrichment entirely, and even
+      // the trace-stream path can miss series whose IDs differ between the two
+      // independent backend traces. One getAllRatings() call fixes both cases.
+      if (user) {
+        try {
+          const allRatings = await userApi.getAllRatings();
+          const ratingsMap = new Map(allRatings.map((r: any) => [r.seriesId, r.rating]));
+          finalGraph.nodes.forEach((node) => {
+            (node.series as any).userRating = ratingsMap.get(node.series.id) ?? null;
+          });
+        } catch {
+          // Non-critical — widgets fall back to their own fetch on interaction
+        }
       }
 
       setRelationshipGraph(finalGraph);
@@ -330,6 +344,19 @@ export function DiscoveryPage() {
           }
         }
       );
+
+      // Tag-based endpoints don't attach user ratings — fetch and attach them now
+      if (user) {
+        try {
+          const allRatings = await userApi.getAllRatings();
+          const ratingsMap = new Map(allRatings.map((r: any) => [r.seriesId, r.rating]));
+          graph.nodes.forEach((node) => {
+            (node.series as any).userRating = ratingsMap.get(node.series.id) ?? null;
+          });
+        } catch {
+          // Non-critical — ratings just won't pre-populate
+        }
+      }
 
       setRelationshipGraph(graph);
       setRootSeries(null); // No specific root series for tag search
@@ -422,8 +449,8 @@ export function DiscoveryPage() {
 
       await new Promise(resolve => setTimeout(resolve, NAVIGATION_DELAY.ROUTE_TRANSITION));
 
-      // Trace relationships
-      const baseGraph = await seriesApi.traceRelationshipsStream(
+      // Trace relationships (+ optional in-band personalisation)
+      const finalGraph = await seriesApi.traceRelationshipsStream(
         series.id,
         2,
         (progress) => {
@@ -440,6 +467,9 @@ export function DiscoveryPage() {
             } else {
               document.title = '🔄 Tracing... - Tanuki Temaki';
             }
+          } else if (progress.step === 'personalizing') {
+            step = 'tracing';
+            document.title = '✨ Personalizing... - Tanuki Temaki';
           } else if (progress.step === 'rate_limited') {
             step = 'rate_limited';
             document.title = '⏳ Rate Limited - Tanuki Temaki';
@@ -454,19 +484,9 @@ export function DiscoveryPage() {
             current: progress.current,
             total: progress.total,
           });
-        }
+        },
+        preferPersonalized && !!user
       );
-
-      // Apply personalization if enabled and user is logged in
-      let finalGraph = baseGraph;
-      if (preferPersonalized && user) {
-        setLoadingProgress({
-          step: 'tracing',
-          message: 'Personalizing recommendations...',
-        });
-        document.title = '✨ Personalizing... - Tanuki Temaki';
-        finalGraph = await recommendationApi.getPersonalizedRecommendations(series.id, 2);
-      }
 
       setRelationshipGraph(finalGraph);
 

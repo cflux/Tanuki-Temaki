@@ -224,3 +224,12 @@ model Configuration {
   @@unique([key])
   @@map("Configuration")
 }
+
+// SystemSetting model - key/value store for system config (e.g., scheduler settings)
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@map("system_settings")
+}

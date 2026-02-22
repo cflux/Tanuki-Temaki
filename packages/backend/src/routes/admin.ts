@@ -5,6 +5,7 @@ import { logger } from '../lib/logger.js';
 import { AniListAdapter } from '../adapters/anilist.js';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
+import { Scheduler } from '../services/scheduler.js';
 
 const router: express.Router = express.Router();
 const prisma = new PrismaClient();
@@ -19,6 +20,9 @@ export function setDependencies(
 ) {
   seriesCache = cache;
   relationshipTracer = tracer;
+  // Give scheduler access to dependencies for scheduled jobs
+  Scheduler.setRelationshipTracer(tracer);
+  Scheduler.setSeriesCache(cache);
 }
 
 /**
@@ -508,6 +512,95 @@ router.post('/seed/expand-stream', requireAuth, requireAdmin, async (req, res) =
       adminUser: req.user?.username
     });
     res.status(500).json({ error: 'Failed to start expansion' });
+  }
+});
+
+/**
+ * Get schedule configuration (expand + refresh cache)
+ * Admin only
+ */
+router.get('/schedule', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const schedule = await Scheduler.getSchedule();
+    res.json(schedule);
+  } catch (error) {
+    logger.error('Error fetching schedule', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    res.status(500).json({ error: 'Failed to fetch schedule' });
+  }
+});
+
+/**
+ * Run expand database job immediately
+ * Admin only
+ */
+router.post('/schedule/run-expand', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    logger.info('Admin triggered expand job', { adminUser: req.user?.username });
+    await Scheduler.runExpandNow();
+    const schedule = await Scheduler.getSchedule();
+    res.json({ success: true, schedule });
+  } catch (error) {
+    logger.error('Failed to run expand job', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    res.status(500).json({ error: 'Failed to run expand job' });
+  }
+});
+
+/**
+ * Run refresh stale cache job immediately
+ * Admin only
+ */
+router.post('/schedule/run-refresh', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    logger.info('Admin triggered refresh cache job', { adminUser: req.user?.username });
+    await Scheduler.runRefreshNow();
+    const schedule = await Scheduler.getSchedule();
+    res.json({ success: true, schedule });
+  } catch (error) {
+    logger.error('Failed to run refresh cache job', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    res.status(500).json({ error: 'Failed to run refresh cache job' });
+  }
+});
+
+/**
+ * Update schedule configuration (expand + refresh cache)
+ * Admin only
+ */
+router.put('/schedule', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { expand, refreshCache } = req.body;
+
+    // Validate expand
+    if (!expand || typeof expand.enabled !== 'boolean') {
+      return res.status(400).json({ error: 'expand.enabled must be a boolean' });
+    }
+    if (typeof expand.time !== 'string' || !/^\d{2}:\d{2}$/.test(expand.time)) {
+      return res.status(400).json({ error: 'expand.time must be HH:MM format' });
+    }
+
+    // Validate refreshCache
+    if (!refreshCache || typeof refreshCache.enabled !== 'boolean') {
+      return res.status(400).json({ error: 'refreshCache.enabled must be a boolean' });
+    }
+    if (typeof refreshCache.time !== 'string' || !/^\d{2}:\d{2}$/.test(refreshCache.time)) {
+      return res.status(400).json({ error: 'refreshCache.time must be HH:MM format' });
+    }
+    if (typeof refreshCache.limit !== 'number' || refreshCache.limit < 1 || refreshCache.limit > 100) {
+      return res.status(400).json({ error: 'refreshCache.limit must be a number between 1 and 100' });
+    }
+
+    const schedule = await Scheduler.updateSchedule(expand, refreshCache);
+    res.json(schedule);
+  } catch (error) {
+    logger.error('Error updating schedule', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    res.status(500).json({ error: 'Failed to update schedule' });
   }
 });
 
