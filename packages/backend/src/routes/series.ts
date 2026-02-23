@@ -371,38 +371,8 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
         sendProgress
       );
 
-      // If user is authenticated, add user ratings/notes/votes to all series
       if (req.user) {
-        const seriesIds = relationship.nodes.map(n => n.series.id);
-
-        // Fetch all user data for these series in parallel
-        const [ratingsMap, notesMap, votesMap] = await Promise.all([
-          UserService.getRatingsMap(req.user.userId, seriesIds),
-          Promise.all(seriesIds.map(async (sid) => {
-            const note = await UserService.getNote(req.user!.userId, sid);
-            return [sid, note?.note ?? null] as [string, string | null];
-          })).then(pairs => new Map(pairs)),
-          UserService.getTagVotesMap(req.user.userId, seriesIds),
-        ]);
-
-        // Attach user data to each series
-        relationship.nodes.forEach(node => {
-          const sid = node.series.id;
-          (node.series as any).userRating = ratingsMap.get(sid) ?? null;
-          (node.series as any).userNote = notesMap.get(sid) ?? null;
-
-          // Convert tag votes to map
-          const tagVotes = votesMap.get(sid);
-          const tagVotesObj: Record<string, number> = {};
-          if (tagVotes) {
-            tagVotes.forEach((vote, tag) => {
-              tagVotesObj[tag] = vote;
-            });
-          }
-          (node.series as any).userTagVotes = tagVotesObj;
-        });
-
-        // Apply personalisation in-band — no extra HTTP round-trip needed
+        // Apply personalisation first so expansion nodes are included before user data is attached
         if (wantPersonalized) {
           sendProgress({
             step: 'personalizing',
@@ -415,6 +385,33 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
             req.user.userId
           );
         }
+
+        // Attach user ratings/notes/votes to the final node set (includes any expansion nodes)
+        const seriesIds = relationship.nodes.map(n => n.series.id);
+
+        const [ratingsMap, notesMap, votesMap] = await Promise.all([
+          UserService.getRatingsMap(req.user.userId, seriesIds),
+          Promise.all(seriesIds.map(async (sid) => {
+            const note = await UserService.getNote(req.user!.userId, sid);
+            return [sid, note?.note ?? null] as [string, string | null];
+          })).then(pairs => new Map(pairs)),
+          UserService.getTagVotesMap(req.user.userId, seriesIds),
+        ]);
+
+        relationship.nodes.forEach(node => {
+          const sid = node.series.id;
+          (node.series as any).userRating = ratingsMap.get(sid) ?? null;
+          (node.series as any).userNote = notesMap.get(sid) ?? null;
+
+          const tagVotes = votesMap.get(sid);
+          const tagVotesObj: Record<string, number> = {};
+          if (tagVotes) {
+            tagVotes.forEach((vote, tag) => {
+              tagVotesObj[tag] = vote;
+            });
+          }
+          (node.series as any).userTagVotes = tagVotesObj;
+        });
       }
 
       // Send final result
