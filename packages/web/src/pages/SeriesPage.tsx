@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { seriesApi } from '../lib/api';
 import type { Series } from '../lib/api';
+import { TagVotingWidget } from '../components/user/TagVotingWidget';
+import { RatingWidget } from '../components/user/RatingWidget';
 
 export function SeriesPage() {
   const { id } = useParams<{ id: string }>();
@@ -57,14 +59,8 @@ export function SeriesPage() {
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 20);
 
-  const tagColor = (category: string | undefined) => {
-    switch (category) {
-      case 'genre': return 'border-blue-400 text-blue-300';
-      case 'content': return 'border-purple-400 text-purple-300';
-      case 'description': return 'border-green-400 text-green-300';
-      default: return 'border-cyber-border text-cyber-text-dim';
-    }
-  };
+  const userTagVotes: Record<string, number> = (series as any).userTagVotes ?? {};
+  const userRating: number | null = (series as any).userRating ?? null;
 
   return (
     <div className="min-h-screen bg-cyber-bg text-cyber-text p-6 pt-24 md:pt-6">
@@ -173,6 +169,12 @@ export function SeriesPage() {
               )}
             </div>
 
+            {/* User rating */}
+            <div className="mb-5">
+              <p className="text-cyber-text-dim text-xs font-mono uppercase tracking-widest mb-2">YOUR RATING</p>
+              <RatingWidget seriesId={series.id} initialRating={userRating} />
+            </div>
+
             {/* Description */}
             {series.description && (
               <div className="mb-5">
@@ -189,12 +191,12 @@ export function SeriesPage() {
                 <p className="text-cyber-text-dim text-xs font-mono uppercase tracking-widest mb-2">GENRES</p>
                 <div className="flex flex-wrap gap-1.5">
                   {series.genres.map((g) => (
-                    <span
+                    <TagVotingWidget
                       key={g}
-                      className="px-2 py-0.5 bg-cyber-bg-elevated border border-cyber-border text-cyber-text text-xs font-mono uppercase tracking-wide"
-                    >
-                      {g}
-                    </span>
+                      seriesId={series.id}
+                      tagValue={g}
+                      initialVote={userTagVotes[g] ?? null}
+                    />
                   ))}
                 </div>
               </div>
@@ -206,12 +208,12 @@ export function SeriesPage() {
                 <p className="text-cyber-text-dim text-xs font-mono uppercase tracking-widest mb-2">TAGS</p>
                 <div className="flex flex-wrap gap-1.5">
                   {topTags.map((tag) => (
-                    <span
+                    <TagVotingWidget
                       key={tag.id}
-                      className={`px-2 py-0.5 bg-cyber-bg-elevated border text-xs font-mono uppercase tracking-wide ${tagColor(tag.category ?? undefined)}`}
-                    >
-                      {tag.value}
-                    </span>
+                      seriesId={series.id}
+                      tagValue={tag.value}
+                      initialVote={userTagVotes[tag.value] ?? null}
+                    />
                   ))}
                 </div>
               </div>
