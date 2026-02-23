@@ -36,11 +36,8 @@ export class PersonalizedRecommendationService {
       return baseGraph;
     }
 
-    // Expand graph for highly-rated series (4-5 stars)
-    let expandedGraph = baseGraph;
-    if (this.relationshipTracer) {
-      expandedGraph = await this.expandForHighlyRated(baseGraph, preferences);
-    }
+    // Expand graph for highly-rated series (4-5 stars) using DB relationships (no AniList calls)
+    const expandedGraph = await this.expandForHighlyRated(baseGraph, preferences);
 
     // Score all nodes based on user preferences
     const scoredNodes = this.scoreNodes(expandedGraph.nodes, preferences);
@@ -137,8 +134,6 @@ export class PersonalizedRecommendationService {
     baseGraph: SeriesRelationship,
     preferences: UserPreferences
   ): Promise<SeriesRelationship> {
-    if (!this.relationshipTracer) return baseGraph;
-
     // Get upvoted tags (positive scores only)
     const upvotedTags = new Set(
       Object.entries(preferences.tagPreferences)
@@ -188,7 +183,7 @@ export class PersonalizedRecommendationService {
     // SAFETY: Hard limit on total nodes to prevent memory issues
     const MAX_NODES = 200;
 
-    // Expand each highly-rated series (limited to prevent explosion)
+    // Expand each highly-rated series using DB relationships only (no AniList calls)
     for (const ratedNode of limitedSeries) {
       // Stop if we've hit the node limit
       if (allNodes.size >= MAX_NODES) {
@@ -197,45 +192,59 @@ export class PersonalizedRecommendationService {
       }
 
       try {
-        // Get tags from the highly-rated series
         const ratedSeriesTags = new Set(ratedNode.series.tags.map(t => t.value));
 
-        // Trace deeper (depth 2 additional levels = total depth 4)
-        const deepGraph = await this.relationshipTracer.traceRelationships(
-          ratedNode.series.url,
-          2 // Go 2 levels deep from this series
-        );
-
-        // Filter new nodes: must share upvoted tags with the rated series
-        deepGraph.nodes.forEach(node => {
-          // Skip if already in graph
-          if (allNodes.has(node.series.id)) return;
-
-          // Skip if we've hit the node limit
-          if (allNodes.size >= MAX_NODES) return;
-
-          const nodeTags = node.series.tags.map(t => t.value);
-
-          // Check if node shares any upvoted tags
-          const hasUpvotedTag = nodeTags.some(tag => upvotedTags.has(tag));
-          if (!hasUpvotedTag) return;
-
-          // Check if node shares tags with the highly-rated series
-          const sharesTags = nodeTags.some(tag => ratedSeriesTags.has(tag));
-          if (!sharesTags) return;
-
-          // Add the node
-          allNodes.set(node.series.id, node);
+        // Query depth-1 neighbors directly from DB
+        const depth1Rels = await prisma.relationship.findMany({
+          where: { fromSeriesId: ratedNode.series.id },
+          include: { toSeries: { include: { tags: true } } },
         });
 
-        // Add edges
-        deepGraph.edges.forEach(edge => {
-          const key = `${edge.from}-${edge.to}`;
-          // Only add edge if both nodes are in our graph
-          if (allNodes.has(edge.from) && allNodes.has(edge.to)) {
-            allEdges.set(key, edge);
+        const depth1NewIds: string[] = [];
+        for (const rel of depth1Rels) {
+          if (allNodes.size >= MAX_NODES) break;
+          const s = rel.toSeries;
+          if (allNodes.has(s.id)) continue;
+
+          const nodeTags = s.tags.map((t: any) => t.value);
+          if (!nodeTags.some((tag: string) => upvotedTags.has(tag))) continue;
+          if (!nodeTags.some((tag: string) => ratedSeriesTags.has(tag))) continue;
+
+          allNodes.set(s.id, this.buildSeriesNode(s, 1));
+          depth1NewIds.push(s.id);
+          allEdges.set(`${rel.fromSeriesId}-${rel.toSeriesId}`, {
+            from: rel.fromSeriesId,
+            to: rel.toSeriesId,
+            similarity: rel.similarity ?? 0,
+            sharedTags: rel.sharedTags,
+          });
+        }
+
+        // Query depth-2 neighbors for any newly added depth-1 nodes
+        if (depth1NewIds.length > 0 && allNodes.size < MAX_NODES) {
+          const depth2Rels = await prisma.relationship.findMany({
+            where: { fromSeriesId: { in: depth1NewIds } },
+            include: { toSeries: { include: { tags: true } } },
+          });
+
+          for (const rel of depth2Rels) {
+            if (allNodes.size >= MAX_NODES) break;
+            const s = rel.toSeries;
+            if (allNodes.has(s.id)) continue;
+
+            const nodeTags = s.tags.map((t: any) => t.value);
+            if (!nodeTags.some((tag: string) => upvotedTags.has(tag))) continue;
+            if (!nodeTags.some((tag: string) => ratedSeriesTags.has(tag))) continue;
+
+            allNodes.set(s.id, this.buildSeriesNode(s, 2));
+            allEdges.set(`${rel.fromSeriesId}-${rel.toSeriesId}`, {
+              from: rel.fromSeriesId,
+              to: rel.toSeriesId,
+              similarity: rel.similarity ?? 0,
+              sharedTags: rel.sharedTags,
+            });
           }
-        });
+        }
       } catch (error) {
         logger.error('Failed to expand for series', {
           seriesId: ratedNode.series.id,
@@ -257,6 +266,37 @@ export class PersonalizedRecommendationService {
     });
 
     return expandedGraph;
+  }
+
+  private buildSeriesNode(series: any, depth: number): SeriesNode {
+    return {
+      series: {
+        id: series.id,
+        provider: series.provider,
+        mediaType: (series.mediaType || 'ANIME') as 'ANIME' | 'MANGA',
+        externalId: series.externalId,
+        url: series.url,
+        title: series.title,
+        titleImage: series.titleImage ?? undefined,
+        description: series.description,
+        rating: series.rating ?? undefined,
+        ageRating: series.ageRating ?? undefined,
+        languages: series.languages,
+        genres: series.genres,
+        contentAdvisory: series.contentAdvisory,
+        tags: series.tags.map((tag: any) => ({
+          id: tag.id,
+          value: tag.value,
+          source: tag.source,
+          confidence: tag.confidence,
+          category: tag.category ?? undefined,
+        })),
+        metadata: (series.metadata as Record<string, any>) ?? {},
+        fetchedAt: series.fetchedAt,
+        updatedAt: series.updatedAt,
+      },
+      depth,
+    };
   }
 
   /**

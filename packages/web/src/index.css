@@ -50,6 +50,10 @@
     --cyber-text-bright: #e0ffe0;
     --cyber-border: #00aa00;
     --cyber-border-dim: #006600;
+    /* Adjacent accent: Chartreuse */
+    --cyber-secondary: #aaff00;
+    --cyber-secondary-dim: #77cc00;
+    --cyber-secondary-bright: #ccff66;
   }
 
   /* Cyberpunk Theme: Cyber Blue */
@@ -65,6 +69,10 @@
     --cyber-text-bright: #e0f4ff;
     --cyber-border: #0088bb;
     --cyber-border-dim: #005577;
+    /* Adjacent accent: Indigo-Blue */
+    --cyber-secondary: #4466ff;
+    --cyber-secondary-dim: #2233cc;
+    --cyber-secondary-bright: #8899ff;
   }
 
   /* Cyberpunk Theme: Synthwave Purple */
@@ -80,6 +88,10 @@
     --cyber-text-bright: #fae0ff;
     --cyber-border: #aa33cc;
     --cyber-border-dim: #771188;
+    /* Adjacent accent: Neon Rose */
+    --cyber-secondary: #ff3399;
+    --cyber-secondary-dim: #cc0077;
+    --cyber-secondary-bright: #ff77bb;
   }
 
   /* Cyberpunk Theme: Dystopia Red */
@@ -95,6 +107,10 @@
     --cyber-text-bright: #ffe0e8;
     --cyber-border: #cc0033;
     --cyber-border-dim: #880022;
+    /* Adjacent accent: Neon Orange */
+    --cyber-secondary: #ff6600;
+    --cyber-secondary-dim: #cc4400;
+    --cyber-secondary-bright: #ff9944;
   }
 }
 

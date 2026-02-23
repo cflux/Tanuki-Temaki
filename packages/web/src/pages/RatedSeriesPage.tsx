@@ -76,7 +76,7 @@ export function RatedSeriesPage() {
                   onClick={() => setFilterMediaType('all')}
                   className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
                     filterMediaType === 'all'
-                      ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                      ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                       : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                   }`}
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -94,7 +94,7 @@ export function RatedSeriesPage() {
                       onClick={() => setFilterMediaType(type)}
                       className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
                         filterMediaType === type
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -117,7 +117,7 @@ export function RatedSeriesPage() {
                   onClick={() => setFilterRating('all')}
                   className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide font-mono ${
                     filterRating === 'all'
-                      ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                      ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                       : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                   }`}
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -138,7 +138,7 @@ export function RatedSeriesPage() {
                       onClick={() => setFilterRating(rating)}
                       className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide font-mono ${
                         filterRating === rating
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}

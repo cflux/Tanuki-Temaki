@@ -72,7 +72,7 @@ export function WatchlistButton({ seriesId, initialStatus }: WatchlistButtonProp
           disabled={isLoading}
           className={`px-3 py-1.5 text-sm font-medium transition-all flex items-center gap-2 uppercase tracking-wider ${
             status
-              ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+              ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-md'
               : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
           }`}
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}

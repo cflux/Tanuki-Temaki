@@ -369,10 +369,17 @@ export class RelationshipTracer {
           const tagGenerator = new (await import('./tagGenerator.js')).TagGenerator();
           const generatedTags = tagGenerator.generateTags(rawData);
 
-          // Add streaming links to metadata
+          // Cache the relations data we already have — avoids a redundant AniList call later
+          const relationsForNew = this.anilistMatcher
+            .getAdapter()
+            .getRelatedAnimeAllPlatforms(relatedAnilistMedia);
+
+          // Add streaming links and relations to metadata
           const enrichedMetadata = {
             ...rawData.metadata,
             streamingLinks: relatedInfo.streamingLinks || {},
+            anilistRelations: relationsForNew,
+            relationsLastFetched: new Date().toISOString(),
           };
 
           // Create new series (with race condition handling)
@@ -391,7 +398,7 @@ export class RelationshipTracer {
                 languages: rawData.languages,
                 genres: rawData.genres,
                 contentAdvisory: rawData.contentAdvisory,
-                metadata: enrichedMetadata,
+                metadata: enrichedMetadata as any,
                 tags: {
                   create: generatedTags.map(tag => ({
                     value: tag.value,
@@ -635,6 +642,41 @@ export class RelationshipTracer {
         const sequelRelated = this.anilistMatcher
           .getAdapter()
           .getRelatedAnimeAllPlatforms(sequelMedia);
+
+        // Cache anilistRelations for this sequel if it already exists in DB
+        try {
+          const existingSequel = await prisma.series.findFirst({
+            where: { metadata: { path: ['anilistId'], equals: sequelMedia.id } },
+            select: { id: true, metadata: true },
+          });
+          if (existingSequel) {
+            const existingMeta = existingSequel.metadata as Record<string, any>;
+            const lastFetched = existingMeta?.relationsLastFetched;
+            const isStale = !lastFetched ||
+              (Date.now() - new Date(lastFetched as string).getTime()) > CACHE_EXPIRATION.RELATIONSHIP_TRACE;
+            if (isStale) {
+              await prisma.series.update({
+                where: { id: existingSequel.id },
+                data: {
+                  metadata: {
+                    ...existingMeta,
+                    anilistRelations: sequelRelated,
+                    relationsLastFetched: new Date().toISOString(),
+                  } as any,
+                },
+              });
+              logger.info('[SEQUEL] Cached anilistRelations for sequel', {
+                seriesId: existingSequel.id,
+                sequelAnilistId: sequelMedia.id,
+              });
+            }
+          }
+        } catch (cacheError) {
+          logger.warn('[SEQUEL] Failed to cache relations for sequel', {
+            sequelAnilistId: sequelMedia.id,
+            error: cacheError instanceof Error ? cacheError.message : String(cacheError),
+          });
+        }
 
         logger.info('[SEQUEL] Got related media from sequel', {
           totalRelated: sequelRelated.length,

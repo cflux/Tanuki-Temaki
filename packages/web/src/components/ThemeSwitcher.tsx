@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useThemeStore, type CyberTheme } from '../store/themeStore';
 
-const themes: Array<{ name: CyberTheme; label: string; color: string }> = [
-  { name: 'cyber-green', label: 'MATRIX GREEN', color: '#00FF00' },
-  { name: 'cyber-blue', label: 'CYBER BLUE', color: '#00D4FF' },
-  { name: 'cyber-purple', label: 'SYNTHWAVE', color: '#D946EF' },
-  { name: 'cyber-red', label: 'DYSTOPIA', color: '#FF0040' },
+const themes: Array<{ name: CyberTheme; label: string; color: string; secondary: string }> = [
+  { name: 'cyber-green', label: 'MATRIX GREEN', color: '#00FF00', secondary: '#aaff00' },
+  { name: 'cyber-blue', label: 'CYBER BLUE', color: '#00D4FF', secondary: '#4466ff' },
+  { name: 'cyber-purple', label: 'SYNTHWAVE', color: '#D946EF', secondary: '#ff3399' },
+  { name: 'cyber-red', label: 'DYSTOPIA', color: '#FF0040', secondary: '#ff6600' },
 ];
 
 export function ThemeSwitcher() {
@@ -42,10 +42,10 @@ export function ThemeSwitcher() {
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             title="Change theme"
           >
-            <div
-              className="w-4 h-4 border border-cyber-accent"
-              style={{ backgroundColor: currentTheme.color }}
-            />
+            <div className="w-4 h-4 border border-cyber-accent flex overflow-hidden flex-shrink-0">
+              <div className="w-1/2 h-full" style={{ backgroundColor: currentTheme.color }} />
+              <div className="w-1/2 h-full" style={{ backgroundColor: currentTheme.secondary }} />
+            </div>
             <span className="text-sm">{currentTheme.label}</span>
             <svg
               className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -72,17 +72,17 @@ export function ThemeSwitcher() {
                   }}
                   className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors uppercase tracking-wide text-sm ${
                     theme === t.name
-                      ? 'bg-cyber-accent text-cyber-bg'
+                      ? 'bg-cyber-secondary text-cyber-bg'
                       : 'bg-cyber-bg text-cyber-text hover:bg-cyber-accent hover:text-cyber-bg'
                   }`}
                 >
                   <div
-                    className="w-4 h-4 border flex-shrink-0"
-                    style={{
-                      backgroundColor: t.color,
-                      borderColor: theme === t.name ? 'currentColor' : t.color,
-                    }}
-                  />
+                    className="w-4 h-4 border flex-shrink-0 flex overflow-hidden"
+                    style={{ borderColor: theme === t.name ? 'currentColor' : t.color }}
+                  >
+                    <div className="w-1/2 h-full" style={{ backgroundColor: t.color }} />
+                    <div className="w-1/2 h-full" style={{ backgroundColor: t.secondary }} />
+                  </div>
                   <span>{t.label}</span>
                   {theme === t.name && <span className="ml-auto">✓</span>}
                 </button>

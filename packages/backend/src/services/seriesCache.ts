@@ -446,6 +446,7 @@ export class SeriesCacheService {
     // Generate tags
     const generatedTags = this.tagGenerator.generateTags(rawData);
 
+    // Cache relations alongside other metadata so they're available for future traversals
     // Add streaming links to metadata
     const enrichedMetadata = {
       ...rawData.metadata,
@@ -547,6 +548,7 @@ export class SeriesCacheService {
         rawData.rating = enrichedData.rating || rawData.rating;
         rawData.genres = enrichedData.genres;
         rawData.titleImage = enrichedData.titleImage || rawData.titleImage;
+
         rawData.metadata = {
           ...rawData.metadata,
           ...enrichedData.metadata,
@@ -633,8 +635,8 @@ export class SeriesCacheService {
    * Targets entries whose fetchedAt is older than CACHE_EXPIRATION.SERIES_DATA.
    * Preserves relationship metadata (anilistRelations, relationsLastFetched).
    */
-  async refreshStale(limit: number): Promise<{ refreshed: number; skipped: number }> {
-    const staleThreshold = new Date(Date.now() - CACHE_EXPIRATION.SERIES_DATA);
+  async refreshStale(limit: number, staleDays: number = 7): Promise<{ refreshed: number; skipped: number }> {
+    const staleThreshold = new Date(Date.now() - staleDays * 24 * 60 * 60 * 1000);
 
     const staleSeries = await prisma.series.findMany({
       where: { fetchedAt: { lt: staleThreshold } },
@@ -672,6 +674,7 @@ export class SeriesCacheService {
         const generatedTags = this.tagGenerator.generateTags(rawData);
 
         // Merge fresh metadata but preserve cached relationship data
+        // (anilistRelations staleness is governed separately by CACHE_EXPIRATION.RELATIONSHIP_TRACE)
         const freshMeta: Record<string, any> = {
           ...rawData.metadata,
           streamingLinks,

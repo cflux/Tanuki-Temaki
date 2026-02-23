@@ -71,7 +71,7 @@ export function WatchlistPage() {
                   onClick={() => setFilterMediaType('all')}
                   className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
                     filterMediaType === 'all'
-                      ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                      ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                       : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                   }`}
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -89,7 +89,7 @@ export function WatchlistPage() {
                       onClick={() => setFilterMediaType(type)}
                       className={`px-3 py-1.5 text-sm font-medium transition-all uppercase tracking-wide ${
                         filterMediaType === type
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -113,25 +113,31 @@ export function WatchlistPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredWatchlist.map((item) => (
               <div
                 key={item.id}
-                className="bg-cyber-bg-card border border-cyber-border overflow-hidden hover:border-cyber-accent transition-colors"
+                className="bg-cyber-bg-card border border-cyber-border overflow-hidden hover:border-cyber-accent transition-colors flex"
               >
-                <Link to={`/series/${item.seriesId}`} className="block">
-                  {item.series.titleImage && (
+                <Link to={`/series/${item.seriesId}`} className="flex-shrink-0">
+                  {item.series.titleImage ? (
                     <img
                       src={item.series.titleImage}
                       alt={item.series.title}
-                      className="w-full h-48 object-cover"
+                      className="w-24 h-36 object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
+                  ) : (
+                    <div className="w-24 h-36 bg-cyber-bg flex items-center justify-center text-cyber-text-dim text-xs font-mono uppercase">
+                      NO IMG
+                    </div>
                   )}
-                  <div className="p-4 pb-2">
-                    <h3 className="font-semibold text-lg mb-2 text-cyber-text-bright uppercase tracking-wide">{item.series.title}</h3>
+                </Link>
+                <div className="flex flex-col flex-1 p-3 min-w-0">
+                  <Link to={`/series/${item.seriesId}`} className="flex-1">
+                    <h3 className="font-semibold text-base mb-2 text-cyber-text-bright uppercase tracking-wide line-clamp-2 leading-tight">{item.series.title}</h3>
                     <div className="flex items-center gap-2 text-xs flex-wrap">
                       <span className="px-2 py-1 bg-transparent border border-cyber-accent text-cyber-accent uppercase tracking-wide">
                         {item.series.mediaType === 'ANIME' ? '[TV]' : '[BK]'} {item.series.mediaType}
@@ -140,18 +146,18 @@ export function WatchlistPage() {
                         ADDED {new Date(item.addedAt).toLocaleDateString()}
                       </span>
                     </div>
-                  </div>
-                </Link>
-                <div className="p-4 pt-3">
-                  <div className="inline-flex w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                    <div className="bg-red-500 p-[1px] w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                      <button
-                        onClick={() => handleRemove(item.seriesId)}
-                        className="w-full px-3 py-2 bg-cyber-bg border border-red-500 text-red-400 text-sm hover:bg-red-500 hover:text-black transition-all uppercase tracking-wider"
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        REMOVE
-                      </button>
+                  </Link>
+                  <div className="mt-auto pt-2">
+                    <div className="inline-flex w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                      <div className="bg-red-500 p-[1px] w-full" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                        <button
+                          onClick={() => handleRemove(item.seriesId)}
+                          className="w-full px-3 py-2 bg-cyber-bg border border-red-500 text-red-400 text-sm hover:bg-red-500 hover:text-black transition-all uppercase tracking-wider"
+                          style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                        >
+                          REMOVE
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

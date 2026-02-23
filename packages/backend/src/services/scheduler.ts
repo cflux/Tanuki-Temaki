@@ -10,10 +10,11 @@ const EXPAND_ENABLED  = 'expand_database_enabled';
 const EXPAND_TIME     = 'expand_database_time';      // "HH:MM" 24-hour
 const EXPAND_LAST_RUN = 'expand_database_last_run';
 
-const REFRESH_ENABLED  = 'refresh_cache_enabled';
-const REFRESH_TIME     = 'refresh_cache_time';       // "HH:MM" 24-hour
-const REFRESH_LIMIT    = 'refresh_cache_limit';
-const REFRESH_LAST_RUN = 'refresh_cache_last_run';
+const REFRESH_ENABLED    = 'refresh_cache_enabled';
+const REFRESH_TIME       = 'refresh_cache_time';       // "HH:MM" 24-hour
+const REFRESH_LIMIT      = 'refresh_cache_limit';
+const REFRESH_STALE_DAYS = 'refresh_cache_stale_days';
+const REFRESH_LAST_RUN   = 'refresh_cache_last_run';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 export interface ExpandJob {
@@ -26,6 +27,7 @@ export interface RefreshCacheJob {
   enabled: boolean;
   time: string;          // "HH:MM"
   limit: number;
+  staleDays: number;
   lastRunAt: string | null;
 }
 
@@ -41,11 +43,11 @@ export class Scheduler {
 
   // In-memory config snapshot — avoids a DB read every minute
   private static expandConfig: ExpandJob = { enabled: false, time: '00:00', lastRunAt: null };
-  private static refreshConfig: RefreshCacheJob = { enabled: false, time: '02:00', limit: 10, lastRunAt: null };
+  private static refreshConfig: RefreshCacheJob = { enabled: false, time: '02:00', limit: 10, staleDays: 7, lastRunAt: null };
 
   // Injected dependencies
   private static relationshipTracer: { traceRelationships: (url: string, depth: number) => Promise<any> } | null = null;
-  private static seriesCache: { refreshStale: (limit: number) => Promise<{ refreshed: number; skipped: number }> } | null = null;
+  private static seriesCache: { refreshStale: (limit: number, staleDays: number) => Promise<{ refreshed: number; skipped: number }> } | null = null;
 
   static setRelationshipTracer(tracer: { traceRelationships: (url: string, depth: number) => Promise<any> }) {
     Scheduler.relationshipTracer = tracer;
@@ -113,7 +115,7 @@ export class Scheduler {
   // ── Config API ──────────────────────────────────────────────────────────────
 
   static async getSchedule(): Promise<Schedule> {
-    const keys = [EXPAND_ENABLED, EXPAND_TIME, EXPAND_LAST_RUN, REFRESH_ENABLED, REFRESH_TIME, REFRESH_LIMIT, REFRESH_LAST_RUN];
+    const keys = [EXPAND_ENABLED, EXPAND_TIME, EXPAND_LAST_RUN, REFRESH_ENABLED, REFRESH_TIME, REFRESH_LIMIT, REFRESH_STALE_DAYS, REFRESH_LAST_RUN];
     const settings = await prisma.systemSetting.findMany({ where: { key: { in: keys } } });
     const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
@@ -127,6 +129,7 @@ export class Scheduler {
         enabled: map[REFRESH_ENABLED] === 'true',
         time: map[REFRESH_TIME] ?? '02:00',
         limit: map[REFRESH_LIMIT] ? parseInt(map[REFRESH_LIMIT], 10) : 10,
+        staleDays: map[REFRESH_STALE_DAYS] ? parseInt(map[REFRESH_STALE_DAYS], 10) : 7,
         lastRunAt: map[REFRESH_LAST_RUN] ?? null,
       },
     };
@@ -137,11 +140,12 @@ export class Scheduler {
     refreshCache: Omit<RefreshCacheJob, 'lastRunAt'>
   ): Promise<Schedule> {
     await Promise.all([
-      prisma.systemSetting.upsert({ where: { key: EXPAND_ENABLED },  update: { value: String(expand.enabled) },       create: { key: EXPAND_ENABLED,  value: String(expand.enabled) } }),
-      prisma.systemSetting.upsert({ where: { key: EXPAND_TIME },     update: { value: expand.time },                  create: { key: EXPAND_TIME,     value: expand.time } }),
-      prisma.systemSetting.upsert({ where: { key: REFRESH_ENABLED }, update: { value: String(refreshCache.enabled) }, create: { key: REFRESH_ENABLED, value: String(refreshCache.enabled) } }),
-      prisma.systemSetting.upsert({ where: { key: REFRESH_TIME },    update: { value: refreshCache.time },            create: { key: REFRESH_TIME,    value: refreshCache.time } }),
-      prisma.systemSetting.upsert({ where: { key: REFRESH_LIMIT },   update: { value: String(refreshCache.limit) },   create: { key: REFRESH_LIMIT,   value: String(refreshCache.limit) } }),
+      prisma.systemSetting.upsert({ where: { key: EXPAND_ENABLED },    update: { value: String(expand.enabled) },           create: { key: EXPAND_ENABLED,    value: String(expand.enabled) } }),
+      prisma.systemSetting.upsert({ where: { key: EXPAND_TIME },       update: { value: expand.time },                      create: { key: EXPAND_TIME,       value: expand.time } }),
+      prisma.systemSetting.upsert({ where: { key: REFRESH_ENABLED },   update: { value: String(refreshCache.enabled) },     create: { key: REFRESH_ENABLED,   value: String(refreshCache.enabled) } }),
+      prisma.systemSetting.upsert({ where: { key: REFRESH_TIME },      update: { value: refreshCache.time },                create: { key: REFRESH_TIME,      value: refreshCache.time } }),
+      prisma.systemSetting.upsert({ where: { key: REFRESH_LIMIT },     update: { value: String(refreshCache.limit) },       create: { key: REFRESH_LIMIT,     value: String(refreshCache.limit) } }),
+      prisma.systemSetting.upsert({ where: { key: REFRESH_STALE_DAYS }, update: { value: String(refreshCache.staleDays) }, create: { key: REFRESH_STALE_DAYS, value: String(refreshCache.staleDays) } }),
     ]);
 
     // Refresh in-memory snapshot
@@ -238,11 +242,11 @@ export class Scheduler {
       return;
     }
 
-    const limit = Scheduler.refreshConfig.limit;
-    logger.info('Running scheduled refresh cache job', { limit });
+    const { limit, staleDays } = Scheduler.refreshConfig;
+    logger.info('Running scheduled refresh cache job', { limit, staleDays });
 
     try {
-      const { refreshed, skipped } = await Scheduler.seriesCache.refreshStale(limit);
+      const { refreshed, skipped } = await Scheduler.seriesCache.refreshStale(limit, staleDays);
       logger.info('Refresh cache job complete', { refreshed, skipped });
 
       const nowIso = new Date().toISOString();

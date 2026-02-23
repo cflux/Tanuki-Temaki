@@ -852,7 +852,7 @@ export const adminApi = {
    */
   async getSchedule(): Promise<{
     expand: { enabled: boolean; time: string; lastRunAt: string | null };
-    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; staleDays: number; lastRunAt: string | null };
   }> {
     const { data } = await api.get('/api/admin/schedule');
     return data;
@@ -864,10 +864,10 @@ export const adminApi = {
    */
   async updateSchedule(
     expand: { enabled: boolean; time: string },
-    refreshCache: { enabled: boolean; time: string; limit: number }
+    refreshCache: { enabled: boolean; time: string; limit: number; staleDays: number }
   ): Promise<{
     expand: { enabled: boolean; time: string; lastRunAt: string | null };
-    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; staleDays: number; lastRunAt: string | null };
   }> {
     const { data } = await api.put('/api/admin/schedule', { expand, refreshCache });
     return data;
@@ -879,7 +879,7 @@ export const adminApi = {
    */
   async runExpandNow(): Promise<{
     expand: { enabled: boolean; time: string; lastRunAt: string | null };
-    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; staleDays: number; lastRunAt: string | null };
   }> {
     const { data } = await api.post('/api/admin/schedule/run-expand');
     return data.schedule;
@@ -891,7 +891,7 @@ export const adminApi = {
    */
   async runRefreshNow(): Promise<{
     expand: { enabled: boolean; time: string; lastRunAt: string | null };
-    refreshCache: { enabled: boolean; time: string; limit: number; lastRunAt: string | null };
+    refreshCache: { enabled: boolean; time: string; limit: number; staleDays: number; lastRunAt: string | null };
   }> {
     const { data } = await api.post('/api/admin/schedule/run-refresh');
     return data.schedule;

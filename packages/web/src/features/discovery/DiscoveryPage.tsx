@@ -615,7 +615,7 @@ export function DiscoveryPage() {
                       onClick={() => setSearchMode('series')}
                       className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
                         searchMode === 'series'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -631,7 +631,7 @@ export function DiscoveryPage() {
                       onClick={() => setSearchMode('tag')}
                       className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
                         searchMode === 'tag'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -651,7 +651,7 @@ export function DiscoveryPage() {
                       onClick={() => setMediaType('ANIME')}
                       className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
                         mediaType === 'ANIME'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -667,7 +667,7 @@ export function DiscoveryPage() {
                       onClick={() => setMediaType('MANGA')}
                       className={`px-2 py-1 text-[10px] font-medium transition-all uppercase ${
                         mediaType === 'MANGA'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -716,7 +716,7 @@ export function DiscoveryPage() {
                       onClick={() => setResultsMediaFilter('BOTH')}
                       className={`px-2 py-1 text-[10px] transition-all font-bold ${
                         resultsMediaFilter === 'BOTH'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -732,7 +732,7 @@ export function DiscoveryPage() {
                       onClick={() => setResultsMediaFilter('ANIME')}
                       className={`px-2 py-1 text-[10px] transition-all font-bold ${
                         resultsMediaFilter === 'ANIME'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -748,7 +748,7 @@ export function DiscoveryPage() {
                       onClick={() => setResultsMediaFilter('MANGA')}
                       className={`px-2 py-1 text-[10px] transition-all font-bold ${
                         resultsMediaFilter === 'MANGA'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary'
                           : 'bg-cyber-bg text-cyber-text-dim border border-transparent'
                       }`}
                       style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -772,7 +772,7 @@ export function DiscoveryPage() {
                     onClick={() => setSearchMode('series')}
                     className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
                       searchMode === 'series'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -788,7 +788,7 @@ export function DiscoveryPage() {
                     onClick={() => setSearchMode('tag')}
                     className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
                       searchMode === 'tag'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -808,7 +808,7 @@ export function DiscoveryPage() {
                     onClick={() => setMediaType('ANIME')}
                     className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
                       mediaType === 'ANIME'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -824,7 +824,7 @@ export function DiscoveryPage() {
                     onClick={() => setMediaType('MANGA')}
                     className={`px-3 py-1.5 text-xs font-medium transition-all uppercase tracking-wider ${
                       mediaType === 'MANGA'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -873,7 +873,7 @@ export function DiscoveryPage() {
                     onClick={() => setResultsMediaFilter('BOTH')}
                     className={`px-2 h-9 flex items-center justify-center gap-0.5 text-xs transition-all font-bold ${
                       resultsMediaFilter === 'BOTH'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -890,7 +890,7 @@ export function DiscoveryPage() {
                     onClick={() => setResultsMediaFilter('ANIME')}
                     className={`w-9 h-9 flex items-center justify-center text-xs transition-all font-bold ${
                       resultsMediaFilter === 'ANIME'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -907,7 +907,7 @@ export function DiscoveryPage() {
                     onClick={() => setResultsMediaFilter('MANGA')}
                     className={`w-9 h-9 flex items-center justify-center text-xs transition-all font-bold ${
                       resultsMediaFilter === 'MANGA'
-                        ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-sm'
+                        ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-sm'
                         : 'bg-cyber-bg text-cyber-text-dim hover:text-cyber-accent hover:bg-cyber-bg-elevated border border-transparent'
                     }`}
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -962,7 +962,7 @@ export function DiscoveryPage() {
                       onClick={() => setViewMode('tree')}
                       className={`px-4 py-2 font-medium transition-all uppercase tracking-wide w-full ${
                         viewMode === 'tree'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-md'
                           : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
                       }`}
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -977,7 +977,7 @@ export function DiscoveryPage() {
                       onClick={() => setViewMode('table')}
                       className={`px-4 py-2 font-medium transition-all uppercase tracking-wide w-full ${
                         viewMode === 'table'
-                          ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+                          ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-md'
                           : 'bg-cyber-bg border border-cyber-border text-cyber-text-dim hover:border-cyber-accent hover:text-cyber-accent'
                       }`}
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}

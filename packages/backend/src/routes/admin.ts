@@ -593,6 +593,9 @@ router.put('/schedule', requireAuth, requireAdmin, async (req, res) => {
     if (typeof refreshCache.limit !== 'number' || refreshCache.limit < 1 || refreshCache.limit > 100) {
       return res.status(400).json({ error: 'refreshCache.limit must be a number between 1 and 100' });
     }
+    if (typeof refreshCache.staleDays !== 'number' || refreshCache.staleDays < 1 || refreshCache.staleDays > 365) {
+      return res.status(400).json({ error: 'refreshCache.staleDays must be a number between 1 and 365' });
+    }
 
     const schedule = await Scheduler.updateSchedule(expand, refreshCache);
     res.json(schedule);

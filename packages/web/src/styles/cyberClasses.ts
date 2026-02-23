@@ -16,7 +16,7 @@ export const cyberButton = {
   secondary: 'bg-transparent border border-cyber-border text-cyber-text hover:border-cyber-accent hover:text-cyber-accent px-4 py-2 uppercase tracking-wider font-medium transition-colors',
   danger: 'bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-black px-4 py-2 uppercase tracking-wider font-medium transition-all',
   ghost: 'text-cyber-text hover:text-cyber-accent hover:bg-cyber-bg-elevated px-4 py-2 uppercase tracking-wider font-medium transition-colors',
-  active: 'bg-cyber-accent text-cyber-bg border border-cyber-accent px-4 py-2 uppercase tracking-wider font-medium shadow-cyber-md',
+  active: 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary px-4 py-2 uppercase tracking-wider font-medium shadow-cyber-secondary-md',
 };
 
 // Input and textarea styles
@@ -30,7 +30,8 @@ export const cyberInput = {
 export const cyberBadge = {
   default: 'bg-transparent border border-cyber-border text-cyber-text-dim px-2 py-1 text-xs uppercase tracking-wide',
   accent: 'bg-transparent border border-cyber-accent text-cyber-accent px-2 py-1 text-xs uppercase tracking-wide shadow-cyber-sm',
-  active: 'bg-cyber-accent text-cyber-bg border border-cyber-accent px-2 py-1 text-xs uppercase tracking-wide',
+  active: 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary px-2 py-1 text-xs uppercase tracking-wide shadow-cyber-secondary-sm',
+  secondary: 'bg-transparent border border-cyber-secondary text-cyber-secondary px-2 py-1 text-xs uppercase tracking-wide shadow-cyber-secondary-sm',
 };
 
 // Header and section styles
@@ -58,7 +59,7 @@ export const cyberDivider = {
 // Toggle and checkbox styles
 export const cyberToggle = {
   button: 'border border-cyber-border text-cyber-text-dim px-3 py-1.5 uppercase text-sm tracking-wide transition-all hover:border-cyber-accent hover:text-cyber-accent',
-  active: 'border border-cyber-accent text-cyber-accent bg-cyber-bg-elevated px-3 py-1.5 uppercase text-sm tracking-wide shadow-cyber-sm',
+  active: 'border border-cyber-secondary text-cyber-secondary bg-cyber-bg-elevated px-3 py-1.5 uppercase text-sm tracking-wide shadow-cyber-secondary-sm',
 };
 
 // Cover image styles

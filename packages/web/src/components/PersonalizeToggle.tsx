@@ -30,7 +30,7 @@ export const PersonalizeToggle: React.FC = () => {
           onClick={handleToggle}
           className={`h-10 px-4 font-medium transition-all whitespace-nowrap flex items-center gap-2 uppercase tracking-wider ${
             preferPersonalized
-              ? 'bg-cyber-accent text-cyber-bg border border-cyber-accent shadow-cyber-md'
+              ? 'bg-cyber-secondary text-cyber-bg border border-cyber-secondary shadow-cyber-secondary-md'
               : 'bg-cyber-bg text-cyber-text-dim border border-cyber-border hover:border-cyber-accent hover:text-cyber-accent'
           }`}
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}

@@ -31,6 +31,7 @@ export function MaintenancePage() {
   const [refreshEnabled, setRefreshEnabled] = useState(false);
   const [refreshTime, setRefreshTime] = useState('02:00');
   const [refreshLimit, setRefreshLimit] = useState(10);
+  const [refreshStaleDays, setRefreshStaleDays] = useState(7);
   const [refreshLastRun, setRefreshLastRun] = useState<string | null>(null);
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [scheduleSaveSuccess, setScheduleSaveSuccess] = useState(false);
@@ -66,6 +67,7 @@ export function MaintenancePage() {
         setRefreshEnabled(schedule.refreshCache.enabled);
         setRefreshTime(schedule.refreshCache.time);
         setRefreshLimit(schedule.refreshCache.limit);
+        setRefreshStaleDays(schedule.refreshCache.staleDays);
         setRefreshLastRun(schedule.refreshCache.lastRunAt);
       } catch (error) {
         console.error('Failed to fetch schedule:', error);
@@ -110,7 +112,7 @@ export function MaintenancePage() {
     try {
       const result = await adminApi.updateSchedule(
         { enabled: expandEnabled, time: expandTime },
-        { enabled: refreshEnabled, time: refreshTime, limit: refreshLimit }
+        { enabled: refreshEnabled, time: refreshTime, limit: refreshLimit, staleDays: refreshStaleDays }
       );
       setExpandEnabled(result.expand.enabled);
       setExpandTime(result.expand.time);
@@ -118,6 +120,7 @@ export function MaintenancePage() {
       setRefreshEnabled(result.refreshCache.enabled);
       setRefreshTime(result.refreshCache.time);
       setRefreshLimit(result.refreshCache.limit);
+      setRefreshStaleDays(result.refreshCache.staleDays);
       setRefreshLastRun(result.refreshCache.lastRunAt);
       setScheduleSaveSuccess(true);
       setTimeout(() => setScheduleSaveSuccess(false), 3000);
@@ -396,7 +399,7 @@ export function MaintenancePage() {
                 [2] REFRESH STALE CACHE
               </h3>
               <p className="text-cyber-text-dim text-xs mb-3 font-mono">
-                Re-fetches series from AniList whose cached data is older than 7 days.
+                Re-fetches series from AniList whose cached data is older than {refreshStaleDays} day{refreshStaleDays !== 1 ? 's' : ''}.
               </p>
               <div className="space-y-3">
                 {/* Enable/Disable toggle */}
@@ -427,6 +430,19 @@ export function MaintenancePage() {
                     onChange={(e) => setRefreshTime(e.target.value)}
                     className="px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
                   />
+                </div>
+                {/* Stale days input */}
+                <div className="flex items-center gap-4">
+                  <label className="text-cyber-text-dim text-sm font-mono uppercase tracking-wide w-20">STALE:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={refreshStaleDays}
+                    onChange={(e) => setRefreshStaleDays(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
+                    className="w-24 px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
+                  />
+                  <span className="text-cyber-text-dim text-xs font-mono">days before data is considered stale (1–365)</span>
                 </div>
                 {/* Limit input */}
                 <div className="flex items-center gap-4">
