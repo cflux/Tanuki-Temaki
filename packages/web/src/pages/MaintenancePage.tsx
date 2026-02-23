@@ -27,12 +27,16 @@ export function MaintenancePage() {
   const [expandEnabled, setExpandEnabled] = useState(false);
   const [expandTime, setExpandTime] = useState('00:00');
   const [expandLastRun, setExpandLastRun] = useState<string | null>(null);
+  const [expandLastRunStatus, setExpandLastRunStatus] = useState<'running' | 'success' | 'failed' | null>(null);
+  const [expandLastRunError, setExpandLastRunError] = useState<string | null>(null);
   // Schedule state — refresh stale cache job
   const [refreshEnabled, setRefreshEnabled] = useState(false);
   const [refreshTime, setRefreshTime] = useState('02:00');
   const [refreshLimit, setRefreshLimit] = useState(10);
   const [refreshStaleDays, setRefreshStaleDays] = useState(7);
   const [refreshLastRun, setRefreshLastRun] = useState<string | null>(null);
+  const [refreshLastRunStatus, setRefreshLastRunStatus] = useState<'running' | 'success' | 'failed' | null>(null);
+  const [refreshLastRunError, setRefreshLastRunError] = useState<string | null>(null);
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [scheduleSaveSuccess, setScheduleSaveSuccess] = useState(false);
   const [isRunningExpand, setIsRunningExpand] = useState(false);
@@ -64,11 +68,15 @@ export function MaintenancePage() {
         setExpandEnabled(schedule.expand.enabled);
         setExpandTime(schedule.expand.time);
         setExpandLastRun(schedule.expand.lastRunAt);
+        setExpandLastRunStatus(schedule.expand.lastRunStatus);
+        setExpandLastRunError(schedule.expand.lastRunError);
         setRefreshEnabled(schedule.refreshCache.enabled);
         setRefreshTime(schedule.refreshCache.time);
         setRefreshLimit(schedule.refreshCache.limit);
         setRefreshStaleDays(schedule.refreshCache.staleDays);
         setRefreshLastRun(schedule.refreshCache.lastRunAt);
+        setRefreshLastRunStatus(schedule.refreshCache.lastRunStatus);
+        setRefreshLastRunError(schedule.refreshCache.lastRunError);
       } catch (error) {
         console.error('Failed to fetch schedule:', error);
       }
@@ -83,7 +91,11 @@ export function MaintenancePage() {
     try {
       const schedule = await adminApi.runExpandNow();
       setExpandLastRun(schedule.expand.lastRunAt);
+      setExpandLastRunStatus(schedule.expand.lastRunStatus);
+      setExpandLastRunError(schedule.expand.lastRunError);
       setRefreshLastRun(schedule.refreshCache.lastRunAt);
+      setRefreshLastRunStatus(schedule.refreshCache.lastRunStatus);
+      setRefreshLastRunError(schedule.refreshCache.lastRunError);
     } catch (error) {
       console.error('Failed to run expand job:', error);
       alert('Failed to run expand job. Check console for details.');
@@ -97,7 +109,11 @@ export function MaintenancePage() {
     try {
       const schedule = await adminApi.runRefreshNow();
       setExpandLastRun(schedule.expand.lastRunAt);
+      setExpandLastRunStatus(schedule.expand.lastRunStatus);
+      setExpandLastRunError(schedule.expand.lastRunError);
       setRefreshLastRun(schedule.refreshCache.lastRunAt);
+      setRefreshLastRunStatus(schedule.refreshCache.lastRunStatus);
+      setRefreshLastRunError(schedule.refreshCache.lastRunError);
     } catch (error) {
       console.error('Failed to run refresh job:', error);
       alert('Failed to run refresh job. Check console for details.');
@@ -117,11 +133,15 @@ export function MaintenancePage() {
       setExpandEnabled(result.expand.enabled);
       setExpandTime(result.expand.time);
       setExpandLastRun(result.expand.lastRunAt);
+      setExpandLastRunStatus(result.expand.lastRunStatus);
+      setExpandLastRunError(result.expand.lastRunError);
       setRefreshEnabled(result.refreshCache.enabled);
       setRefreshTime(result.refreshCache.time);
       setRefreshLimit(result.refreshCache.limit);
       setRefreshStaleDays(result.refreshCache.staleDays);
       setRefreshLastRun(result.refreshCache.lastRunAt);
+      setRefreshLastRunStatus(result.refreshCache.lastRunStatus);
+      setRefreshLastRunError(result.refreshCache.lastRunError);
       setScheduleSaveSuccess(true);
       setTimeout(() => setScheduleSaveSuccess(false), 3000);
     } catch (error) {
@@ -374,13 +394,18 @@ export function MaintenancePage() {
                     className="px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text font-mono text-sm focus:border-cyber-accent focus:outline-none"
                   />
                 </div>
-                {/* Last run + Run Now */}
+                {/* Last run + status + Run Now */}
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="text-cyber-text-dim text-xs font-mono uppercase tracking-wide">
                     LAST RUN:{' '}
                     <span className="text-cyber-text">
                       {expandLastRun ? new Date(expandLastRun).toLocaleString() : 'NEVER'}
                     </span>
+                    {expandLastRunStatus && (
+                      <span className={`ml-2 ${expandLastRunStatus === 'success' ? 'text-cyber-accent' : expandLastRunStatus === 'failed' ? 'text-red-400' : 'text-yellow-400'}`}>
+                        [{expandLastRunStatus.toUpperCase()}]
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={handleRunExpandNow}
@@ -390,6 +415,11 @@ export function MaintenancePage() {
                     {isRunningExpand ? '[...] RUNNING' : '[>] RUN NOW'}
                   </button>
                 </div>
+                {expandLastRunError && (
+                  <div className="text-red-400 text-xs font-mono bg-cyber-bg-elevated border border-red-500 px-3 py-2 mt-1">
+                    ERROR: {expandLastRunError}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -457,13 +487,18 @@ export function MaintenancePage() {
                   />
                   <span className="text-cyber-text-dim text-xs font-mono">series per run (1–100)</span>
                 </div>
-                {/* Last run + Run Now */}
+                {/* Last run + status + Run Now */}
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="text-cyber-text-dim text-xs font-mono uppercase tracking-wide">
                     LAST RUN:{' '}
                     <span className="text-cyber-text">
                       {refreshLastRun ? new Date(refreshLastRun).toLocaleString() : 'NEVER'}
                     </span>
+                    {refreshLastRunStatus && (
+                      <span className={`ml-2 ${refreshLastRunStatus === 'success' ? 'text-cyber-accent' : refreshLastRunStatus === 'failed' ? 'text-red-400' : 'text-yellow-400'}`}>
+                        [{refreshLastRunStatus.toUpperCase()}]
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={handleRunRefreshNow}
@@ -473,6 +508,11 @@ export function MaintenancePage() {
                     {isRunningRefresh ? '[...] RUNNING' : '[>] RUN NOW'}
                   </button>
                 </div>
+                {refreshLastRunError && (
+                  <div className="text-red-400 text-xs font-mono bg-cyber-bg-elevated border border-red-500 px-3 py-2 mt-1">
+                    ERROR: {refreshLastRunError}
+                  </div>
+                )}
               </div>
             </div>
 
