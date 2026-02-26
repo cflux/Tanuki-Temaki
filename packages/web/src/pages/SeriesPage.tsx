@@ -55,7 +55,7 @@ export function SeriesPage() {
   const format: string | undefined = meta?.format;
   const streamingLinks: Array<{ url: string; site: string }> | undefined = meta?.streamingLinks;
 
-  const topTags = series.tags
+  const topTags = [...series.tags]
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 20);
 

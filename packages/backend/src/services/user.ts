@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
+import { WatchlistStatus } from '@prisma/client';
+import { normalizeServiceName } from '../utils/services.js';
 
 export class UserService {
   // ==================== RATINGS ====================
@@ -85,6 +85,24 @@ export class UserService {
     });
 
     return new Map(ratings.map((r) => [r.seriesId, r.rating]));
+  }
+
+  /**
+   * Get notes for multiple series in a single query
+   */
+  static async getNotesMap(userId: string, seriesIds: string[]): Promise<Map<string, string>> {
+    const notes = await prisma.userSeriesNote.findMany({
+      where: {
+        userId,
+        seriesId: { in: seriesIds },
+      },
+      select: {
+        seriesId: true,
+        note: true,
+      },
+    });
+
+    return new Map(notes.map((n) => [n.seriesId, n.note]));
   }
 
   // ==================== NOTES ====================
@@ -274,27 +292,6 @@ export class UserService {
   /**
    * Normalize service names to canonical versions
    */
-  private static normalizeServiceName(name: string): string {
-    const lower = name.toLowerCase();
-
-    // Amazon variations
-    if (lower.includes('amazon') || lower === 'prime video') {
-      return 'Amazon Prime Video';
-    }
-    // Crunchyroll variations
-    if (lower.includes('crunchyroll') && !lower.includes('manga')) {
-      return 'Crunchyroll';
-    }
-    if (lower.includes('crunchyroll') && lower.includes('manga')) {
-      return 'Crunchyroll Manga';
-    }
-    // HBO variations
-    if (lower.includes('hbo')) {
-      return 'HBO Max';
-    }
-    // Return original if no normalization needed
-    return name;
-  }
 
   /**
    * Get available services
@@ -305,7 +302,7 @@ export class UserService {
       return [];
     }
     // Normalize service names to match current canonical names
-    return services.map(s => this.normalizeServiceName(s as string));
+    return services.map(s => normalizeServiceName(s as string));
   }
 
   // ==================== WATCHLIST ====================
@@ -313,7 +310,7 @@ export class UserService {
   /**
    * Add series to watchlist
    */
-  static async addToWatchlist(userId: string, seriesId: string, status: string = 'plan_to_watch') {
+  static async addToWatchlist(userId: string, seriesId: string, status: WatchlistStatus = WatchlistStatus.plan_to_watch) {
     return prisma.userWatchlist.upsert({
       where: {
         userId_seriesId: {

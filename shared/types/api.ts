@@ -39,6 +39,6 @@ export interface ExtensionRequest {
 
 export interface ExtensionResponse {
   requestId: string;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }

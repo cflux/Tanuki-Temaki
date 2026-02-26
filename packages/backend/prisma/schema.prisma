@@ -63,6 +63,7 @@ model Tag {
   confidence Float   @default(1.0) // Confidence score (0-1)
   category   String? // 'theme', 'mood', 'setting', etc.
 
+  @@unique([seriesId, value])
   @@index([seriesId])
   @@index([value])
   @@index([category])
@@ -104,8 +105,6 @@ model User {
   preferences     UserPreference[]
   watchlist       UserWatchlist[]
 
-  @@index([username])
-  @@index([email])
   @@map("users")
 }
 
@@ -196,14 +195,22 @@ model UserPreference {
   @@map("user_preferences")
 }
 
+enum WatchlistStatus {
+  plan_to_watch
+  watching
+  completed
+  on_hold
+  dropped
+}
+
 // UserWatchlist model - series marked to watch/read later
 model UserWatchlist {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   userId    String
   seriesId  String
-  status    String   @default("plan_to_watch") // 'plan_to_watch', 'watching', 'completed', 'on_hold', 'dropped'
-  addedAt   DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    WatchlistStatus @default(plan_to_watch)
+  addedAt   DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
@@ -221,7 +228,6 @@ model Configuration {
   value     Json
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  @@unique([key])
   @@map("Configuration")
 }
 

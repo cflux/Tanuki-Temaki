@@ -12,7 +12,7 @@ COPY shared/package.json ./shared/
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm@9
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY shared ./shared
@@ -43,20 +43,25 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/backend/package.json ./packages/backend/
 COPY shared/package.json ./shared/
 
-# Install all dependencies (needed for Prisma CLI)
-RUN pnpm install --no-frozen-lockfile
+# Install all dependencies (need prisma CLI for generate)
+RUN pnpm install --frozen-lockfile
+
+# Copy Prisma schema and generate client
+COPY --from=builder /app/packages/backend/prisma ./packages/backend/prisma
+RUN cd packages/backend && npx prisma generate
+
+# Remove devDependencies after generation
+RUN pnpm prune --prod
 
 # Copy built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
-COPY --from=builder /app/packages/backend/prisma ./packages/backend/prisma
 COPY --from=builder /app/shared/dist ./shared/dist
 
-# Generate Prisma client in production
-WORKDIR /app/packages/backend
-RUN pnpm prisma generate
-
-# Create logs directory
+# Create logs directory and non-root user
 RUN mkdir -p /app/packages/backend/logs
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 WORKDIR /app/packages/backend
 

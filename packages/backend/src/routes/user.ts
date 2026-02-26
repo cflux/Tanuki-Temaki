@@ -1,10 +1,18 @@
 import express from 'express';
+import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { UserService } from '../services/user.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { logger } from '../lib/logger.js';
 import { validateRequired, validateRating } from '../utils/validators.js';
 import { USER_DATA_ERRORS } from '../config/errorMessages.js';
+import { prisma } from '../lib/prisma.js';
+
+const uuidSchema = z.string().uuid();
+const WATCHLIST_STATUSES = ['plan_to_watch', 'watching', 'completed', 'on_hold', 'dropped'] as const;
+const MAX_NOTE_LENGTH = 10_000;
+const ALLOWED_PREFERENCE_KEYS = ['prefer_personalized', 'available_services', 'theme', 'media_filter', 'adult_filter'] as const;
+const MAX_PREFERENCE_VALUE_SIZE = 10_000;
 
 const router: express.Router = express.Router();
 
@@ -76,6 +84,14 @@ router.post('/notes', async (req, res) => {
 
     if (!seriesId || !note) {
       return res.status(400).json({ error: 'seriesId and note are required' });
+    }
+
+    if (!uuidSchema.safeParse(seriesId).success) {
+      return res.status(400).json({ error: 'Invalid seriesId format' });
+    }
+
+    if (typeof note !== 'string' || note.length > MAX_NOTE_LENGTH) {
+      return res.status(400).json({ error: `Note must be a string of at most ${MAX_NOTE_LENGTH} characters` });
     }
 
     const result = await UserService.saveNote(req.user!.userId, seriesId, note);
@@ -201,6 +217,14 @@ router.post('/preferences', async (req, res) => {
       return res.status(400).json({ error: 'key and value are required' });
     }
 
+    if (!ALLOWED_PREFERENCE_KEYS.includes(key as any)) {
+      return res.status(400).json({ error: `Invalid preference key. Allowed keys: ${ALLOWED_PREFERENCE_KEYS.join(', ')}` });
+    }
+
+    if (JSON.stringify(value).length > MAX_PREFERENCE_VALUE_SIZE) {
+      return res.status(400).json({ error: 'Preference value is too large' });
+    }
+
     const result = await UserService.setPreference(req.user!.userId, key, value);
     res.json(result);
   } catch (error) {
@@ -267,7 +291,15 @@ router.post('/watchlist', async (req, res) => {
       return res.status(400).json({ error: 'seriesId is required' });
     }
 
-    const result = await UserService.addToWatchlist(req.user!.userId, seriesId, status);
+    if (!uuidSchema.safeParse(seriesId).success) {
+      return res.status(400).json({ error: 'Invalid seriesId format' });
+    }
+
+    if (status && !WATCHLIST_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${WATCHLIST_STATUSES.join(', ')}` });
+    }
+
+    const result = await UserService.addToWatchlist(req.user!.userId, seriesId, status as import('@prisma/client').WatchlistStatus);
     res.json(result);
   } catch (error) {
     logger.error('Error adding to watchlist', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -319,15 +351,19 @@ router.post('/watchlist/batch', async (req, res) => {
       return res.status(400).json({ error: 'Maximum 200 series IDs per batch' });
     }
 
-    const statuses = await Promise.all(
-      seriesIds.map(async (seriesId) => {
-        const status = await UserService.getWatchlistStatus(req.user!.userId, seriesId);
-        return {
-          seriesId,
-          status: status?.status || null,
-        };
-      })
-    );
+    const watchlistItems = await prisma.userWatchlist.findMany({
+      where: {
+        userId: req.user!.userId,
+        seriesId: { in: seriesIds },
+      },
+      select: { seriesId: true, status: true },
+    });
+
+    const statusMap = new Map(watchlistItems.map((w) => [w.seriesId, w.status]));
+    const statuses = seriesIds.map((seriesId) => ({
+      seriesId,
+      status: statusMap.get(seriesId) || null,
+    }));
 
     res.json(statuses);
   } catch (error) {

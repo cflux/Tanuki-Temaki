@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 type IsAdultValue = 'omit' | 'true' | 'false';
 type QueryType = 'searchMedia' | 'searchMediaMultiple' | 'getAnimeWithRelations' | 'searchByTag';
 
@@ -68,7 +70,7 @@ export function IsAdultTestPage() {
   const runTest = async (isAdultValue: IsAdultValue) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/test/isadult', {
+      const response = await fetch(`${API_BASE_URL}/api/test/isadult`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,6 +1,6 @@
 export interface Series {
   id: string;
-  provider: 'crunchyroll' | 'anilist' | string;
+  provider: string;
   mediaType: 'ANIME' | 'MANGA';
   externalId: string;
   url: string;
@@ -18,8 +18,8 @@ export interface Series {
   tags: Tag[];
 
   metadata: Record<string, any>;
-  fetchedAt: Date;
-  updatedAt: Date;
+  fetchedAt: string;
+  updatedAt: string;
 }
 
 export interface Tag {

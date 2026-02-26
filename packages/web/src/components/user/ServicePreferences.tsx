@@ -22,10 +22,6 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
           userApi.getAvailableServices(),
         ]);
 
-        console.log('Loaded all services:', services);
-        console.log('Loaded user services:', userServices);
-        console.log('User services type:', typeof userServices, Array.isArray(userServices));
-
         setAllServices(services);
         setSelectedServices(userServices);
       } catch (error) {
@@ -47,13 +43,11 @@ export const ServicePreferences: React.FC<ServicePreferencesProps> = ({ userId }
   };
 
   const handleSave = async () => {
-    console.log('Saving services:', selectedServices);
     setIsSaving(true);
     setSaveStatus('saving');
 
     try {
       await userApi.setAvailableServices(selectedServices);
-      console.log('Services saved successfully');
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), STATUS_DISPLAY_DURATION.SUCCESS);
     } catch (error) {

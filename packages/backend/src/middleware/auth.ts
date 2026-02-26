@@ -27,7 +27,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
     return;
   }
 
-  const payload = AuthService.verifyToken(accessToken);
+  const payload = AuthService.verifyToken(accessToken, 'access');
 
   if (!payload) {
     res.status(401).json({ error: 'Invalid or expired token' });
@@ -51,7 +51,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
   const accessToken = req.cookies.access_token;
 
   if (accessToken) {
-    const payload = AuthService.verifyToken(accessToken);
+    const payload = AuthService.verifyToken(accessToken, 'access');
 
     if (payload) {
       req.user = {

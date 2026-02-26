@@ -1,14 +1,13 @@
 import express from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
-import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger.js';
-import { AniListAdapter } from '../adapters/anilist.js';
+import { anilistAdapter } from '../adapters/anilist.js';
 import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
 import { Scheduler } from '../services/scheduler.js';
+import { prisma } from '../lib/prisma.js';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 
 // Dependency injection - will be set in main server file
 let seriesCache: SeriesCacheService;
@@ -119,7 +118,7 @@ router.post('/seed/popular', requireAuth, requireAdmin, async (req, res) => {
 
     // Process in background
     (async () => {
-      const anilistAdapter = new AniListAdapter();
+      // Use shared singleton anilistAdapter
       const seededSeries: string[] = [];
       const errors: Array<{ title: string; error: string }> = [];
 
@@ -224,7 +223,11 @@ router.post('/seed/popular-stream', requireAuth, requireAdmin, async (req, res) 
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    let aborted = false;
+    req.on('close', () => { aborted = true; });
+
     const sendProgress = (step: string, message: string, data?: any) => {
+      if (aborted) return;
       res.write(`data: ${JSON.stringify({ step, message, ...data })}\n\n`);
     };
 
@@ -432,7 +435,11 @@ router.post('/seed/expand-stream', requireAuth, requireAdmin, async (req, res) =
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    let aborted = false;
+    req.on('close', () => { aborted = true; });
+
     const sendProgress = (step: string, message: string, data?: any) => {
+      if (aborted) return;
       res.write(`data: ${JSON.stringify({ step, message, ...data })}\n\n`);
     };
 

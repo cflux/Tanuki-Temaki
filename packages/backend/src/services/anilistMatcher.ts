@@ -1,4 +1,4 @@
-import { AniListAdapter } from '../adapters/anilist.js';
+import { anilistAdapter, AniListAdapter } from '../adapters/anilist.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import stringSimilarity from 'string-similarity';
@@ -8,11 +8,7 @@ import stringSimilarity from 'string-similarity';
  * Caches matches in database to avoid repeated lookups
  */
 export class AniListMatcherService {
-  private anilistAdapter: AniListAdapter;
-
-  constructor() {
-    this.anilistAdapter = new AniListAdapter();
-  }
+  private anilistAdapter = anilistAdapter;
 
   /**
    * Match a Crunchyroll series to AniList by title

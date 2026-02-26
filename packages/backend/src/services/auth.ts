@@ -1,16 +1,15 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
 import { ADMIN_USERNAMES } from '../config/constants.js';
 import { logger } from '../lib/logger.js';
+import { prisma } from '../lib/prisma.js';
 
 const BCRYPT_ROUNDS = 12;
-
-const prisma = new PrismaClient();
 
 interface TokenPayload {
   userId: string;
   username: string;
+  type: 'access' | 'refresh';
 }
 
 interface OAuthProfile {
@@ -20,7 +19,13 @@ interface OAuthProfile {
 }
 
 export class AuthService {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  private static readonly JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    return secret;
+  })();
   private static readonly JWT_ACCESS_EXPIRY = (process.env.JWT_ACCESS_EXPIRY || '15m') as string | number;
   private static readonly JWT_REFRESH_EXPIRY = (process.env.JWT_REFRESH_EXPIRY || '7d') as string | number;
 
@@ -28,7 +33,7 @@ export class AuthService {
    * Generate JWT access token (15min expiry)
    */
   static generateAccessToken(userId: string, username: string): string {
-    const payload: TokenPayload = { userId, username };
+    const payload: TokenPayload = { userId, username, type: 'access' };
     const options = { expiresIn: this.JWT_ACCESS_EXPIRY } as SignOptions;
     return jwt.sign(payload, this.JWT_SECRET, options);
   }
@@ -37,17 +42,21 @@ export class AuthService {
    * Generate JWT refresh token (7 day expiry)
    */
   static generateRefreshToken(userId: string, username: string): string {
-    const payload: TokenPayload = { userId, username };
+    const payload: TokenPayload = { userId, username, type: 'refresh' };
     const options = { expiresIn: this.JWT_REFRESH_EXPIRY } as SignOptions;
     return jwt.sign(payload, this.JWT_SECRET, options);
   }
 
   /**
-   * Verify and decode JWT token
+   * Verify and decode JWT token, optionally checking the token type
    */
-  static verifyToken(token: string): TokenPayload | null {
+  static verifyToken(token: string, expectedType?: 'access' | 'refresh'): TokenPayload | null {
     try {
-      return jwt.verify(token, this.JWT_SECRET) as TokenPayload;
+      const payload = jwt.verify(token, this.JWT_SECRET) as TokenPayload;
+      if (expectedType && payload.type !== expectedType) {
+        return null;
+      }
+      return payload;
     } catch (error) {
       return null;
     }

@@ -1,8 +1,8 @@
 import axios from 'axios';
-import type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote } from '@tanuki-temaki/shared';
+import type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote, UserRatingWithSeries, UserWatchlistWithSeries, UserNoteWithSeries } from '@tanuki-temaki/shared';
 
 // Re-export types for use in components
-export type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote };
+export type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote, UserRatingWithSeries, UserWatchlistWithSeries, UserNoteWithSeries };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -185,76 +185,72 @@ export const seriesApi = {
     seriesId: string,
     maxDepth = 2,
     onProgress: (progress: any) => void,
-    personalized = false
+    personalized = false,
+    signal?: AbortSignal
   ): Promise<SeriesRelationship> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const params = new URLSearchParams({ maxDepth: String(maxDepth) });
-        if (personalized) params.set('personalized', 'true');
-        const response = await fetch(
-          `${API_BASE_URL}/api/series/${seriesId}/trace-stream?${params}`,
-          {
-            credentials: 'include', // Send cookies with the request
-            headers: {
-              'Accept': 'text/event-stream',
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error('No response body');
-        }
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                if (data.error) {
-                  reader.cancel();
-                  reject(new Error(data.error));
-                  return;
-                }
-
-                if (data.result) {
-                  // Final result received
-                  reader.cancel();
-                  resolve(data.result);
-                  return;
-                }
-
-                // Progress update
-                onProgress?.(data);
-              } catch (error) {
-                console.error('Failed to parse SSE data:', error);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        reject(error);
+    const params = new URLSearchParams({ maxDepth: String(maxDepth) });
+    if (personalized) params.set('personalized', 'true');
+    const response = await fetch(
+      `${API_BASE_URL}/api/series/${seriesId}/trace-stream?${params}`,
+      {
+        credentials: 'include',
+        signal,
+        headers: {
+          'Accept': 'text/event-stream',
+        },
       }
-    });
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.error) {
+              reader.cancel();
+              throw new Error(data.error);
+            }
+
+            if (data.result) {
+              reader.cancel();
+              return data.result;
+            }
+
+            // Progress update
+            onProgress?.(data);
+          } catch (error) {
+            if (error instanceof Error && error.message) throw error;
+            console.error('Failed to parse SSE data:', error);
+          }
+        }
+      }
+    }
+
+    throw new Error('Stream ended without result');
   },
 
   /**
@@ -484,7 +480,7 @@ export const userApi = {
     await api.delete(`/api/user/watchlist/${seriesId}`);
   },
 
-  async getWatchlist(): Promise<any[]> {
+  async getWatchlist(): Promise<UserWatchlistWithSeries[]> {
     const { data } = await api.get('/api/user/watchlist');
     return data;
   },
@@ -511,12 +507,12 @@ export const userApi = {
     }
   },
 
-  async getRatedSeries(): Promise<any[]> {
+  async getRatedSeries(): Promise<UserRatingWithSeries[]> {
     const { data } = await api.get('/api/user/rated');
     return data;
   },
 
-  async getNotedSeries(): Promise<any[]> {
+  async getNotedSeries(): Promise<UserNoteWithSeries[]> {
     const { data } = await api.get('/api/user/noted');
     return data;
   },
@@ -579,7 +575,7 @@ export interface RecommendedSeries {
   basedOnTitles: string[];
 }
 
-export const recommendationsApi = {
+export const recommendationApi = {
   /**
    * Get "For You" top-10 recommendations based on user ratings and tag votes
    * Requires authentication
@@ -588,9 +584,7 @@ export const recommendationsApi = {
     const { data } = await api.get<{ recommendations: RecommendedSeries[] }>('/api/recommendations');
     return data;
   },
-};
 
-export const recommendationApi = {
   /**
    * Get personalized recommendations for a series
    * Requires authentication
@@ -616,92 +610,80 @@ export const recommendationApi = {
     maxDepth?: number,
     topSeriesCount?: number,
     personalized: boolean = false,
-    onProgress?: (step: string, message: string, data?: any) => void
+    onProgress?: (step: string, message: string, data?: any) => void,
+    signal?: AbortSignal
   ): Promise<SeriesRelationship> {
-    return new Promise((resolve, reject) => {
-      // Build request body, only including optional params if provided (let backend use defaults)
-      const requestBody: any = { tagValue, mediaType, personalized };
-      if (maxDepth !== undefined) requestBody.maxDepth = maxDepth;
-      if (topSeriesCount !== undefined) requestBody.topSeriesCount = topSeriesCount;
+    // Build request body, only including optional params if provided (let backend use defaults)
+    const requestBody: any = { tagValue, mediaType, personalized };
+    if (maxDepth !== undefined) requestBody.maxDepth = maxDepth;
+    if (topSeriesCount !== undefined) requestBody.topSeriesCount = topSeriesCount;
 
-      // Send POST request with streaming response
-      fetch(`${API_BASE_URL}/api/recommendations/from-tag-stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : '',
-        },
-        credentials: 'include',
-        body: JSON.stringify(requestBody),
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const error = await response.json();
-            reject(new Error(error.error || 'Failed to get recommendations'));
-            return;
-          }
-
-          // Read the SSE stream
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-
-          if (!reader) {
-            reject(new Error('No response body'));
-            return;
-          }
-
-          let buffer = '';
-
-          const readStream = async () => {
-            try {
-              const { done, value } = await reader.read();
-
-              if (done) {
-                return;
-              }
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-
-                  if (data === '[DONE]') {
-                    return;
-                  }
-
-                  try {
-                    const parsed = JSON.parse(data);
-
-                    if (parsed.error) {
-                      reject(new Error(parsed.message || parsed.details || 'Unknown error'));
-                      return;
-                    }
-
-                    if (parsed.result) {
-                      resolve(parsed.result);
-                      return;
-                    }
-
-                    onProgress?.(parsed.step, parsed.message, parsed);
-                  } catch (e) {
-                    console.error('Failed to parse SSE data:', data, e);
-                  }
-                }
-              }
-
-              readStream();
-            } catch (error) {
-              reject(error);
-            }
-          };
-
-          readStream();
-        })
-        .catch(reject);
+    const response = await fetch(`${API_BASE_URL}/api/recommendations/from-tag-stream`, {
+      method: 'POST',
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(requestBody),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get recommendations');
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+
+          if (data === '[DONE]') {
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+
+            if (parsed.error) {
+              reader.cancel();
+              throw new Error(parsed.message || parsed.details || 'Unknown error');
+            }
+
+            if (parsed.result) {
+              reader.cancel();
+              return parsed.result;
+            }
+
+            onProgress?.(parsed.step, parsed.message, parsed);
+          } catch (error) {
+            if (error instanceof Error && error.message) throw error;
+            console.error('Failed to parse SSE data:', data, error);
+          }
+        }
+      }
+    }
+
+    throw new Error('Stream ended without result');
   },
 
   /**
@@ -764,76 +746,69 @@ export const adminApi = {
    * Requires admin privileges
    */
   async seedFromPopularStream(
-    onProgress: (step: string, message: string, data?: any) => void
+    onProgress: (step: string, message: string, data?: any) => void,
+    signal?: AbortSignal
   ): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/admin/seed/popular-stream`,
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Accept': 'text/event-stream',
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error('No response body');
-        }
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                if (data.error) {
-                  reader.cancel();
-                  reject(new Error(data.error));
-                  return;
-                }
-
-                if (data.done) {
-                  reader.cancel();
-                  resolve();
-                  return;
-                }
-
-                // Progress update
-                onProgress?.(data.step, data.message, data);
-              } catch (error) {
-                console.error('Failed to parse SSE data:', error);
-              }
-            }
-          }
-        }
-
-        resolve();
-      } catch (error) {
-        reject(error);
+    const response = await fetch(
+      `${API_BASE_URL}/api/admin/seed/popular-stream`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        signal,
+        headers: {
+          'Accept': 'text/event-stream',
+        },
       }
-    });
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.error) {
+              reader.cancel();
+              throw new Error(data.error);
+            }
+
+            if (data.done) {
+              reader.cancel();
+              return;
+            }
+
+            // Progress update
+            onProgress?.(data.step, data.message, data);
+          } catch (error) {
+            if (error instanceof Error && error.message) throw error;
+            console.error('Failed to parse SSE data:', error);
+          }
+        }
+      }
+    }
   },
 
   /**
@@ -902,75 +877,68 @@ export const adminApi = {
    * Requires admin privileges
    */
   async expandDatabaseStream(
-    onProgress: (step: string, message: string, data?: any) => void
+    onProgress: (step: string, message: string, data?: any) => void,
+    signal?: AbortSignal
   ): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/admin/seed/expand-stream`,
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Accept': 'text/event-stream',
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error('No response body');
-        }
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                if (data.error) {
-                  reader.cancel();
-                  reject(new Error(data.error));
-                  return;
-                }
-
-                if (data.done) {
-                  reader.cancel();
-                  resolve();
-                  return;
-                }
-
-                // Progress update
-                onProgress?.(data.step, data.message, data);
-              } catch (error) {
-                console.error('Failed to parse SSE data:', error);
-              }
-            }
-          }
-        }
-
-        resolve();
-      } catch (error) {
-        reject(error);
+    const response = await fetch(
+      `${API_BASE_URL}/api/admin/seed/expand-stream`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        signal,
+        headers: {
+          'Accept': 'text/event-stream',
+        },
       }
-    });
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.error) {
+              reader.cancel();
+              throw new Error(data.error);
+            }
+
+            if (data.done) {
+              reader.cancel();
+              return;
+            }
+
+            // Progress update
+            onProgress?.(data.step, data.message, data);
+          } catch (error) {
+            if (error instanceof Error && error.message) throw error;
+            console.error('Failed to parse SSE data:', error);
+          }
+        }
+      }
+    }
   },
 };

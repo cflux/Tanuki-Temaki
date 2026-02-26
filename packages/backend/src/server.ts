@@ -1,10 +1,9 @@
 // MUST be first to load environment variables before other imports
 import './env.js';
 
-console.log('[SERVER] Environment loaded, importing dependencies...');
-
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -26,13 +25,10 @@ import {
 } from './index.js';
 import { Scheduler } from './services/scheduler.js';
 
-console.log('[SERVER] All imports loaded successfully');
-
 const app = express();
 
-console.log('[SERVER] Express app created, setting up middleware...');
-
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: FRONTEND_URL,
   credentials: true,
@@ -61,13 +57,13 @@ app.use('/api/series', seriesRouter);
 app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/test', testRouter);
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/test', testRouter);
+}
 
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-console.log('[SERVER] Middleware and routes configured, starting HTTP server...');
 
 // Start HTTP server
 const server = app.listen(HTTP_PORT, () => {
@@ -80,7 +76,6 @@ const server = app.listen(HTTP_PORT, () => {
 
 // Log if listen errors occur
 server.on('error', (error: any) => {
-  console.error('[SERVER] Server error:', error);
   logger.error('Server error', { error });
 });
 
@@ -91,9 +86,10 @@ const shutdown = async () => {
   // Stop scheduled tasks
   Scheduler.stop();
 
-  server.close(() => {
+  await new Promise<void>((resolve) => server.close(() => {
     logger.info('HTTP server closed');
-  });
+    resolve();
+  }));
 
   await prisma.$disconnect();
   logger.info('Database connection closed');
@@ -106,13 +102,11 @@ process.on('SIGINT', shutdown);
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  console.error('[SERVER] Uncaught exception:', error);
   logger.error('Uncaught exception', { error });
   shutdown();
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[SERVER] Unhandled rejection:', reason);
   logger.error('Unhandled rejection', { reason });
   shutdown();
 });

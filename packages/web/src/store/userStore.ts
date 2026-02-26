@@ -46,11 +46,10 @@ export const useUserStore = create<UserState>()(
     {
       name: 'tanuki-user-storage',
       partialize: (state) => ({
-        user: state.user,
         preferPersonalized: state.preferPersonalized,
         resultsMediaFilter: state.resultsMediaFilter,
         filterAdultContent: state.filterAdultContent,
-      }), // Persist user data and preferences
+      }), // Persist only preferences — user is re-fetched via initAuth()
     }
   )
 );

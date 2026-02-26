@@ -5,7 +5,6 @@
     "lib": ["ES2022"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

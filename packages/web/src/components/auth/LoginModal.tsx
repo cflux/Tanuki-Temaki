@@ -106,6 +106,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [regUsername]);
 
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -155,7 +165,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label={view === 'signin' ? 'Sign in' : 'Create account'}>
       <div className="bg-cyber-bg-elevated border-2 border-cyber-accent p-8 max-w-md w-full mx-4 shadow-cyber-xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b border-cyber-accent pb-4">

@@ -1,10 +1,9 @@
 import express from 'express';
-import { AniListAdapter } from '../adapters/anilist.js';
+import { anilistAdapter } from '../adapters/anilist.js';
 import { logger } from '../lib/logger.js';
 import { ANILIST_API_URL, JSON_HEADERS } from '../config/constants.js';
 
 const router: express.Router = express.Router();
-const anilistAdapter = new AniListAdapter();
 
 /**
  * GET /api/test/health

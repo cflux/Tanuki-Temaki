@@ -47,21 +47,26 @@ router.post('/register', async (req, res) => {
 
 // Local login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = await AuthService.verifyLocalUser(email, password);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const accessToken = AuthService.generateAccessToken(user.userId, user.username);
+    const refreshToken = AuthService.generateRefreshToken(user.userId, user.username);
+    setAuthCookies(res, accessToken, refreshToken);
+    return res.json({ success: true });
+  } catch (error) {
+    logger.error('Login error', { error: error instanceof Error ? error.message : 'Unknown error' });
+    return res.status(500).json({ error: 'Login failed' });
   }
-
-  const user = await AuthService.verifyLocalUser(email, password);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password' });
-  }
-
-  const accessToken = AuthService.generateAccessToken(user.userId, user.username);
-  const refreshToken = AuthService.generateRefreshToken(user.userId, user.username);
-  setAuthCookies(res, accessToken, refreshToken);
-  return res.json({ success: true });
 });
 
 // Google OAuth - Initiate
@@ -156,7 +161,7 @@ router.post('/refresh', (req, res) => {
     return res.status(401).json({ error: 'Refresh token required' });
   }
 
-  const payload = AuthService.verifyToken(refreshToken);
+  const payload = AuthService.verifyToken(refreshToken, 'refresh');
 
   if (!payload) {
     return res.status(401).json({ error: 'Invalid or expired refresh token' });

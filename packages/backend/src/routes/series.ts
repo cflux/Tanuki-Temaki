@@ -4,10 +4,11 @@ import { SeriesCacheService } from '../services/seriesCache.js';
 import { RelationshipTracer } from '../services/relationshipTracer.js';
 import { PersonalizedRecommendationService } from '../services/personalizedRecommendations.js';
 import { UserService } from '../services/user.js';
-import { optionalAuth } from '../middleware/auth.js';
+import { optionalAuth, requireAuth, requireAdmin } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
+import { normalizeServiceName } from '../utils/services.js';
 
 const router: RouterType = Router();
 
@@ -174,29 +175,6 @@ router.get('/stats', async (req, res, next) => {
  */
 router.get('/services', async (req, res, next) => {
   try {
-    // Normalize service names to canonical versions
-    const normalizeServiceName = (name: string): string => {
-      const lower = name.toLowerCase();
-
-      // Amazon variations
-      if (lower.includes('amazon') || lower === 'prime video') {
-        return 'Amazon Prime Video';
-      }
-      // Crunchyroll variations
-      if (lower.includes('crunchyroll') && !lower.includes('manga')) {
-        return 'Crunchyroll';
-      }
-      if (lower.includes('crunchyroll') && lower.includes('manga')) {
-        return 'Crunchyroll Manga';
-      }
-      // HBO variations
-      if (lower.includes('hbo')) {
-        return 'HBO Max';
-      }
-      // Return original if no normalization needed
-      return name;
-    };
-
     // Predefined list of common anime/manga services
     const commonServices = [
       // Anime Streaming
@@ -267,7 +245,7 @@ router.get('/services', async (req, res, next) => {
  * DELETE /api/series/clear
  * Clear all cached data (for testing)
  */
-router.delete('/clear', async (req, res, next) => {
+router.delete('/clear', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     logger.warn('Clearing all database data');
 
@@ -350,6 +328,9 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
 
     logger.info('Starting SSE trace', { seriesId: id, maxDepth, personalized: wantPersonalized });
 
+    let aborted = false;
+    req.on('close', () => { aborted = true; });
+
     // Get series to get URL
     const series = await seriesCache.getSeriesById(id);
     if (!series) {
@@ -391,10 +372,7 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
 
         const [ratingsMap, notesMap, votesMap] = await Promise.all([
           UserService.getRatingsMap(req.user.userId, seriesIds),
-          Promise.all(seriesIds.map(async (sid) => {
-            const note = await UserService.getNote(req.user!.userId, sid);
-            return [sid, note?.note ?? null] as [string, string | null];
-          })).then(pairs => new Map(pairs)),
+          UserService.getNotesMap(req.user!.userId, seriesIds),
           UserService.getTagVotesMap(req.user.userId, seriesIds),
         ]);
 
@@ -495,7 +473,7 @@ router.post('/:id/trace', optionalAuth, async (req, res, next) => {
  * GET /api/series/debug-anilist/:anilistId?type=ANIME|MANGA
  * Debug endpoint to see raw AniList query and response
  */
-router.get('/debug-anilist/:anilistId', async (req, res, next) => {
+router.get('/debug-anilist/:anilistId', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const anilistId = parseInt(req.params.anilistId);
     const mediaType = (req.query.type as string)?.toUpperCase() || 'ANIME';

@@ -32,7 +32,7 @@ export const SeriesSelectionModal: React.FC<SeriesSelectionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Select series">
       <div className="bg-cyber-bg-elevated border-2 border-cyber-accent max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-cyber-xl">
         {/* Header */}
         <div className="p-6 border-b border-cyber-accent">

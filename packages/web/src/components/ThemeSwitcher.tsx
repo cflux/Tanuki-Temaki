@@ -13,20 +13,38 @@ export function ThemeSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const buttons = dropdownRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]');
+        if (!buttons?.length) return;
+        const focused = document.activeElement;
+        const idx = Array.from(buttons).indexOf(focused as HTMLButtonElement);
+        const next = event.key === 'ArrowDown'
+          ? (idx + 1) % buttons.length
+          : (idx - 1 + buttons.length) % buttons.length;
+        buttons[next].focus();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -38,6 +56,9 @@ export function ThemeSwitcher() {
         <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
           <button
             onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            aria-haspopup="menu"
+            aria-label="Change theme"
             className="h-10 flex items-center gap-2 px-4 bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-text hover:text-cyber-accent font-medium transition-all uppercase tracking-wide"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             title="Change theme"
@@ -62,15 +83,17 @@ export function ThemeSwitcher() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 z-50" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
           <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-            <div className="bg-cyber-bg-elevated shadow-cyber-lg py-2" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+            <div className="bg-cyber-bg-elevated shadow-cyber-lg py-2" role="menu" aria-label="Theme options" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
               {themes.map((t) => (
                 <button
                   key={t.name}
+                  role="menuitemradio"
+                  aria-checked={theme === t.name}
                   onClick={() => {
                     setTheme(t.name);
                     setIsOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors uppercase tracking-wide text-sm ${
+                  className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors uppercase tracking-wide text-sm focus:outline-none ${
                     theme === t.name
                       ? 'bg-cyber-secondary text-cyber-bg'
                       : 'bg-cyber-bg text-cyber-text hover:bg-cyber-accent hover:text-cyber-bg'

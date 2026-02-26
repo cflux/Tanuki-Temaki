@@ -1,24 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { userApi } from '../lib/api';
-import { useNavigate } from 'react-router-dom';
+import type { UserNoteWithSeries } from '../lib/api';
 
 export function NotedSeriesPage() {
-  const { user, isLoading: authLoading } = useUserStore();
-  const navigate = useNavigate();
-  const [notedSeries, setNotedSeries] = useState<any[]>([]);
+  const { user } = useUserStore();
+  const [notedSeries, setNotedSeries] = useState<UserNoteWithSeries[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      return;
-    }
-
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    if (!user) return;
 
     const fetchNoted = async () => {
       try {
@@ -32,7 +23,7 @@ export function NotedSeriesPage() {
     };
 
     fetchNoted();
-  }, [user, authLoading, navigate]);
+  }, [user]);
 
   if (isLoading) {
     return (

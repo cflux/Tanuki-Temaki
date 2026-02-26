@@ -11,6 +11,7 @@ import { IsAdultTestPage } from './pages/IsAdultTestPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { HomePage } from './pages/HomePage';
 import { SeriesPage } from './pages/SeriesPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { UsernameModal } from './components/auth/UsernameModal';
 import { PersonalizeToggle } from './components/PersonalizeToggle';
 import { SafeModeToggle } from './components/SafeModeToggle';
@@ -19,6 +20,8 @@ import { Logo } from './components/Logo';
 import { MobileMenu } from './components/MobileMenu';
 import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { ToastContainer } from './components/Toast';
 
 function LogoMenu() {
   const [open, setOpen] = useState(false);
@@ -27,13 +30,20 @@ function LogoMenu() {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [open]);
 
   const go = (path: string) => {
@@ -188,15 +198,18 @@ function App() {
           <Route path="/" element={<RootPage />} />
           <Route path="/search" element={<DiscoveryPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/watchlist" element={<WatchlistPage />} />
-          <Route path="/rated" element={<RatedSeriesPage />} />
-          <Route path="/noted" element={<NotedSeriesPage />} />
-          <Route path="/admin/maintenance" element={<MaintenancePage />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
+          <Route path="/rated" element={<ProtectedRoute><RatedSeriesPage /></ProtectedRoute>} />
+          <Route path="/noted" element={<ProtectedRoute><NotedSeriesPage /></ProtectedRoute>} />
+          <Route path="/admin/maintenance" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/series/:id" element={<SeriesPage />} />
           <Route path="/test/isadult" element={<IsAdultTestPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+
+        <ToastContainer />
 
         {/* Force username selection for temp usernames */}
         <UsernameModal

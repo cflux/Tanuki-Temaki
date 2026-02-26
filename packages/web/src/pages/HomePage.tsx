@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
-import { userApi, recommendationsApi } from '../lib/api';
-import type { RecommendedSeries } from '../lib/api';
+import { userApi, recommendationApi } from '../lib/api';
+import type { RecommendedSeries, UserWatchlistWithSeries, UserRatingWithSeries } from '../lib/api';
 
 // Portrait card for watchlist items
-function WatchlistCard({ item }: { item: any }) {
+function WatchlistCard({ item }: { item: UserWatchlistWithSeries }) {
   return (
     <Link
       to={`/series/${item.seriesId}`}
@@ -43,7 +43,7 @@ function WatchlistCard({ item }: { item: any }) {
 }
 
 // Portrait card for rated series
-function RatedCard({ item }: { item: any }) {
+function RatedCard({ item }: { item: UserRatingWithSeries }) {
   return (
     <Link
       to={`/series/${item.seriesId ?? item.series?.id}`}
@@ -126,12 +126,20 @@ function RecommendationCard({ rec }: { rec: RecommendedSeries }) {
   );
 }
 
+function SectionSpinner() {
+  return (
+    <div className="flex justify-center py-8">
+      <div className="animate-spin h-8 w-8 border-2 border-cyber-border border-t-cyber-accent" />
+    </div>
+  );
+}
+
 export function HomePage() {
   const { user, isLoading: authLoading } = useUserStore();
   const navigate = useNavigate();
 
-  const [watchlist, setWatchlist] = useState<any[]>([]);
-  const [topRated, setTopRated] = useState<any[]>([]);
+  const [watchlist, setWatchlist] = useState<UserWatchlistWithSeries[]>([]);
+  const [topRated, setTopRated] = useState<UserRatingWithSeries[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendedSeries[]>([]);
 
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
@@ -154,14 +162,14 @@ export function HomePage() {
       userApi.getRatedSeries()
         .then((data) => {
           const filtered = data
-            .filter((item: any) => item.rating >= 4)
-            .sort((a: any, b: any) => b.rating - a.rating);
+            .filter((item) => item.rating >= 4)
+            .sort((a, b) => b.rating - a.rating);
           setTopRated(filtered);
         })
         .catch(() => setTopRated([]))
         .finally(() => setLoadingRated(false)),
 
-      recommendationsApi.getRecommendations()
+      recommendationApi.getRecommendations()
         .then(({ recommendations: recs }) => setRecommendations(recs))
         .catch(() => setRecommendations([]))
         .finally(() => setLoadingRecs(false)),
@@ -177,12 +185,6 @@ export function HomePage() {
   }
 
   if (!user) return null;
-
-  const SectionSpinner = () => (
-    <div className="flex justify-center py-8">
-      <div className="animate-spin h-8 w-8 border-2 border-cyber-border border-t-cyber-accent" />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-cyber-bg text-cyber-text p-6 pt-24 md:pt-6">

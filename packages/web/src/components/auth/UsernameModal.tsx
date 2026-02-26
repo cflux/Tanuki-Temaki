@@ -67,7 +67,7 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose })
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Choose username">
       <div className="bg-cyber-bg-elevated border-2 border-cyber-accent p-8 max-w-md w-full mx-4 shadow-cyber-xl">
         <h2 className="text-2xl font-bold text-cyber-text-bright mb-4 uppercase tracking-widest border-b border-cyber-accent pb-3">CHOOSE USERNAME</h2>
         <p className="text-cyber-text-dim mb-6 font-mono">

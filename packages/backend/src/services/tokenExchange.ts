@@ -17,6 +17,10 @@ interface ExchangeTokenData {
 const exchangeTokens = new Map<string, ExchangeTokenData>();
 
 const TOKEN_EXPIRY_MS = 2 * 60 * 1000; // 2 minutes
+const MAX_TOKENS = 10_000;
+
+// Periodic cleanup every 60 seconds
+setInterval(() => cleanupExpiredTokens(), 60_000).unref();
 
 /**
  * Generate a one-time exchange token
@@ -25,6 +29,14 @@ export function createExchangeToken(userId: string, username: string | null, isN
   // Generate cryptographically secure random token
   const token = randomBytes(32).toString('hex');
 
+  // Reject if map is at capacity
+  if (exchangeTokens.size >= MAX_TOKENS) {
+    cleanupExpiredTokens();
+    if (exchangeTokens.size >= MAX_TOKENS) {
+      throw new Error('Exchange token store is full');
+    }
+  }
+
   // Store with expiration
   exchangeTokens.set(token, {
     userId,
@@ -32,9 +44,6 @@ export function createExchangeToken(userId: string, username: string | null, isN
     isNewUser,
     expiresAt: Date.now() + TOKEN_EXPIRY_MS,
   });
-
-  // Clean up expired tokens periodically
-  cleanupExpiredTokens();
 
   return token;
 }

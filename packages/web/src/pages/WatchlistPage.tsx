@@ -1,25 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { userApi } from '../lib/api';
-import { useNavigate, Link } from 'react-router-dom';
+import type { UserWatchlistWithSeries } from '../lib/api';
+import { Link } from 'react-router-dom';
 
 export function WatchlistPage() {
-  const { user, isLoading: authLoading } = useUserStore();
-  const navigate = useNavigate();
-  const [watchlist, setWatchlist] = useState<any[]>([]);
+  const { user } = useUserStore();
+  const [watchlist, setWatchlist] = useState<UserWatchlistWithSeries[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterMediaType, setFilterMediaType] = useState<string | 'all'>('all');
 
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      return;
-    }
-
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    if (!user) return;
 
     const fetchWatchlist = async () => {
       try {
@@ -33,7 +25,7 @@ export function WatchlistPage() {
     };
 
     fetchWatchlist();
-  }, [user, authLoading, navigate]);
+  }, [user]);
 
   const filteredWatchlist = watchlist.filter(item => {
     const matchesMediaType = filterMediaType === 'all' || item.series.mediaType === filterMediaType;

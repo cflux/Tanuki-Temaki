@@ -12,20 +12,38 @@ export const UserMenu: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
+    if (!showDropdown) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
     };
 
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowDropdown(false);
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const buttons = dropdownRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+        if (!buttons?.length) return;
+        const focused = document.activeElement;
+        const idx = Array.from(buttons).indexOf(focused as HTMLButtonElement);
+        const next = event.key === 'ArrowDown'
+          ? (idx + 1) % buttons.length
+          : (idx - 1 + buttons.length) % buttons.length;
+        buttons[next].focus();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [showDropdown]);
 
@@ -70,6 +88,8 @@ export const UserMenu: React.FC = () => {
         <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
+            aria-expanded={showDropdown}
+            aria-haspopup="menu"
             className="h-10 flex items-center gap-2 px-4 bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-text hover:text-cyber-accent font-medium transition-all uppercase tracking-wide"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
           >
@@ -99,29 +119,33 @@ export const UserMenu: React.FC = () => {
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-48 z-50" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
           <div className="bg-cyber-accent p-[1px]" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-            <div className="bg-cyber-bg-elevated shadow-cyber-lg py-2" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+            <div className="bg-cyber-bg-elevated shadow-cyber-lg py-2" role="menu" aria-label="User menu" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
               <button
+                role="menuitem"
                 onClick={handleProfileClick}
-                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg focus:bg-cyber-accent focus:text-cyber-bg focus:outline-none transition-colors text-cyber-text uppercase tracking-wide text-sm"
               >
                 [USER] PROFILE
               </button>
               <div className="border-t border-cyber-border my-1"></div>
               <button
+                role="menuitem"
                 onClick={() => { setShowDropdown(false); navigate('/watchlist'); }}
-                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg focus:bg-cyber-accent focus:text-cyber-bg focus:outline-none transition-colors text-cyber-text uppercase tracking-wide text-sm"
               >
                 [LIST] WATCHLIST
               </button>
               <button
+                role="menuitem"
                 onClick={() => { setShowDropdown(false); navigate('/rated'); }}
-                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg focus:bg-cyber-accent focus:text-cyber-bg focus:outline-none transition-colors text-cyber-text uppercase tracking-wide text-sm"
               >
                 [STAR] RATED SERIES
               </button>
               <button
+                role="menuitem"
                 onClick={() => { setShowDropdown(false); navigate('/noted'); }}
-                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-text uppercase tracking-wide text-sm"
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg focus:bg-cyber-accent focus:text-cyber-bg focus:outline-none transition-colors text-cyber-text uppercase tracking-wide text-sm"
               >
                 [NOTE] MY NOTES
               </button>
@@ -129,8 +153,9 @@ export const UserMenu: React.FC = () => {
                 <>
                   <div className="border-t border-cyber-border my-1"></div>
                   <button
+                    role="menuitem"
                     onClick={() => { setShowDropdown(false); navigate('/admin/maintenance'); }}
-                    className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg transition-colors text-cyber-accent uppercase tracking-wide text-sm font-bold"
+                    className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-cyber-accent hover:text-cyber-bg focus:bg-cyber-accent focus:text-cyber-bg focus:outline-none transition-colors text-cyber-accent uppercase tracking-wide text-sm font-bold"
                   >
                     [ADMIN] MAINTENANCE
                   </button>
@@ -138,8 +163,9 @@ export const UserMenu: React.FC = () => {
               )}
               <div className="border-t border-cyber-border my-1"></div>
               <button
+                role="menuitem"
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-red-500 hover:text-black transition-colors text-red-400 uppercase tracking-wide text-sm"
+                className="w-full text-left px-4 py-2 bg-cyber-bg hover:bg-red-500 hover:text-black focus:bg-red-500 focus:text-black focus:outline-none transition-colors text-red-400 uppercase tracking-wide text-sm"
               >
                 [EXIT] SIGN OUT
               </button>

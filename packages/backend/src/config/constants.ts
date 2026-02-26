@@ -32,13 +32,6 @@ const OAUTH_BACKEND_URL = `${PROTOCOL}://${OAUTH_HOST}${backendPortStr}`;
 export const GOOGLE_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/google/callback`;
 export const GITHUB_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/github/callback`;
 
-// Debug logging
-console.log('[BACKEND CONSTANTS] HOST:', HOST);
-console.log('[BACKEND CONSTANTS] OAUTH_HOST:', OAUTH_HOST);
-console.log('[BACKEND CONSTANTS] FRONTEND_URL:', FRONTEND_URL);
-console.log('[BACKEND CONSTANTS] BACKEND_URL:', BACKEND_URL);
-console.log('[BACKEND CONSTANTS] GOOGLE_CALLBACK_URL:', GOOGLE_CALLBACK_URL);
-
 // ============================================================================
 // External API URLs
 // ============================================================================

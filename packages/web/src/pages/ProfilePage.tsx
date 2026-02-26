@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { userApi, authApi, type UserRating } from '../lib/api';
 import { ServicePreferences } from '../components/user/ServicePreferences';
 
 export const ProfilePage: React.FC = () => {
-  const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
-  const authLoading = useUserStore((state) => state.isLoading);
   const updateUsername = useUserStore((state) => state.updateUsername);
   const [ratings, setRatings] = useState<UserRating[]>([]);
   const [tagPreferences, setTagPreferences] = useState<Record<string, number>>({});
@@ -22,15 +19,7 @@ export const ProfilePage: React.FC = () => {
   const [isSavingUsername, setIsSavingUsername] = useState(false);
 
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      return;
-    }
-
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    if (!user) return;
 
     const loadData = async () => {
       setIsLoading(true);
@@ -50,7 +39,7 @@ export const ProfilePage: React.FC = () => {
     };
 
     loadData();
-  }, [user, authLoading, navigate]);
+  }, [user]);
 
   // Check username availability when editing
   useEffect(() => {

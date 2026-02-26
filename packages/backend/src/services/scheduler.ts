@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger.js';
 import { GenreCollectionService } from './genreCollection.js';
 import { CACHE_EXPIRATION } from '../config/constants.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // ── DB settings keys ──────────────────────────────────────────────────────────
 const EXPAND_ENABLED  = 'expand_database_enabled';

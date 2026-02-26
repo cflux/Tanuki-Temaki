@@ -18,7 +18,6 @@ interface DiscoveryState {
   rootSeries: Series | null;
   relationshipGraph: SeriesRelationship | null;
   mediaType: 'ANIME' | 'MANGA'; // Search media type
-  resultsMediaFilter: 'ANIME' | 'MANGA' | 'BOTH'; // Results display filter
 
   // UI state
   viewMode: 'tree' | 'table';
@@ -40,7 +39,6 @@ interface DiscoveryState {
   setRootSeries: (series: Series | null) => void;
   setRelationshipGraph: (graph: SeriesRelationship | null) => void;
   setMediaType: (type: 'ANIME' | 'MANGA') => void;
-  setResultsMediaFilter: (filter: 'ANIME' | 'MANGA' | 'BOTH') => void;
   setViewMode: (mode: 'tree' | 'table') => void;
   setSelectedSeries: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
@@ -60,7 +58,6 @@ export const useDiscoveryStore = create<DiscoveryState>((set) => ({
   rootSeries: null,
   relationshipGraph: null,
   mediaType: 'ANIME',
-  resultsMediaFilter: 'BOTH',
   viewMode: 'tree',
   selectedSeriesId: null,
   isLoading: false,
@@ -76,7 +73,6 @@ export const useDiscoveryStore = create<DiscoveryState>((set) => ({
   setRootSeries: (series) => set({ rootSeries: series }),
   setRelationshipGraph: (graph) => set({ relationshipGraph: graph, requiredTags: new Set(), excludedTags: new Set() }),
   setMediaType: (type) => set({ mediaType: type }),
-  setResultsMediaFilter: (filter) => set({ resultsMediaFilter: filter }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setSelectedSeries: (id) => set({ selectedSeriesId: id }),
   setLoading: (loading) => set({ isLoading: loading }),
@@ -118,7 +114,6 @@ export const useDiscoveryStore = create<DiscoveryState>((set) => ({
       rootSeries: null,
       relationshipGraph: null,
       mediaType: 'ANIME',
-      resultsMediaFilter: 'BOTH',
       selectedSeriesId: null,
       isLoading: false,
       loadingProgress: null,

@@ -1,26 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { userApi } from '../lib/api';
-import { useNavigate, Link } from 'react-router-dom';
+import type { UserRatingWithSeries } from '../lib/api';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function RatedSeriesPage() {
-  const { user, isLoading: authLoading } = useUserStore();
+  const { user } = useUserStore();
   const navigate = useNavigate();
-  const [ratedSeries, setRatedSeries] = useState<any[]>([]);
+  const [ratedSeries, setRatedSeries] = useState<UserRatingWithSeries[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterRating, setFilterRating] = useState<number | 'all'>('all');
   const [filterMediaType, setFilterMediaType] = useState<string | 'all'>('all');
 
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      return;
-    }
-
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    if (!user) return;
 
     const fetchRated = async () => {
       try {
@@ -34,7 +27,7 @@ export function RatedSeriesPage() {
     };
 
     fetchRated();
-  }, [user, authLoading, navigate]);
+  }, [user]);
 
   // Split series into positive (1-5 stars) and negative (0 stars/thumbs down)
   const positiveSeries = ratedSeries.filter(item => {

@@ -988,3 +988,6 @@ export interface RelatedAnimeInfoMultiPlatform {
   availableOnCrunchyroll: boolean;
   rating?: number;
 }
+
+/** Shared singleton AniListAdapter instance — use this to share rate-limit state */
+export const anilistAdapter = new AniListAdapter();

@@ -35,6 +35,7 @@ export class RelationshipTracer {
   private anilistMatcher: AniListMatcherService;
   private graphCache: Map<string, { graph: SeriesRelationship; timestamp: number }> = new Map();
   private readonly GRAPH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly MAX_CACHE_ENTRIES = 500;
 
   constructor(
     private seriesCache: SeriesCacheService
@@ -127,6 +128,19 @@ export class RelationshipTracer {
       edges,
     };
 
+    // Evict oldest entries if cache is full
+    if (this.graphCache.size >= this.MAX_CACHE_ENTRIES) {
+      let oldestKey: string | null = null;
+      let oldestTime = Infinity;
+      for (const [key, entry] of this.graphCache) {
+        if (entry.timestamp < oldestTime) {
+          oldestTime = entry.timestamp;
+          oldestKey = key;
+        }
+      }
+      if (oldestKey) this.graphCache.delete(oldestKey);
+    }
+
     // Cache the graph for future requests
     this.graphCache.set(graphCacheKey, {
       graph,
@@ -164,7 +178,7 @@ export class RelationshipTracer {
 
     // Set up rate limit callback to notify UI
     if (onProgress) {
-      this.anilistMatcher.getAdapter().setRateLimitCallback((waitTimeMs, attempt, maxRetries) => {
+      this.anilistMatcher.getAdapter().setRateLimitCallback((waitTimeMs: number, attempt: number, maxRetries: number) => {
         onProgress({
           step: 'rate_limited',
           current: nodes.length,
@@ -469,8 +483,8 @@ export class RelationshipTracer {
             category: tag.category ?? undefined,
           })),
           metadata: (related.metadata as Record<string, any>) ?? {},
-          fetchedAt: related.fetchedAt,
-          updatedAt: related.updatedAt,
+          fetchedAt: related.fetchedAt.toISOString(),
+          updatedAt: related.updatedAt.toISOString(),
         };
 
         // Report progress for this series (even if we filter it out later)

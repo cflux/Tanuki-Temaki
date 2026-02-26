@@ -192,20 +192,21 @@ export class SeriesCacheService {
     while (true) {
       // Find PREQUEL relation
       const prequelEdge = currentMedia.relations?.edges?.find(
-        edge => edge.relationType === 'PREQUEL' && edge.node.type === mediaType
+        (edge: any) => edge.relationType === 'PREQUEL' && edge.node.type === mediaType
       );
 
       if (!prequelEdge || !prequelEdge.node.id) break;
 
-      prequelId = prequelEdge.node.id;
+      const nextId: number = prequelEdge.node.id;
+      prequelId = nextId;
 
       // Prevent infinite loops
-      if (visited.has(prequelId)) {
-        logger.warn('Circular PREQUEL relation detected', { currentId: currentMedia.id, prequelId });
+      if (visited.has(nextId)) {
+        logger.warn('Circular PREQUEL relation detected', { currentId: currentMedia.id, prequelId: nextId });
         break;
       }
 
-      visited.add(prequelId);
+      visited.add(nextId);
 
       logger.info('Following PREQUEL relation', {
         from: currentMedia.title.english || currentMedia.title.romaji,
@@ -381,11 +382,11 @@ export class SeriesCacheService {
     }
 
     logger.info(`Found ${searchResults.length} results from AniList`, {
-      titles: searchResults.slice(0, 3).map(r => r.title.english || r.title.romaji),
+      titles: searchResults.slice(0, 3).map((r: any) => r.title.english || r.title.romaji),
     });
 
     // Map to simplified series info
-    return searchResults.map(media => ({
+    return searchResults.map((media: any) => ({
       id: `anilist-${media.id}`,
       title: media.title.english || media.title.romaji,
       description: media.description || '',

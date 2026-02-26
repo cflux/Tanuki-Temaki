@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 export interface RecommendedSeries {
   series: {

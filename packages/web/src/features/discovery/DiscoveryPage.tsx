@@ -30,11 +30,10 @@ export function DiscoveryPage() {
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userServices, setUserServices] = useState<string[]>([]);
-  const { user, preferPersonalized, resultsMediaFilter: savedResultsMediaFilter, setResultsMediaFilter: saveResultsMediaFilter, filterAdultContent } = useUserStore();
+  const { user, preferPersonalized, resultsMediaFilter, setResultsMediaFilter, filterAdultContent } = useUserStore();
   const {
     relationshipGraph,
     mediaType,
-    resultsMediaFilter,
     isLoading,
     loadingProgress,
     error,
@@ -47,7 +46,6 @@ export function DiscoveryPage() {
     setRootSeries,
     setRelationshipGraph,
     setMediaType,
-    setResultsMediaFilter,
     setLoading,
     setLoadingProgress,
     setError,
@@ -129,7 +127,7 @@ export function DiscoveryPage() {
       .map(([tag, count]) => ({ tag, count, isPrimary: primaryTags.has(tag) }));
   }, [relationshipGraph]);
 
-  const performDiscovery = async (searchQuery: string) => {
+  const performDiscovery = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
     // Reset view state for new discovery
@@ -285,7 +283,7 @@ export function DiscoveryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mediaType, user, preferPersonalized, filterAdultContent, setSelectedSeries, setRootSeries, setRelationshipGraph, setLoading, setLoadingProgress, setError]);
 
   const handleDiscover = async () => {
     if (searchMode === 'tag') {
@@ -406,7 +404,7 @@ export function DiscoveryPage() {
     // Update search box and trigger discovery
     setUrl(series.title);
     await performDiscovery(series.title);
-  }, [relationshipGraph]);
+  }, [relationshipGraph, performDiscovery]);
 
   const handleSeriesSelect = async (anilistId: number, title: string) => {
     // Close modal
@@ -536,16 +534,6 @@ export function DiscoveryPage() {
 
     loadUserServices();
   }, [user]);
-
-  // Initialize resultsMediaFilter from saved preference on mount
-  useEffect(() => {
-    setResultsMediaFilter(savedResultsMediaFilter);
-  }, []); // Only run once on mount
-
-  // Save resultsMediaFilter preference when it changes
-  useEffect(() => {
-    saveResultsMediaFilter(resultsMediaFilter);
-  }, [resultsMediaFilter, saveResultsMediaFilter]);
 
   // Handle navigation from other pages (e.g., explore from ratings page)
   useEffect(() => {

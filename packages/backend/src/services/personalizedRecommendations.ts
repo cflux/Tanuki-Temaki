@@ -406,14 +406,16 @@ export class PersonalizedRecommendationService {
   /**
    * Get all children IDs for a series
    */
-  private getChildrenIds(seriesId: string, graph: SeriesRelationship): string[] {
+  private getChildrenIds(seriesId: string, graph: SeriesRelationship, visited = new Set<string>()): string[] {
+    if (visited.has(seriesId)) return [];
+    visited.add(seriesId);
+
     const childrenIds: string[] = [];
     const edges = graph.edges.filter(e => e.from === seriesId);
 
     edges.forEach(edge => {
       childrenIds.push(edge.to);
-      // Recursively get children of children
-      childrenIds.push(...this.getChildrenIds(edge.to, graph));
+      childrenIds.push(...this.getChildrenIds(edge.to, graph, visited));
     });
 
     return childrenIds;
