@@ -293,8 +293,8 @@ export function DiscoveryPage() {
     }
   };
 
-  const handleTagDiscovery = async () => {
-    const tagValue = url.trim();
+  const handleTagDiscovery = async (tagOverride?: string) => {
+    const tagValue = (tagOverride ?? url).trim();
     if (!tagValue) return;
 
     // Save original title and update with loading indicator
@@ -537,26 +537,31 @@ export function DiscoveryPage() {
 
   // Handle navigation from other pages (e.g., explore from ratings page)
   useEffect(() => {
-    const state = location.state as { exploreTitle?: string; exploreMediaType?: 'ANIME' | 'MANGA' } | null;
+    const state = location.state as { exploreTitle?: string; exploreTag?: string; exploreMediaType?: 'ANIME' | 'MANGA' } | null;
 
     // Only process if we have state and haven't processed this navigation yet
-    if (state?.exploreTitle && processedLocationKey.current !== location.key) {
+    if ((state?.exploreTitle || state?.exploreTag) && processedLocationKey.current !== location.key) {
       processedLocationKey.current = location.key;
-
-      const title = state.exploreTitle;
-      const mediaTypeToSet = state.exploreMediaType;
 
       // Clear the state to prevent it from persisting
       window.history.replaceState({}, document.title);
 
       // Set the media type if provided
-      if (mediaTypeToSet) {
-        setMediaType(mediaTypeToSet);
+      if (state.exploreMediaType) {
+        setMediaType(state.exploreMediaType);
       }
-      // Set the search box
-      setUrl(title);
-      // Trigger discovery
-      performDiscovery(title);
+
+      if (state.exploreTag) {
+        // Tag-based search
+        setSearchMode('tag');
+        setUrl(state.exploreTag);
+        // Delay to let searchMode state update before triggering
+        setTimeout(() => handleTagDiscovery(state.exploreTag!), 0);
+      } else if (state.exploreTitle) {
+        // Series-based search
+        setUrl(state.exploreTitle);
+        performDiscovery(state.exploreTitle);
+      }
     }
   }, [location]);
 

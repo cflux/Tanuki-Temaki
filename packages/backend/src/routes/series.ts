@@ -329,7 +329,7 @@ router.get('/:id/trace-stream', optionalAuth, async (req, res, next) => {
     logger.info('Starting SSE trace', { seriesId: id, maxDepth, personalized: wantPersonalized });
 
     let aborted = false;
-    req.on('close', () => { aborted = true; });
+    res.on('close', () => { aborted = true; });
 
     // Get series to get URL
     const series = await seriesCache.getSeriesById(id);

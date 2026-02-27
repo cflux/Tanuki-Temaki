@@ -650,34 +650,31 @@ export const recommendationApi = {
       }
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
+      const lines = buffer.split('\n\n');
       buffer = lines.pop() || '';
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-
-          if (data === '[DONE]') {
-            break;
-          }
+          const raw = line.slice(6);
+          if (raw === '[DONE]') continue;
 
           try {
-            const parsed = JSON.parse(data);
+            const data = JSON.parse(raw);
 
-            if (parsed.error) {
+            if (data.error) {
               reader.cancel();
-              throw new Error(parsed.message || parsed.details || 'Unknown error');
+              throw new Error(data.message || data.details || 'Unknown error');
             }
 
-            if (parsed.result) {
+            if (data.result) {
               reader.cancel();
-              return parsed.result;
+              return data.result;
             }
 
-            onProgress?.(parsed.step, parsed.message, parsed);
+            onProgress?.(data.step, data.message, data);
           } catch (error) {
             if (error instanceof Error && error.message) throw error;
-            console.error('Failed to parse SSE data:', data, error);
+            console.error('Failed to parse SSE data:', error);
           }
         }
       }

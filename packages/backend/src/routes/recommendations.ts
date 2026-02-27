@@ -119,7 +119,7 @@ router.post('/from-tag-stream', optionalAuth, async (req, res, next) => {
     res.flushHeaders();
 
     let aborted = false;
-    req.on('close', () => { aborted = true; });
+    res.on('close', () => { aborted = true; });
 
     const sendProgress = (step: string, message: string, data?: any) => {
       if (aborted) return;

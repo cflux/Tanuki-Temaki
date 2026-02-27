@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { userApi, authApi, type UserRating } from '../lib/api';
 import { ServicePreferences } from '../components/user/ServicePreferences';
 
 export const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
   const updateUsername = useUserStore((state) => state.updateUsername);
   const [ratings, setRatings] = useState<UserRating[]>([]);
@@ -240,9 +242,15 @@ export const ProfilePage: React.FC = () => {
                 {likedTags.map(([tag, score]) => (
                   <div
                     key={tag}
-                    className="flex items-center justify-between py-2 px-3 bg-cyber-bg-elevated border border-cyber-border"
+                    className="flex items-center justify-between py-2 px-3 bg-cyber-bg-elevated border border-cyber-border group"
                   >
-                    <span className="text-cyber-text uppercase tracking-wide text-sm">{tag}</span>
+                    <button
+                      onClick={() => navigate('/search', { state: { exploreTag: tag } })}
+                      className="text-cyber-text uppercase tracking-wide text-sm hover:text-cyber-accent transition-colors text-left"
+                      title={`Search for series with tag "${tag}"`}
+                    >
+                      {tag} <span className="text-cyber-text-dim group-hover:text-cyber-accent text-xs ml-1">→</span>
+                    </button>
                     <span className="text-green-500 font-mono font-bold">+{score}</span>
                   </div>
                 ))}

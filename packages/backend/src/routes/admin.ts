@@ -224,7 +224,7 @@ router.post('/seed/popular-stream', requireAuth, requireAdmin, async (req, res) 
     res.setHeader('Connection', 'keep-alive');
 
     let aborted = false;
-    req.on('close', () => { aborted = true; });
+    res.on('close', () => { aborted = true; });
 
     const sendProgress = (step: string, message: string, data?: any) => {
       if (aborted) return;
@@ -436,7 +436,7 @@ router.post('/seed/expand-stream', requireAuth, requireAdmin, async (req, res) =
     res.setHeader('Connection', 'keep-alive');
 
     let aborted = false;
-    req.on('close', () => { aborted = true; });
+    res.on('close', () => { aborted = true; });
 
     const sendProgress = (step: string, message: string, data?: any) => {
       if (aborted) return;
