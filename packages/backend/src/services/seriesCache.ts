@@ -148,7 +148,13 @@ export class SeriesCacheService {
     // Search AniList directly
     const anilistAdapter = this.anilistMatcher.getAdapter();
     const isAdult = filterAdult ? false : undefined; // Convert filterAdult flag to AniList parameter
-    const searchResult = await anilistAdapter.searchMedia(title, mediaType, isAdult);
+    let searchResult;
+    try {
+      searchResult = await anilistAdapter.searchMedia(title, mediaType, isAdult);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new AppError(502, `Failed to search AniList: ${message}`);
+    }
 
     if (!searchResult) {
       throw new AppError(404, `No ${mediaType.toLowerCase()} found with title: ${title}`);
@@ -375,7 +381,13 @@ export class SeriesCacheService {
 
     // Search AniList with a higher page limit
     const isAdult = filterAdult ? false : undefined; // Convert filterAdult flag to AniList parameter
-    const searchResults = await anilistAdapter.searchMediaMultiple(title, mediaType, limit, isAdult);
+    let searchResults;
+    try {
+      searchResults = await anilistAdapter.searchMediaMultiple(title, mediaType, limit, isAdult);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new AppError(502, `Failed to search AniList: ${message}`);
+    }
 
     if (!searchResults || searchResults.length === 0) {
       throw new AppError(404, `No ${mediaType.toLowerCase()} found with title: ${title}`);

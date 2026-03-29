@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { userApi, recommendationApi } from '../lib/api';
@@ -197,6 +197,37 @@ export function HomePage() {
           <p className="text-cyber-text-dim font-mono text-sm">
             WELCOME BACK, {user.username.toUpperCase()}
           </p>
+        </div>
+
+        {/* Quick Search */}
+        <div className="mb-8 bg-cyber-bg-card border border-cyber-border p-6">
+          <h2 className="text-xl font-semibold text-cyber-text-bright uppercase tracking-wider border-b border-cyber-border pb-2 mb-4">
+            [SEARCH] DISCOVER
+          </h2>
+          <form
+            onSubmit={(e: FormEvent) => {
+              e.preventDefault();
+              const input = (e.target as HTMLFormElement).elements.namedItem('q') as HTMLInputElement;
+              const query = input.value.trim();
+              if (query) {
+                navigate('/search', { state: { exploreTitle: query } });
+              }
+            }}
+            className="flex gap-2"
+          >
+            <input
+              name="q"
+              type="text"
+              placeholder="Search anime or manga title..."
+              className="flex-1 px-3 py-2 bg-cyber-bg border border-cyber-border text-cyber-text-bright font-mono text-sm placeholder:text-cyber-text-dim focus:outline-none focus:border-cyber-accent"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-cyber-accent text-cyber-bg font-bold text-sm uppercase tracking-wider hover:bg-cyber-secondary transition-colors"
+            >
+              GO
+            </button>
+          </form>
         </div>
 
         {/* ── WATCHLIST ── */}

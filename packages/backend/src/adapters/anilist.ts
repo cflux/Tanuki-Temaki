@@ -247,11 +247,13 @@ export class AniListAdapter {
 
       return data.Media;
     } catch (error) {
+      const message = (error as any)?.response?.errors?.[0]?.message
+        || (error instanceof Error ? error.message : 'Unknown error');
       logger.error('Error searching AniList', {
         title,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: message,
       });
-      return null;
+      throw new Error(`AniList API error: ${message}`);
     }
   }
 
@@ -318,11 +320,13 @@ export class AniListAdapter {
 
       return data.Page.media;
     } catch (error) {
+      const message = (error as any)?.response?.errors?.[0]?.message
+        || (error instanceof Error ? error.message : 'Unknown error');
       logger.error('Error searching AniList for multiple results', {
         title,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: message,
       });
-      return [];
+      throw new Error(`AniList API error: ${message}`);
     }
   }
 

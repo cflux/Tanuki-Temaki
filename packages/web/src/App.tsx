@@ -22,6 +22,7 @@ import { useUserStore } from './store/userStore';
 import { authApi, userApi } from './lib/api';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ToastContainer } from './components/Toast';
+import { version } from '../package.json';
 
 function LogoMenu() {
   const [open, setOpen] = useState(false);
@@ -183,7 +184,10 @@ function App() {
 
         {/* Desktop Header */}
         <header className="border-b border-cyber-accent bg-cyber-bg-elevated shadow-cyber-sm">
-          <div className="w-full pl-4 md:pl-44 pr-4 py-4 flex justify-end items-center">
+          <div className="w-full pl-4 md:pl-44 pr-4 py-4 flex justify-between items-center">
+            <span className="hidden md:block text-cyber-text-dim font-mono text-xs tracking-wider">
+              v{version}
+            </span>
             {/* Desktop Navigation - Hidden on Mobile */}
             <div className="hidden md:flex items-center gap-3">
               <ThemeSwitcher />
