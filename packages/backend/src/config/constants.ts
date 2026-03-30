@@ -37,6 +37,7 @@ export const GITHUB_CALLBACK_URL = `${OAUTH_BACKEND_URL}/api/auth/github/callbac
 // ============================================================================
 
 export const ANILIST_API_URL = 'https://graphql.anilist.co';
+export const CORVID_CACHE_URL = process.env.CORVID_CACHE_URL || '';
 
 // ============================================================================
 // Server Ports

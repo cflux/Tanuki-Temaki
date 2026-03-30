@@ -17,6 +17,7 @@ import recommendationsRouter, { setDependencies as setRecommendationsDependencie
 import tagsRouter from './routes/tags.js';
 import testRouter from './routes/test.js';
 import adminRouter, { setDependencies as setAdminDependencies } from './routes/admin.js';
+import downloadsRouter from './routes/downloads.js';
 import passport from './config/passport.js';
 import { prisma } from './lib/prisma.js';
 import {
@@ -57,6 +58,7 @@ app.use('/api/series', seriesRouter);
 app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/downloads', downloadsRouter);
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/test', testRouter);
 }

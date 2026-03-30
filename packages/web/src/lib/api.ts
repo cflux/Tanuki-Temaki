@@ -560,6 +560,17 @@ export const tagApi = {
   },
 };
 
+export const downloadApi = {
+  async getSupportedServices(): Promise<string[]> {
+    const { data } = await api.get<{ services: string[] }>('/api/downloads/services');
+    return data.services;
+  },
+
+  async requestDownload(seriesId: string, service: string, url: string): Promise<void> {
+    await api.post('/api/downloads/request', { seriesId, service, url });
+  },
+};
+
 export interface RecommendedSeries {
   series: {
     id: string;

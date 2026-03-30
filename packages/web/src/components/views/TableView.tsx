@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Series, SeriesRelationship } from '@tanuki-temaki/shared';
 import { RatingWidget } from '../user/RatingWidget';
 import { NotesWidget } from '../user/NotesWidget';
@@ -6,8 +6,9 @@ import { TagVotingWidget } from '../user/TagVotingWidget';
 import { WatchlistButton } from '../user/WatchlistButton';
 import { PersonalizedBadge } from '../PersonalizedBadge';
 import { RecommendationExplanation } from '../RecommendationExplanation';
-import { userApi } from '../../lib/api';
+import { userApi, downloadApi } from '../../lib/api';
 import { useUserStore } from '../../store/userStore';
+import { toast } from '../Toast';
 
 interface TableViewProps {
   relationship: SeriesRelationship;
@@ -42,6 +43,34 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const [watchlistStatuses, setWatchlistStatuses] = useState<Map<string, string | null>>(new Map());
   const { user } = useUserStore();
+  const [dlServices, setDlServices] = useState<string[]>([]);
+  const [dlPending, setDlPending] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      downloadApi.getSupportedServices()
+        .then(setDlServices)
+        .catch(() => setDlServices([]));
+    }
+  }, [user]);
+
+  const handleRequestDownload = useCallback(async (seriesId: string, service: string, url: string) => {
+    const key = `${seriesId}-${service}`;
+    setDlPending(prev => new Set(prev).add(key));
+    try {
+      await downloadApi.requestDownload(seriesId, service.toLowerCase(), url);
+      toast('Download request sent to Corvid Cache', 'success');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Request failed';
+      toast(msg, 'error');
+    } finally {
+      setDlPending(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  }, []);
 
   const filteredAndSortedData = useMemo(
     () => {
@@ -346,7 +375,19 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                   {/* Services */}
                   <div className="flex gap-2 flex-wrap mb-2">
                     {Object.entries(streamingLinks).length > 0 ? Object.entries(streamingLinks).map(([platform, url]) => (
-                      <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg border border-cyber-accent text-xs text-cyber-accent transition-all uppercase">{getPlatformIcon(platform)} {platform}</a>
+                      <div key={platform} className="inline-flex items-center border border-cyber-accent">
+                        <a href={url as string} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg text-xs text-cyber-accent transition-all uppercase">{getPlatformIcon(platform)} {platform}</a>
+                        {user && dlServices.includes(platform.toLowerCase()) && (
+                          <button
+                            onClick={() => handleRequestDownload(series.id, platform, url as string)}
+                            disabled={dlPending.has(`${series.id}-${platform}`)}
+                            className="px-1.5 py-1 border-l border-cyber-accent text-xs font-mono text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg transition-colors disabled:opacity-50"
+                            title="Request download via Corvid Cache"
+                          >
+                            {dlPending.has(`${series.id}-${platform}`) ? '...' : 'DL'}
+                          </button>
+                        )}
+                      </div>
                     )) : (
                       <a href={series.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg border border-cyber-accent text-xs text-cyber-accent transition-all uppercase">{getPlatformIcon(series.provider)} {series.provider}</a>
                     )}
@@ -499,16 +540,27 @@ export function TableView({ relationship, requiredTags, excludedTags, filterMode
                   <div className="flex gap-2 flex-wrap mb-3">
                     {Object.entries(streamingLinks).length > 0 ? (
                       Object.entries(streamingLinks).map(([platform, url]) => (
-                        <a
-                          key={platform}
-                          href={url as string}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg border border-cyber-accent text-xs text-cyber-accent transition-all uppercase tracking-wide"
-                          title={`View on ${platform}`}
-                        >
-                          {getPlatformIcon(platform)} {platform}
-                        </a>
+                        <div key={platform} className="inline-flex items-center border border-cyber-accent">
+                          <a
+                            href={url as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-2 py-1 bg-transparent hover:bg-cyber-accent hover:text-cyber-bg text-xs text-cyber-accent transition-all uppercase tracking-wide"
+                            title={`View on ${platform}`}
+                          >
+                            {getPlatformIcon(platform)} {platform}
+                          </a>
+                          {user && dlServices.includes(platform.toLowerCase()) && (
+                            <button
+                              onClick={() => handleRequestDownload(series.id, platform, url as string)}
+                              disabled={dlPending.has(`${series.id}-${platform}`)}
+                              className="px-1.5 py-1 border-l border-cyber-accent text-xs font-mono text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg transition-colors disabled:opacity-50"
+                              title="Request download via Corvid Cache"
+                            >
+                              {dlPending.has(`${series.id}-${platform}`) ? '...' : 'DL'}
+                            </button>
+                          )}
+                        </div>
                       ))
                     ) : (
                       <a
