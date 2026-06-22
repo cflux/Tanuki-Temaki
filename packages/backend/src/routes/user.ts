@@ -1,5 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 import { requireAuth } from '../middleware/auth.js';
 import { UserService } from '../services/user.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
@@ -411,5 +413,78 @@ router.get('/noted', async (req, res) => {
     res.status(500).json({ error: USER_DATA_ERRORS.FAILED_TO_FETCH_NOTED_SERIES });
   }
 });
+
+// ==================== API KEYS ====================
+
+const API_KEY_NAME_MAX = 100;
+const BCRYPT_ROUNDS = 10;
+
+/**
+ * Create a new API key
+ * Returns the raw key exactly once — not stored, cannot be recovered.
+ */
+router.post('/api-keys', asyncHandler(async (req, res) => {
+  const { name } = req.body;
+
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    throw new AppError(400, 'name is required');
+  }
+  if (name.length > API_KEY_NAME_MAX) {
+    throw new AppError(400, `name must be at most ${API_KEY_NAME_MAX} characters`);
+  }
+
+  const rawKey = `ttk_${randomBytes(32).toString('hex')}`;
+  const keyPrefix = rawKey.slice(0, 8);
+  const keyHash = await bcrypt.hash(rawKey, BCRYPT_ROUNDS);
+
+  const record = await prisma.apiKey.create({
+    data: {
+      userId: req.user!.userId,
+      name: name.trim(),
+      keyHash,
+      keyPrefix,
+    },
+    select: { id: true, name: true, keyPrefix: true, createdAt: true },
+  });
+
+  res.status(201).json({ ...record, key: rawKey });
+}));
+
+/**
+ * List API keys for the authenticated user (never returns key hash)
+ */
+router.get('/api-keys', asyncHandler(async (req, res) => {
+  const keys = await prisma.apiKey.findMany({
+    where: { userId: req.user!.userId },
+    select: {
+      id: true,
+      name: true,
+      keyPrefix: true,
+      createdAt: true,
+      lastUsedAt: true,
+      expiresAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(keys);
+}));
+
+/**
+ * Revoke an API key
+ */
+router.delete('/api-keys/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const key = await prisma.apiKey.findFirst({
+    where: { id, userId: req.user!.userId },
+  });
+
+  if (!key) {
+    throw new AppError(404, 'API key not found');
+  }
+
+  await prisma.apiKey.delete({ where: { id } });
+  res.json({ success: true });
+}));
 
 export default router;

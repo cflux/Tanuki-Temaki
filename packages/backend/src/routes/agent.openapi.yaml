@@ -1,0 +1,405 @@
+openapi: "3.1.0"
+info:
+  title: Tanuki-Temaki Agent API
+  version: "1.0.0"
+  description: |
+    Read-only API for agent/programmatic access to Tanuki-Temaki anime/manga
+    discovery data. Authenticate with a long-lived API key (Bearer token).
+    Create keys via POST /api/user/api-keys (requires normal user login).
+
+servers:
+  - url: /api/agent
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "API key created via POST /api/user/api-keys. Format: ttk_<hex>"
+
+  schemas:
+    Tag:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        value: { type: string }
+        source: { type: string, enum: [genre, content, description, manual] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        category: { type: string, nullable: true }
+
+    Series:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        provider: { type: string }
+        mediaType: { type: string, enum: [ANIME, MANGA] }
+        externalId: { type: string }
+        url: { type: string, format: uri }
+        title: { type: string }
+        titleImage: { type: string, nullable: true }
+        description: { type: string }
+        rating: { type: number, nullable: true }
+        ageRating: { type: string, nullable: true }
+        isAdult: { type: boolean, nullable: true }
+        languages: { type: array, items: { type: string } }
+        genres: { type: array, items: { type: string } }
+        contentAdvisory: { type: array, items: { type: string } }
+        tags: { type: array, items: { $ref: "#/components/schemas/Tag" } }
+        metadata: { type: object }
+        fetchedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        userRating: { type: integer, nullable: true, minimum: 0, maximum: 5, description: "Key owner's rating for this series" }
+        userNote: { type: string, nullable: true, description: "Key owner's private note" }
+        userTagVotes: { type: object, additionalProperties: { type: integer }, description: "Key owner's tag votes: { tagValue: 1|-1 }" }
+
+    SeriesNode:
+      type: object
+      properties:
+        series: { $ref: "#/components/schemas/Series" }
+        depth: { type: integer }
+        cluster: { type: string, nullable: true }
+
+    RelationshipEdge:
+      type: object
+      properties:
+        from: { type: string }
+        to: { type: string }
+        similarity: { type: number }
+        sharedTags: { type: array, items: { type: string } }
+        relationType: { type: string, nullable: true }
+
+    RelationshipGraph:
+      type: object
+      properties:
+        rootId: { type: string }
+        nodes: { type: array, items: { $ref: "#/components/schemas/SeriesNode" } }
+        edges: { type: array, items: { $ref: "#/components/schemas/RelationshipEdge" } }
+        seedSeriesIds: { type: array, items: { type: string } }
+
+    CacheStats:
+      type: object
+      properties:
+        totalSeries: { type: integer }
+        totalTags: { type: integer }
+        totalRelationships: { type: integer }
+        byProvider:
+          type: array
+          items:
+            type: object
+            properties:
+              provider: { type: string }
+              count: { type: integer }
+        byMediaType:
+          type: array
+          items:
+            type: object
+            properties:
+              mediaType: { type: string, enum: [ANIME, MANGA] }
+              count: { type: integer }
+
+    RatedSeries:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        seriesId: { type: string }
+        rating: { type: integer, minimum: 0, maximum: 5 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        series:
+          type: object
+          properties:
+            id: { type: string }
+            title: { type: string }
+            titleImage: { type: string, nullable: true }
+            url: { type: string }
+            mediaType: { type: string }
+
+    WatchlistItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        seriesId: { type: string }
+        status: { type: string, enum: [plan_to_watch, watching, completed, on_hold, dropped] }
+        addedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        series: { $ref: "#/components/schemas/Series" }
+
+    NotedSeries:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        seriesId: { type: string }
+        note: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        series: { $ref: "#/components/schemas/Series" }
+
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+paths:
+  /openapi.yaml:
+    get:
+      summary: Get this OpenAPI spec
+      security: []
+      responses:
+        "200":
+          description: OpenAPI YAML spec
+          content:
+            text/yaml:
+              schema: { type: string }
+
+  /series/stats:
+    get:
+      summary: Cache statistics
+      description: Total counts of series, tags, and relationships in the database.
+      responses:
+        "200":
+          description: Cache statistics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CacheStats" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /series/search:
+    get:
+      summary: Search series by title
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+          description: Title search query
+        - name: mediaType
+          in: query
+          schema: { type: string, enum: [ANIME, MANGA] }
+          description: Filter by media type
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Matching series
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Series" }
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /series/{id}:
+    get:
+      summary: Get series by ID
+      description: Returns full series detail including the key owner's rating, note, and tag votes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Series with user data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Series" }
+        "404":
+          description: Series not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /series/{id}/relationships:
+    get:
+      summary: Get relationship graph for a series
+      description: |
+        Traces related series up to maxDepth hops. Returns the full graph with
+        nodes (series + depth) and weighted edges (similarity + shared tags).
+        User ratings/notes/votes are attached to each node.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: maxDepth
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 5, default: 3 }
+      responses:
+        "200":
+          description: Relationship graph
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RelationshipGraph" }
+        "404":
+          description: Series not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/profile:
+    get:
+      summary: Key owner's profile
+      responses:
+        "200":
+          description: Profile data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/ratings:
+    get:
+      summary: All ratings by the key owner
+      parameters:
+        - name: minRating
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 5 }
+          description: Only return ratings >= this value
+        - name: mediaType
+          in: query
+          schema: { type: string, enum: [ANIME, MANGA] }
+          description: Filter by media type
+      responses:
+        "200":
+          description: Rated series list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RatedSeries" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/watchlist:
+    get:
+      summary: Key owner's watchlist
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [plan_to_watch, watching, completed, on_hold, dropped] }
+          description: Filter by watchlist status
+      responses:
+        "200":
+          description: Watchlist items with full series detail
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WatchlistItem" }
+        "400":
+          description: Invalid status filter
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/notes:
+    get:
+      summary: All series with private notes by the key owner
+      responses:
+        "200":
+          description: Noted series list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NotedSeries" }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/tag-preferences:
+    get:
+      summary: Aggregated tag vote scores for the key owner
+      description: |
+        Returns an object mapping tag values to their aggregate vote score
+        (sum of all +1/-1 votes across all series). Positive means the user
+        generally likes this tag; negative means they don't.
+      responses:
+        "200":
+          description: Tag preference scores
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: { type: integer }
+                example: { "action": 5, "romance": -2, "isekai": 3 }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /user/preferences:
+    get:
+      summary: App preferences for the key owner
+      description: |
+        Returns all stored preferences (theme, media_filter, adult_filter,
+        prefer_personalized, available_services).
+      responses:
+        "200":
+          description: User preferences object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  theme: { type: string, nullable: true }
+                  media_filter: { type: string, nullable: true }
+                  adult_filter: { type: boolean, nullable: true }
+                  prefer_personalized: { type: boolean, nullable: true }
+                  available_services: { type: array, items: { type: string }, nullable: true }
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }

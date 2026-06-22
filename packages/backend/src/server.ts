@@ -18,6 +18,7 @@ import tagsRouter from './routes/tags.js';
 import testRouter from './routes/test.js';
 import adminRouter, { setDependencies as setAdminDependencies } from './routes/admin.js';
 import downloadsRouter from './routes/downloads.js';
+import agentRouter, { setDependencies as setAgentDependencies } from './routes/agent.js';
 import passport from './config/passport.js';
 import { prisma } from './lib/prisma.js';
 import {
@@ -49,6 +50,7 @@ app.use('/api', rateLimiter({
 setSeriesDependencies(seriesCache, relationshipTracer);
 setRecommendationsDependencies(relationshipTracer, seriesCache);
 setAdminDependencies(seriesCache, relationshipTracer);
+setAgentDependencies(seriesCache, relationshipTracer);
 
 // Routes
 app.use('/api', healthRouter);
@@ -59,6 +61,7 @@ app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/downloads', downloadsRouter);
+app.use('/api/agent', agentRouter);
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/test', testRouter);
 }
