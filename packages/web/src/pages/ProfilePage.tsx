@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { userApi, authApi, type UserRating } from '../lib/api';
 import { ServicePreferences } from '../components/user/ServicePreferences';
+import { ApiKeysWidget } from '../components/user/ApiKeysWidget';
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -341,6 +342,11 @@ export const ProfilePage: React.FC = () => {
       {/* Service Preferences */}
       <div className="mt-8 bg-cyber-bg-card p-6 border border-cyber-border">
         <ServicePreferences userId={user.id} />
+      </div>
+
+      {/* API Keys / Agent Access */}
+      <div className="mt-8 bg-cyber-bg-card p-6 border border-cyber-border">
+        <ApiKeysWidget />
       </div>
     </div>
   );
