@@ -104,8 +104,26 @@ model User {
   notes           UserSeriesNote[]
   preferences     UserPreference[]
   watchlist       UserWatchlist[]
+  apiKeys         ApiKey[]
 
   @@map("users")
+}
+
+// ApiKey model - long-lived read-only tokens for agent/programmatic access
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  keyHash    String    @unique  // bcrypt hash of the full raw key
+  keyPrefix  String             // first 8 chars of raw key (for display)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
 }
 
 // OAuthIdentity model - links users to OAuth providers (no email storage)

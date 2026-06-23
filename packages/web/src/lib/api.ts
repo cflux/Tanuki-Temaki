@@ -4,6 +4,21 @@ import type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVot
 // Re-export types for use in components
 export type { Series, SeriesRelationship, User, UserRating, UserNote, UserTagVote, UserRatingWithSeries, UserWatchlistWithSeries, UserNoteWithSeries };
 
+// API key for programmatic / agent access
+export interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt?: string | null;
+  expiresAt?: string | null;
+}
+
+// Returned only once, at creation time — includes the raw key
+export interface CreatedApiKey extends ApiKey {
+  key: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const api = axios.create({
@@ -515,6 +530,22 @@ export const userApi = {
   async getNotedSeries(): Promise<UserNoteWithSeries[]> {
     const { data } = await api.get('/api/user/noted');
     return data;
+  },
+
+  // ==================== API KEYS ====================
+
+  async getApiKeys(): Promise<ApiKey[]> {
+    const { data } = await api.get('/api/user/api-keys');
+    return data;
+  },
+
+  async createApiKey(name: string): Promise<CreatedApiKey> {
+    const { data } = await api.post('/api/user/api-keys', { name });
+    return data;
+  },
+
+  async revokeApiKey(id: string): Promise<void> {
+    await api.delete(`/api/user/api-keys/${id}`);
   },
 };
 
